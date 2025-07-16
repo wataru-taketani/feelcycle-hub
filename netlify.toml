@@ -18,7 +18,7 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.line-scdn.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.line.me https://*.amazonaws.com https://access.line.me; frame-ancestors https://liff.line.me https://liff-web.line.me;"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.line-scdn.net https://liff-sdk.line-scdn.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https://api.line.me https://*.amazonaws.com https://access.line.me https://liff-sdk.line-scdn.net; frame-ancestors https://liff.line.me https://liff-web.line.me;"
 
 [[headers]]
   for = "*.js"
