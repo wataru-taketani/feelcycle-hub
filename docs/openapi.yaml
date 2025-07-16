@@ -1,0 +1,276 @@
+openapi: 3.0.3
+info:
+  title: FEELCYCLE Hub API
+  description: FEELCYCLEユーザーのレッスン予約・管理支援API
+  version: 0.1.0
+  contact:
+    name: FEELCYCLE Hub Team
+  license:
+    name: MIT
+
+servers:
+  - url: https://api.feelcycle-hub.com
+    description: Production server
+  - url: https://staging-api.feelcycle-hub.com
+    description: Staging server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/credentials:
+    post:
+      tags:
+        - Authentication
+      summary: FEELCYCLE資格情報を登録
+      description: ユーザーのFEELCYCLE ログイン資格情報を暗号化して保存
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: securepassword123
+      responses:
+        '201':
+          description: 資格情報が正常に登録されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: 無効なリクエストデータ
+        '409':
+          description: ユーザーは既に登録済み
+
+  /auth/line/callback:
+    get:
+      tags:
+        - Authentication
+      summary: LINE OAuth コールバック
+      description: LINE Login後のコールバック処理
+      parameters:
+        - in: query
+          name: code
+          required: true
+          schema:
+            type: string
+          description: LINE OAuth認証コード
+        - in: query
+          name: state
+          required: true
+          schema:
+            type: string
+          description: CSRF保護のためのstate
+      responses:
+        '302':
+          description: フロントエンドにリダイレクト
+        '400':
+          description: 無効なOAuth パラメータ
+
+  /watch:
+    post:
+      tags:
+        - Reservation
+      summary: レッスン監視枠を登録
+      description: キャンセル待ち通知を行うレッスン枠を登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - studio
+                - date
+                - time
+                - instructor
+              properties:
+                studio:
+                  type: string
+                  example: "表参道"
+                date:
+                  type: string
+                  format: date
+                  example: "2025-07-20"
+                time:
+                  type: string
+                  example: "10:30"
+                instructor:
+                  type: string
+                  example: "YUKI"
+                autoReserve:
+                  type: boolean
+                  default: false
+                  description: 空きが出た際に自動予約するか
+      responses:
+        '201':
+          description: 監視が開始されました
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: 無効なレッスン情報
+
+  /line/webhook:
+    post:
+      tags:
+        - LINE Integration
+      summary: LINE Webhook
+      description: LINE MessagingAPIからのWebhook（内部用）
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                events:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/LineWebhookEvent'
+      responses:
+        '200':
+          description: Webhook処理完了
+        '400':
+          description: 無効なWebhookデータ
+
+  /history/summary:
+    get:
+      tags:
+        - Analytics
+      summary: 受講履歴サマリーを取得
+      description: ユーザーの受講統計と残レッスン数を取得
+      parameters:
+        - in: query
+          name: period
+          schema:
+            type: string
+            enum: [week, month, year]
+            default: month
+          description: 集計期間
+      responses:
+        '200':
+          description: 受講履歴サマリー
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/HistorySummary'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ApiResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+        message:
+          type: string
+
+    LineWebhookEvent:
+      type: object
+      required:
+        - type
+        - source
+        - replyToken
+      properties:
+        type:
+          type: string
+          enum: [message, follow, unfollow]
+        message:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [text, image, sticker]
+            text:
+              type: string
+        source:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [user, group, room]
+            userId:
+              type: string
+        replyToken:
+          type: string
+
+    HistorySummary:
+      type: object
+      properties:
+        period:
+          type: string
+        totalLessons:
+          type: integer
+          description: 期間内の受講回数
+        remainingLessons:
+          type: integer
+          description: 残りレッスン数
+        favoriteInstructors:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              count:
+                type: integer
+        favoritePrograms:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              count:
+                type: integer
+        studioBreakdown:
+          type: array
+          items:
+            type: object
+            properties:
+              studio:
+                type: string
+              count:
+                type: integer
+
+tags:
+  - name: Authentication
+    description: 認証関連のエンドポイント
+  - name: Reservation
+    description: 予約・監視関連のエンドポイント
+  - name: LINE Integration
+    description: LINE連携関連のエンドポイント
+  - name: Analytics
+    description: 分析・履歴関連のエンドポイント

@@ -1,0 +1,30 @@
+{
+  "name": "@feelcycle-hub/backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/local-dev.ts",
+    "test": "vitest",
+    "lint": "eslint src/ --ext .ts",
+    "setup": "npm install"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.614.0",
+    "@aws-sdk/client-secrets-manager": "^3.614.0",
+    "@aws-sdk/lib-dynamodb": "^3.614.0",
+    "axios": "^1.7.2",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv-flow": "^4.1.0",
+    "playwright": "^1.45.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.140",
+    "@typescript-eslint/eslint-plugin": "^7.16.0",
+    "@typescript-eslint/parser": "^7.16.0",
+    "eslint": "^8.57.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.2",
+    "vitest": "^2.0.2"
+  }
+}

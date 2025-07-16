@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# CDK
+infra/cdk.out/
+infra/*.d.ts
+infra/*.js
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# TypeScript
+backend/dist/
+backend/*.tsbuildinfo
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+
+# AWS
+.aws/
+
+# Secrets
+secrets.json
+credentials.json
