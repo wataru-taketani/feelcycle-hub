@@ -15,22 +15,39 @@ class LiffService {
       throw new Error('LIFF ID is not configured');
     }
 
-    try {
-      // liff.init は複数回呼んでも問題ないためそのまま呼び出す
-      await liff.init({ liffId: this.liffId });
-      this.initialized = true;
-      console.log('LIFF initialized successfully');
-      console.log('isInClient:', liff.isInClient());
-      console.log('isLoggedIn:', liff.isLoggedIn());
-    } catch (error) {
-      console.error('LIFF initialization failed:', error);
-      console.error('Error details:', {
-        name: error?.name,
-        message: error?.message,
-        stack: error?.stack
-      });
-      throw error;
+    // リトライ機能付きの初期化
+    const maxRetries = 3;
+    let lastError: any;
+
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        console.log(`LIFF init attempt ${i + 1}/${maxRetries}`);
+        
+        // liff.init は複数回呼んでも問題ないためそのまま呼び出す
+        await liff.init({ liffId: this.liffId });
+        this.initialized = true;
+        console.log('LIFF initialized successfully');
+        console.log('isInClient:', liff.isInClient());
+        console.log('isLoggedIn:', liff.isLoggedIn());
+        return;
+      } catch (error) {
+        lastError = error;
+        console.warn(`LIFF init attempt ${i + 1} failed:`, error);
+        
+        if (i < maxRetries - 1) {
+          console.log(`Retrying in ${(i + 1) * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, (i + 1) * 1000));
+        }
+      }
     }
+
+    console.error('LIFF initialization failed after all retries:', lastError);
+    console.error('Error details:', {
+      name: lastError?.name,
+      message: lastError?.message,
+      stack: lastError?.stack
+    });
+    throw lastError;
   }
 
   isLoggedIn(): boolean {
