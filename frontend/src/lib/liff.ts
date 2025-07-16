@@ -8,6 +8,8 @@ class LiffService {
     if (this.initialized) return;
 
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
+    console.log('LIFF ID from env:', liffId);
+    
     if (!liffId) {
       throw new Error('LIFF ID is not configured');
     }
@@ -15,9 +17,9 @@ class LiffService {
     try {
       await liff.init({ liffId });
       this.initialized = true;
-      console.log('LIFF initialized successfully');
+      console.log('LIFF initialized successfully with ID:', liffId);
     } catch (error) {
-      console.error('LIFF initialization failed:', error);
+      console.error('LIFF initialization failed with ID:', liffId, 'Error:', error);
       throw error;
     }
   }
