@@ -5,7 +5,7 @@ import { LiffUser, LiffProfile } from '@/types/liff';
 export const initLiff = async () => {
   if (typeof window === "undefined") return null;
   try {
-    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-B9Pqw7Zy';
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-qExN9w3O';
     
     if (!liffId) {
       console.warn("NEXT_PUBLIC_LIFF_ID is not set");
