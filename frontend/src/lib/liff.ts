@@ -7,8 +7,8 @@ class LiffService {
   async init(): Promise<void> {
     if (typeof window === "undefined") return;
     
-    // 動作確認済みのLIFF IDを使用
-    const liffId = '2007687052-qExN9w3O';
+    // 本番用のLIFF IDを使用
+    const liffId = '2007455412-YP5jEbzK';
     console.log('LIFF ID (hardcoded):', liffId);
     console.log('Starting LIFF initialization...');
     
