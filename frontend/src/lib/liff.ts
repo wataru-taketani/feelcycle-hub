@@ -3,45 +3,62 @@ import { LiffUser, LiffProfile } from '@/types/liff';
 
 // 旧アプリと同じシンプルな初期化関数
 export const initLiff = async () => {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") {
+    console.log('❌ STEP 1: Window undefined');
+    return null;
+  }
+  
+  console.log('✅ STEP 1: Window check passed');
+  
   try {
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-qExN9w3O';
     
-    console.log('=== LIFF DEBUG INFO ===');
+    console.log('✅ STEP 2: Environment check');
     console.log('LIFF ID:', liffId);
-    console.log('Current URL:', window.location.href);
-    console.log('User Agent:', navigator.userAgent);
     console.log('Process env LIFF ID:', process.env.NEXT_PUBLIC_LIFF_ID);
     
     if (!liffId) {
-      console.warn("NEXT_PUBLIC_LIFF_ID is not set");
+      console.log('❌ STEP 3: LIFF ID not found');
       return null;
     }
     
-    console.log('Starting LIFF init with ID:', liffId);
+    console.log('✅ STEP 3: LIFF ID found');
     
-    // liff.init は複数回呼んでも問題ないためそのまま呼び出す
-    await liff.init({ liffId });
+    try {
+      console.log('🔄 STEP 4: Starting liff.init()...');
+      await liff.init({ liffId });
+      console.log('✅ STEP 4: liff.init() successful');
+    } catch (initError) {
+      console.log('❌ STEP 4: liff.init() failed');
+      console.error('Init error:', initError);
+      throw initError;
+    }
     
-    console.log('LIFF init successful');
+    console.log('✅ STEP 5: Checking LIFF status');
     console.log('isInClient:', liff.isInClient());
     console.log('isLoggedIn:', liff.isLoggedIn());
 
     // ブラウザ (LINE 外) でアクセスした場合のみログインリダイレクト
     if (!liff.isInClient() && !liff.isLoggedIn()) {
-      console.log('Redirecting to LINE login...');
+      console.log('🔄 STEP 6: Redirecting to LINE login...');
       liff.login();
       return null; // 外部ブラウザはここで LINE ログインへ遷移
     }
 
-    // LINE クライアント内では profile API で userId を取得
-    console.log('Getting user profile...');
-    const { userId } = await liff.getProfile();
-    console.log('User ID:', userId);
-    return userId;
+    try {
+      console.log('🔄 STEP 7: Getting user profile...');
+      const { userId } = await liff.getProfile();
+      console.log('✅ STEP 7: Profile retrieved');
+      console.log('User ID:', userId);
+      return userId;
+    } catch (profileError) {
+      console.log('❌ STEP 7: Profile retrieval failed');
+      console.error('Profile error:', profileError);
+      throw profileError;
+    }
 
   } catch (e) {
-    console.error("LIFF init failed", e);
+    console.log('❌ GENERAL ERROR in initLiff');
     console.error("Error details:", {
       name: e?.name,
       message: e?.message,
