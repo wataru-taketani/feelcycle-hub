@@ -5,10 +5,10 @@ class LiffService {
   private initialized = false;
 
   async init(): Promise<void> {
-    if (this.initialized) return;
-
-    // 開発用LIFF IDを試す
-    const liffId = '2007455410-5RBZMAoM';
+    if (typeof window === "undefined") return;
+    
+    // 動作確認済みのLIFF IDを使用
+    const liffId = '2007687052-qExN9w3O';
     console.log('LIFF ID (hardcoded):', liffId);
     console.log('Starting LIFF initialization...');
     
@@ -18,6 +18,7 @@ class LiffService {
 
     try {
       console.log('Calling liff.init() with ID:', liffId);
+      // liff.init は複数回呼んでも問題ないためそのまま呼び出す
       await liff.init({ liffId });
       this.initialized = true;
       console.log('LIFF initialized successfully with ID:', liffId);
