@@ -7,8 +7,8 @@ class LiffService {
   async init(): Promise<void> {
     if (this.initialized) return;
 
-    // 一時的に直接ハードコード
-    const liffId = '2007455412-YP5jEbzK';
+    // 開発用LIFF IDを試す
+    const liffId = '2007455410-5RBZMAoM';
     console.log('LIFF ID (hardcoded):', liffId);
     console.log('Starting LIFF initialization...');
     
