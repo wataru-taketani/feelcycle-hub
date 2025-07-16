@@ -1,6 +1,7 @@
 [build]
   publish = "out"
-  command = "npm run export"
+  command = "npm install && npm run export"
+  ignore = "/bin/false"
 
 [build.environment]
   NODE_VERSION = "20"
