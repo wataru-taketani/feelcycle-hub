@@ -8,6 +8,9 @@ class LiffService {
   async init(): Promise<void> {
     if (typeof window === "undefined") return;
     
+    console.log('LIFF init starting with ID:', this.liffId);
+    console.log('Current URL:', window.location.href);
+    
     if (!this.liffId) {
       throw new Error('LIFF ID is not configured');
     }
@@ -17,8 +20,15 @@ class LiffService {
       await liff.init({ liffId: this.liffId });
       this.initialized = true;
       console.log('LIFF initialized successfully');
+      console.log('isInClient:', liff.isInClient());
+      console.log('isLoggedIn:', liff.isLoggedIn());
     } catch (error) {
       console.error('LIFF initialization failed:', error);
+      console.error('Error details:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack
+      });
       throw error;
     }
   }

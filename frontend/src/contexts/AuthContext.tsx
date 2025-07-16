@@ -161,7 +161,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async () => {
     try {
       updateAuthState({ loading: true, error: null });
-      await liffService.login();
+      
+      // LIFF初期化を確認してからログイン
+      await liffService.init();
+      
+      if (liffService.isInClient()) {
+        // LINE内の場合は直接ログイン
+        await liffService.login();
+      } else {
+        // 外部ブラウザの場合はリダイレクト
+        liffService.login();
+      }
+      
       // ログイン後のリダイレクトでinitializeAuthが再実行される
     } catch (error) {
       console.error('Login failed:', error);
