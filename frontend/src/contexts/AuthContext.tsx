@@ -76,18 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       updateAuthState({ loading: true, error: null });
 
-      // LIFF環境外での動作確認
-      if (typeof window !== 'undefined' && !window.location.href.includes('liff')) {
-        console.log('LIFF環境外で実行されています');
-        updateAuthState({
-          isAuthenticated: false,
-          user: null,
-          loading: false,
-          error: 'LIFF環境でのみ動作します',
-        });
-        return;
-      }
-
+      // LIFF SDKの初期化
       await liffService.init();
 
       if (liffService.isLoggedIn()) {
