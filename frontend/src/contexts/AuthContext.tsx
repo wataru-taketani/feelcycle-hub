@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { liffService } from '@/lib/liff';
+import { liffService, initLiff } from '@/lib/liff';
 import { AuthState, LiffUser, ApiUser } from '@/types/liff';
 
 interface AuthContextType extends AuthState {
@@ -134,29 +134,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // LIFFアプリの初期化（既存の動作パターンを採用）
-  const initLiff = async (): Promise<string | null> => {
-    if (typeof window === "undefined") return null;
-    
-    try {
-      // LIFF SDKの初期化
-      await liffService.init();
-
-      // ブラウザ (LINE 外) でアクセスした場合のみログインリダイレクト
-      if (!liffService.isInClient() && !liffService.isLoggedIn()) {
-        liffService.login();
-        return null; // 外部ブラウザはここで LINE ログインへ遷移
-      }
-
-      // LINE クライアント内では profile API で userId を取得
-      const { userId } = await liffService.getProfile();
-      return userId;
-
-    } catch (error) {
-      console.error("LIFF init failed", error);
-      return null;
-    }
-  };
 
   const login = async () => {
     try {

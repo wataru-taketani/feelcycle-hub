@@ -1,6 +1,38 @@
 import liff from '@line/liff';
 import { LiffUser, LiffProfile } from '@/types/liff';
 
+// 旧アプリと同じシンプルな初期化関数
+export const initLiff = async () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-qExN9w3O';
+    
+    if (!liffId) {
+      console.warn("NEXT_PUBLIC_LIFF_ID is not set");
+      return null;
+    }
+    
+    console.log('LIFF init with ID:', liffId);
+    
+    // liff.init は複数回呼んでも問題ないためそのまま呼び出す
+    await liff.init({ liffId });
+
+    // ブラウザ (LINE 外) でアクセスした場合のみログインリダイレクト
+    if (!liff.isInClient() && !liff.isLoggedIn()) {
+      liff.login();
+      return null; // 外部ブラウザはここで LINE ログインへ遷移
+    }
+
+    // LINE クライアント内では profile API で userId を取得
+    const { userId } = await liff.getProfile();
+    return userId;
+
+  } catch (e) {
+    console.error("LIFF init failed", e);
+    return null;
+  }
+};
+
 class LiffService {
   private initialized = false;
   private readonly liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-qExN9w3O';
@@ -8,46 +40,17 @@ class LiffService {
   async init(): Promise<void> {
     if (typeof window === "undefined") return;
     
-    console.log('LIFF init starting with ID:', this.liffId);
-    console.log('Current URL:', window.location.href);
-    
     if (!this.liffId) {
       throw new Error('LIFF ID is not configured');
     }
 
-    // リトライ機能付きの初期化
-    const maxRetries = 3;
-    let lastError: any;
-
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        console.log(`LIFF init attempt ${i + 1}/${maxRetries}`);
-        
-        // liff.init は複数回呼んでも問題ないためそのまま呼び出す
-        await liff.init({ liffId: this.liffId });
-        this.initialized = true;
-        console.log('LIFF initialized successfully');
-        console.log('isInClient:', liff.isInClient());
-        console.log('isLoggedIn:', liff.isLoggedIn());
-        return;
-      } catch (error) {
-        lastError = error;
-        console.warn(`LIFF init attempt ${i + 1} failed:`, error);
-        
-        if (i < maxRetries - 1) {
-          console.log(`Retrying in ${(i + 1) * 1000}ms...`);
-          await new Promise(resolve => setTimeout(resolve, (i + 1) * 1000));
-        }
-      }
+    try {
+      await liff.init({ liffId: this.liffId });
+      this.initialized = true;
+    } catch (error) {
+      console.error('LIFF initialization failed:', error);
+      throw error;
     }
-
-    console.error('LIFF initialization failed after all retries:', lastError);
-    console.error('Error details:', {
-      name: lastError?.name,
-      message: lastError?.message,
-      stack: lastError?.stack
-    });
-    throw lastError;
   }
 
   isLoggedIn(): boolean {
