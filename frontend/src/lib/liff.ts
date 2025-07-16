@@ -10,18 +10,25 @@ class LiffService {
     // 一時的に直接ハードコード
     const liffId = '2007455412-YP5jEbzK';
     console.log('LIFF ID (hardcoded):', liffId);
+    console.log('Starting LIFF initialization...');
     
     if (!liffId) {
       throw new Error('LIFF ID is not configured');
     }
 
     try {
+      console.log('Calling liff.init() with ID:', liffId);
       await liff.init({ liffId });
       this.initialized = true;
       console.log('LIFF initialized successfully with ID:', liffId);
+      console.log('LIFF isLoggedIn:', liff.isLoggedIn());
+      console.log('LIFF isInClient:', liff.isInClient());
     } catch (error) {
-      console.error('LIFF initialization failed with ID:', liffId, 'Error:', error);
-      throw error;
+      console.error('LIFF initialization failed with ID:', liffId);
+      console.error('Error details:', error);
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error?.message);
+      throw new Error(`LIFF initialization failed: ${error?.message || 'Unknown error'}`);
     }
   }
 
