@@ -19,27 +19,28 @@ const nextConfig = {
     NEXT_PUBLIC_LINE_CHANNEL_ID: process.env.NEXT_PUBLIC_LINE_CHANNEL_ID,
     NEXT_PUBLIC_FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL,
   },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-        ],
-      },
-    ];
-  },
+  // Headers are handled by netlify.toml for static export
+  // async headers() {
+  //   return [
+  //     {
+  //       source: '/(.*)',
+  //       headers: [
+  //         {
+  //           key: 'X-Frame-Options',
+  //           value: 'DENY',
+  //         },
+  //         {
+  //           key: 'X-Content-Type-Options',
+  //           value: 'nosniff',
+  //         },
+  //         {
+  //           key: 'Referrer-Policy',
+  //           value: 'strict-origin-when-cross-origin',
+  //         },
+  //       ],
+  //     },
+  //   ];
+  // },
 };
 
 module.exports = nextConfig;
