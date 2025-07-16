@@ -7,8 +7,9 @@ class LiffService {
   async init(): Promise<void> {
     if (this.initialized) return;
 
-    const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
-    console.log('LIFF ID from env:', liffId);
+    // 一時的に直接ハードコード
+    const liffId = '2007455412-YP5jEbzK';
+    console.log('LIFF ID (hardcoded):', liffId);
     
     if (!liffId) {
       throw new Error('LIFF ID is not configured');
