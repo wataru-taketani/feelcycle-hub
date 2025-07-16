@@ -46,11 +46,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/user`,
         {
           params: { lineUserId },
+          timeout: 10000, // 10秒タイムアウト
         }
       );
       return response.data.data;
     } catch (error) {
-      console.log('API user not found or error:', error);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          console.log('API user not found - will create new user');
+          return null;
+        }
+        console.error('API user fetch error:', error.response?.status, error.message);
+      } else {
+        console.error('Unexpected error fetching API user:', error);
+      }
       return null;
     }
   };
@@ -63,12 +72,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           lineUserId: user.userId,
           displayName: user.displayName,
           pictureUrl: user.pictureUrl,
+        },
+        {
+          timeout: 10000, // 10秒タイムアウト
         }
       );
       return response.data.data;
     } catch (error) {
-      console.error('Failed to create API user:', error);
-      throw error;
+      if (axios.isAxiosError(error)) {
+        console.error('Failed to create API user:', error.response?.status, error.response?.data);
+        throw new Error(`User registration failed: ${error.response?.data?.message || error.message}`);
+      } else {
+        console.error('Unexpected error creating API user:', error);
+        throw new Error('User registration failed: Unknown error');
+      }
     }
   };
 
@@ -117,19 +134,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  // 既存のLIFFアプリのパターンを採用
-  const initLiff = async () => {
+  // LIFFアプリの初期化（既存の動作パターンを採用）
+  const initLiff = async (): Promise<string | null> => {
     if (typeof window === "undefined") return null;
+    
     try {
-      const liffId = '2007687052-qExN9w3O';
-      console.log('Using LIFF ID:', liffId);
-      
-      if (!liffId) {
-        console.warn("LIFF ID is not set");
-        return null;
-      }
-      
-      // liff.init は複数回呼んでも問題ないためそのまま呼び出す
+      // LIFF SDKの初期化
       await liffService.init();
 
       // ブラウザ (LINE 外) でアクセスした場合のみログインリダイレクト
@@ -142,8 +152,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { userId } = await liffService.getProfile();
       return userId;
 
-    } catch (e) {
-      console.error("LIFF init failed", e);
+    } catch (error) {
+      console.error("LIFF init failed", error);
       return null;
     }
   };

@@ -3,20 +3,18 @@ import { LiffUser, LiffProfile } from '@/types/liff';
 
 class LiffService {
   private initialized = false;
+  private readonly liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-qExN9w3O';
 
   async init(): Promise<void> {
     if (typeof window === "undefined") return;
     
-    const liffId = '2007687052-qExN9w3O';
-    console.log('LIFF init with ID:', liffId);
-    
-    if (!liffId) {
+    if (!this.liffId) {
       throw new Error('LIFF ID is not configured');
     }
 
     try {
       // liff.init は複数回呼んでも問題ないためそのまま呼び出す
-      await liff.init({ liffId });
+      await liff.init({ liffId: this.liffId });
       this.initialized = true;
       console.log('LIFF initialized successfully');
     } catch (error) {

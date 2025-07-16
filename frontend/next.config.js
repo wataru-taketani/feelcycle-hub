@@ -15,9 +15,9 @@ const nextConfig = {
   },
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'https://cscrz3qax3.execute-api.ap-northeast-1.amazonaws.com/dev',
-    NEXT_PUBLIC_LIFF_ID: process.env.NEXT_PUBLIC_LIFF_ID || '2007455412-YP5jEbzK',
+    NEXT_PUBLIC_LIFF_ID: process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-qExN9w3O',
     NEXT_PUBLIC_LINE_CHANNEL_ID: process.env.NEXT_PUBLIC_LINE_CHANNEL_ID,
-    NEXT_PUBLIC_FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL,
+    NEXT_PUBLIC_FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://feelcycle-hub.netlify.app',
   },
   // Headers are handled by netlify.toml for static export
   // async headers() {
