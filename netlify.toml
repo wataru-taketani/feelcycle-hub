@@ -1,11 +1,10 @@
 [build]
+  base = "frontend"
   publish = "out"
   command = "npm install && npm run export"
-  ignore = "/bin/false"
 
 [build.environment]
   NODE_VERSION = "20"
-  NPM_FLAGS = "--prefix=/opt/buildhome/.nodejs/node_modules/.bin"
 
 [[redirects]]
   from = "/api/*"
