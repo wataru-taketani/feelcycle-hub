@@ -59,6 +59,12 @@ export default function HomePage() {
         <div className="error">
           エラーが発生しました: {error}
         </div>
+        <div style={{ marginTop: '20px', padding: '10px', backgroundColor: '#f0f0f0', fontSize: '12px' }}>
+          <strong>デバッグ情報:</strong><br/>
+          URL: {typeof window !== 'undefined' ? window.location.href : 'N/A'}<br/>
+          LIFF ID: {process.env.NEXT_PUBLIC_LIFF_ID || 'デフォルト値を使用'}<br/>
+          User Agent: {typeof window !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'N/A'}
+        </div>
       </div>
     );
   }
