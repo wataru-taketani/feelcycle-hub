@@ -11,7 +11,7 @@ export const initLiff = async () => {
   console.log('✅ STEP 1: Window check passed');
   
   try {
-    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-qExN9w3O';
+    const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-B9Pqw7Zy';
     
     console.log('✅ STEP 2: Environment check');
     console.log('LIFF ID:', liffId);
