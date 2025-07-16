@@ -7,28 +7,46 @@ export const initLiff = async () => {
   try {
     const liffId = process.env.NEXT_PUBLIC_LIFF_ID || '2007687052-qExN9w3O';
     
+    console.log('=== LIFF DEBUG INFO ===');
+    console.log('LIFF ID:', liffId);
+    console.log('Current URL:', window.location.href);
+    console.log('User Agent:', navigator.userAgent);
+    console.log('Process env LIFF ID:', process.env.NEXT_PUBLIC_LIFF_ID);
+    
     if (!liffId) {
       console.warn("NEXT_PUBLIC_LIFF_ID is not set");
       return null;
     }
     
-    console.log('LIFF init with ID:', liffId);
+    console.log('Starting LIFF init with ID:', liffId);
     
     // liff.init は複数回呼んでも問題ないためそのまま呼び出す
     await liff.init({ liffId });
+    
+    console.log('LIFF init successful');
+    console.log('isInClient:', liff.isInClient());
+    console.log('isLoggedIn:', liff.isLoggedIn());
 
     // ブラウザ (LINE 外) でアクセスした場合のみログインリダイレクト
     if (!liff.isInClient() && !liff.isLoggedIn()) {
+      console.log('Redirecting to LINE login...');
       liff.login();
       return null; // 外部ブラウザはここで LINE ログインへ遷移
     }
 
     // LINE クライアント内では profile API で userId を取得
+    console.log('Getting user profile...');
     const { userId } = await liff.getProfile();
+    console.log('User ID:', userId);
     return userId;
 
   } catch (e) {
     console.error("LIFF init failed", e);
+    console.error("Error details:", {
+      name: e?.name,
+      message: e?.message,
+      stack: e?.stack
+    });
     return null;
   }
 };
