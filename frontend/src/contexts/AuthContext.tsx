@@ -76,26 +76,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       updateAuthState({ loading: true, error: null });
 
-      // LIFF SDKの初期化
-      await liffService.init();
-
-      if (liffService.isLoggedIn()) {
-        const liffUser = await liffService.getProfile();
+      // 既存のLIFFアプリのパターンを使用
+      const userId = await initLiff();
+      
+      if (userId) {
+        // ユーザー情報を取得
+        const profile = await liffService.getProfile();
+        
         updateAuthState({
           isAuthenticated: true,
-          user: liffUser,
+          user: profile,
         });
 
         // APIユーザーを取得または作成
-        let user = await fetchApiUser(liffUser.userId);
+        let user = await fetchApiUser(userId);
         if (!user) {
-          user = await createApiUser(liffUser);
+          user = await createApiUser(profile);
         }
         
         setApiUser(user);
         
         // ユーザー情報をCookieに保存
-        Cookies.set('lineUserId', liffUser.userId, { expires: 30 });
+        Cookies.set('lineUserId', userId, { expires: 30 });
         Cookies.set('apiUserId', user.userId, { expires: 30 });
       } else {
         updateAuthState({
@@ -112,6 +114,37 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
     } finally {
       updateAuthState({ loading: false });
+    }
+  };
+
+  // 既存のLIFFアプリのパターンを採用
+  const initLiff = async () => {
+    if (typeof window === "undefined") return null;
+    try {
+      const liffId = '2007687052-qExN9w3O';
+      console.log('Using LIFF ID:', liffId);
+      
+      if (!liffId) {
+        console.warn("LIFF ID is not set");
+        return null;
+      }
+      
+      // liff.init は複数回呼んでも問題ないためそのまま呼び出す
+      await liffService.init();
+
+      // ブラウザ (LINE 外) でアクセスした場合のみログインリダイレクト
+      if (!liffService.isInClient() && !liffService.isLoggedIn()) {
+        liffService.login();
+        return null; // 外部ブラウザはここで LINE ログインへ遷移
+      }
+
+      // LINE クライアント内では profile API で userId を取得
+      const { userId } = await liffService.getProfile();
+      return userId;
+
+    } catch (e) {
+      console.error("LIFF init failed", e);
+      return null;
     }
   };
 
