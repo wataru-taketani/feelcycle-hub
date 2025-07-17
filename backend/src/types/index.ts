@@ -85,3 +85,61 @@ export interface LessonAvailability {
   totalSlots: number;
   isAvailable: boolean;
 }
+
+// Waitlist types for cancellation waitlist feature
+export type WaitlistStatus = 'active' | 'paused' | 'expired' | 'cancelled' | 'completed';
+
+export interface Waitlist {
+  userId: string;
+  waitlistId: string; // format: studioCode#date#startTime#lessonName
+  studioCode: string;
+  studioName: string;
+  lessonDate: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  lessonName: string;
+  instructor: string;
+  lessonDateTime: string; // ISO 8601 format for comparison
+  status: WaitlistStatus;
+  createdAt: string;
+  updatedAt: string;
+  pausedAt?: string;
+  expiredAt?: string;
+  cancelledAt?: string;
+  completedAt?: string;
+  notificationHistory: NotificationRecord[];
+  autoResumeAt?: string; // ISO 8601 format
+  ttl: number; // Unix timestamp for DynamoDB TTL
+}
+
+export interface NotificationRecord {
+  sentAt: string; // ISO 8601 format
+  availableSlots: number;
+  totalSlots: number;
+  notificationId: string;
+}
+
+export interface StudioInfo {
+  code: string;
+  name: string;
+  region: string;
+}
+
+export interface LessonSearchParams {
+  studioCode?: string;
+  date?: string; // YYYY-MM-DD
+  program?: string;
+  instructor?: string;
+}
+
+export interface WaitlistCreateRequest {
+  studioCode: string;
+  lessonDate: string;
+  startTime: string;
+  lessonName: string;
+  instructor: string;
+}
+
+export interface WaitlistUpdateRequest {
+  action: 'resume' | 'cancel';
+}

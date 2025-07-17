@@ -28,6 +28,12 @@ export class FeelcycleHubStack extends cdk.Stack {
       removalPolicy: isProduction ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
     });
 
+    // Add GSI for LINE user ID lookup (most critical for current error)
+    usersTable.addGlobalSecondaryIndex({
+      indexName: 'LineUserIndex',
+      partitionKey: { name: 'GSI2PK', type: dynamodb.AttributeType.STRING },
+    });
+
     const reservationsTable = new dynamodb.Table(this, 'ReservationsTable', {
       tableName: `feelcycle-hub-reservations-${environment}`,
       partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
@@ -52,6 +58,32 @@ export class FeelcycleHubStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       encryption: dynamodb.TableEncryption.AWS_MANAGED,
       removalPolicy: isProduction ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
+    // Waitlist table for cancellation waitlist feature
+    const waitlistTable = new dynamodb.Table(this, 'WaitlistTable', {
+      tableName: `feelcycle-hub-waitlist-${environment}`,
+      partitionKey: { name: 'userId', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'waitlistId', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      timeToLiveAttribute: 'ttl',
+      pointInTimeRecovery: isProduction,
+      removalPolicy: isProduction ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
+    // GSI for efficient monitoring target extraction
+    waitlistTable.addGlobalSecondaryIndex({
+      indexName: 'StatusLessonDateTimeIndex',
+      partitionKey: { name: 'status', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'lessonDateTime', type: dynamodb.AttributeType.STRING },
+    });
+
+    // GSI for studio-based queries
+    waitlistTable.addGlobalSecondaryIndex({
+      indexName: 'StudioDateIndex',
+      partitionKey: { name: 'studioCode', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'lessonDate', type: dynamodb.AttributeType.STRING },
     });
 
     // Secrets Manager for storing user credentials
@@ -102,6 +134,7 @@ export class FeelcycleHubStack extends cdk.Stack {
         USERS_TABLE_NAME: usersTable.tableName,
         RESERVATIONS_TABLE_NAME: reservationsTable.tableName,
         LESSON_HISTORY_TABLE_NAME: lessonHistoryTable.tableName,
+        WAITLIST_TABLE_NAME: waitlistTable.tableName,
         USER_CREDENTIALS_SECRET_ARN: userCredentialsSecret.secretArn,
         LINE_API_SECRET_ARN: lineApiSecret.secretArn,
         ENVIRONMENT: environment,
@@ -114,8 +147,27 @@ export class FeelcycleHubStack extends cdk.Stack {
     usersTable.grantReadWriteData(mainLambda);
     reservationsTable.grantReadWriteData(mainLambda);
     lessonHistoryTable.grantReadWriteData(mainLambda);
+    waitlistTable.grantReadWriteData(mainLambda);
     userCredentialsSecret.grantRead(mainLambda);
     lineApiSecret.grantRead(mainLambda);
+
+    // Grant permission to query GSIs
+    mainLambda.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+      effect: cdk.aws_iam.Effect.ALLOW,
+      actions: ['dynamodb:Query'],
+      resources: [
+        `${usersTable.tableArn}/index/*`,
+        `${reservationsTable.tableArn}/index/*`,
+        `${waitlistTable.tableArn}/index/*`,
+      ],
+    }));
+
+    // Grant permission to write to user credentials secret
+    mainLambda.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+      effect: cdk.aws_iam.Effect.ALLOW,
+      actions: ['secretsmanager:PutSecretValue'],
+      resources: [userCredentialsSecret.secretArn],
+    }));
 
     // API Gateway
     const api = new apigateway.RestApi(this, 'FeelcycleHubApi', {
@@ -143,11 +195,33 @@ export class FeelcycleHubStack extends cdk.Stack {
     // API routes
     const auth = api.root.addResource('auth');
     auth.addResource('credentials').addMethod('POST', lambdaIntegration);
+    auth.addResource('user').addMethod('GET', lambdaIntegration);
     
     const lineAuth = auth.addResource('line');
     lineAuth.addResource('callback').addMethod('GET', lambdaIntegration);
+    lineAuth.addResource('register').addMethod('POST', lambdaIntegration);
 
     api.root.addResource('watch').addMethod('POST', lambdaIntegration);
+    
+    // Waitlist API routes
+    const waitlist = api.root.addResource('waitlist');
+    waitlist.addMethod('POST', lambdaIntegration); // Create waitlist
+    waitlist.addMethod('GET', lambdaIntegration);  // Get user waitlists
+    
+    const waitlistItem = waitlist.addResource('{waitlistId}');
+    waitlistItem.addMethod('PUT', lambdaIntegration);    // Update waitlist (resume/cancel)
+    waitlistItem.addMethod('DELETE', lambdaIntegration); // Delete waitlist
+    
+    // Studios and Lessons API routes
+    const studios = api.root.addResource('studios');
+    studios.addMethod('GET', lambdaIntegration); // Get all studios
+    
+    const studioItem = studios.addResource('{studioCode}');
+    const studioDates = studioItem.addResource('dates');
+    studioDates.addMethod('GET', lambdaIntegration); // Get available dates for studio
+    
+    const lessons = api.root.addResource('lessons');
+    lessons.addMethod('GET', lambdaIntegration); // Search lessons
     
     const line = api.root.addResource('line');
     line.addResource('webhook').addMethod('POST', lambdaIntegration);
@@ -166,6 +240,24 @@ export class FeelcycleHubStack extends cdk.Stack {
       event: events.RuleTargetInput.fromObject({
         source: 'eventbridge.monitoring',
         action: 'checkAvailability',
+      }),
+    }));
+
+    // EventBridge rule for daily cleanup
+    const cleanupRule = new events.Rule(this, 'CleanupRule', {
+      ruleName: `feelcycle-hub-cleanup-${environment}`,
+      description: 'Daily cleanup of expired waitlists',
+      schedule: events.Schedule.cron({ 
+        hour: '2', 
+        minute: '0',
+        timeZone: 'Asia/Tokyo',
+      }),
+    });
+
+    cleanupRule.addTarget(new targets.LambdaFunction(mainLambda, {
+      event: events.RuleTargetInput.fromObject({
+        source: 'eventbridge.cleanup',
+        action: 'cleanupExpired',
       }),
     }));
 

@@ -200,31 +200,37 @@ export default function HomePage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">機能</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 border border-orange-200 hover:shadow-md transition-shadow">
+            <a 
+              href="/lessons"
+              className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 border border-orange-200 hover:shadow-md transition-shadow block"
+            >
               <div className="text-orange-600 mb-3">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </div>
               <h3 className="text-lg font-semibold text-orange-900 mb-2">レッスン検索</h3>
-              <p className="text-orange-800 text-sm mb-4">空きのあるレッスンを検索</p>
-              <button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                検索
-              </button>
-            </div>
+              <p className="text-orange-800 text-sm mb-4">空きのあるレッスンを検索してキャンセル待ち登録</p>
+              <div className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 text-center">
+                🚴‍♀️ 検索
+              </div>
+            </a>
             
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200 hover:shadow-md transition-shadow">
+            <a 
+              href="/waitlist"
+              className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200 hover:shadow-md transition-shadow block"
+            >
               <div className="text-blue-600 mb-3">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM12 17h3m-3 0v5m0-5V7a2 2 0 112 2m-2-2V5a2 2 0 012-2h.01M12 7V3.13a2 2 0 01.885-1.65l2-1.333a2 2 0 011.43-.133l1.774.443a2 2 0 011.61 1.955V7" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">監視登録</h3>
-              <p className="text-blue-800 text-sm mb-4">希望レッスンの空き通知を設定</p>
-              <button className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                設定
-              </button>
-            </div>
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">キャンセル待ち管理</h3>
+              <p className="text-blue-800 text-sm mb-4">登録中の監視状況と通知履歴</p>
+              <div className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 text-center">
+                🔔 管理
+              </div>
+            </a>
             
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200 hover:shadow-md transition-shadow">
               <div className="text-green-600 mb-3">
@@ -235,7 +241,7 @@ export default function HomePage() {
               <h3 className="text-lg font-semibold text-green-900 mb-2">履歴確認</h3>
               <p className="text-green-800 text-sm mb-4">受講履歴とレッスン詳細</p>
               <button className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                確認
+                📊 確認
               </button>
             </div>
             
@@ -249,7 +255,7 @@ export default function HomePage() {
               <h3 className="text-lg font-semibold text-purple-900 mb-2">設定</h3>
               <p className="text-purple-800 text-sm mb-4">通知設定と個人情報管理</p>
               <button className="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                設定
+                ⚙️ 設定
               </button>
             </div>
           </div>

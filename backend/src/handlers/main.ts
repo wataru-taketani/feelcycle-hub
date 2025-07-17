@@ -5,6 +5,8 @@ import { reservationHandler } from './reservation';
 import { lineHandler } from './line';
 import { historyHandler } from './history';
 import { monitoringHandler } from './monitoring';
+import { handler as waitlistHandler } from './waitlist';
+import { handler as lessonsHandler } from './lessons';
 
 /**
  * メインLambda関数ハンドラー
@@ -18,7 +20,7 @@ export async function handler(
   
   try {
     // EventBridge からの定期実行
-    if ('source' in event && event.source === 'eventbridge.monitoring') {
+    if ('source' in event && (event.source === 'eventbridge.monitoring' || event.source === 'eventbridge.cleanup')) {
       await monitoringHandler(event);
       return;
     }
@@ -51,6 +53,10 @@ export async function handler(
       result = await authHandler(apiEvent);
     } else if (path.startsWith('/watch')) {
       result = await reservationHandler(apiEvent);
+    } else if (path.startsWith('/waitlist')) {
+      return await waitlistHandler(apiEvent);
+    } else if (path.startsWith('/studios') || path.startsWith('/lessons')) {
+      return await lessonsHandler(apiEvent);
     } else if (path.startsWith('/line/')) {
       result = await lineHandler(apiEvent);
     } else if (path.startsWith('/history/')) {
