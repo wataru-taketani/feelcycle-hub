@@ -27,7 +27,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
         const studioCode = path.split('/')[2];
         return await getStudioDates(studioCode);
       } else if (path === '/lessons') {
-        return await searchLessons(queryStringParameters);
+        return await searchLessons(queryStringParameters || {});
       }
     }
 
@@ -140,7 +140,7 @@ async function getStudioDates(studioCode: string): Promise<APIGatewayProxyResult
 /**
  * Search lessons with filters
  */
-async function searchLessons(params: Record<string, string> | null): Promise<APIGatewayProxyResult> {
+async function searchLessons(params: Record<string, string | undefined> | null): Promise<APIGatewayProxyResult> {
   if (!params?.studioCode || !params?.date) {
     return {
       statusCode: 400,

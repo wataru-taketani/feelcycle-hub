@@ -141,7 +141,7 @@ export class WaitlistService {
       TableName: WAITLIST_TABLE_NAME,
       Key: { userId, waitlistId },
       UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames,
+      ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
     }));
   }
