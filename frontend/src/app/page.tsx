@@ -201,7 +201,7 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-6">機能</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <a 
-              href="/lessons"
+              href="/lessons/"
               className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 border border-orange-200 hover:shadow-md transition-shadow block"
             >
               <div className="text-orange-600 mb-3">
@@ -217,7 +217,7 @@ export default function HomePage() {
             </a>
             
             <a 
-              href="/waitlist"
+              href="/waitlist/"
               className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200 hover:shadow-md transition-shadow block"
             >
               <div className="text-blue-600 mb-3">
