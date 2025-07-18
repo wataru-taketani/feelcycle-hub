@@ -7,16 +7,28 @@
     "dev": "tsx watch src/local-dev.ts",
     "test": "vitest",
     "lint": "eslint src/ --ext .ts",
-    "setup": "npm install"
+    "setup": "npm install",
+    "daily-refresh": "npm run build && node dist/run-daily-refresh.js",
+    "create-batch-table": "npm run build && node dist/create-batch-table.js",
+    "init-batch": "npm run build && node dist/cmd-initialize-batch.js",
+    "clear-lessons": "npm run build && node dist/cmd-clear-lessons.js",
+    "process-studio": "npm run build && node dist/cmd-process-studio.js",
+    "batch-status": "npm run build && node dist/cmd-batch-status.js"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.614.0",
     "@aws-sdk/client-secrets-manager": "^3.614.0",
     "@aws-sdk/lib-dynamodb": "^3.614.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/puppeteer": "^5.4.7",
     "axios": "^1.7.2",
     "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
     "dotenv-flow": "^4.1.0",
-    "playwright": "^1.45.1"
+    "express": "^5.1.0",
+    "playwright": "^1.45.1",
+    "puppeteer": "^24.14.0"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.140",

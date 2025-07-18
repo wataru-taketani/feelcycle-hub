@@ -200,64 +200,70 @@ export default function HomePage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-6">機能</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* キャンセル待ち */}
             <a 
-              href="/lessons/"
+              href="/waitlist/"
               className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6 border border-orange-200 hover:shadow-md transition-shadow block"
             >
               <div className="text-orange-600 mb-3">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-orange-900 mb-2">レッスン検索</h3>
-              <p className="text-orange-800 text-sm mb-4">空きのあるレッスンを検索してキャンセル待ち登録</p>
+              <h3 className="text-lg font-semibold text-orange-900 mb-2">キャンセル待ち</h3>
+              <p className="text-orange-800 text-sm mb-4">レッスンの空きを監視して通知</p>
               <div className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 text-center">
-                🚴‍♀️ 検索
+                🔔 監視開始
               </div>
             </a>
             
-            <a 
-              href="/waitlist/"
-              className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200 hover:shadow-md transition-shadow block"
-            >
-              <div className="text-blue-600 mb-3">
+            {/* 自動予約 - グレーアウト */}
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200 opacity-50 cursor-not-allowed">
+              <div className="text-gray-400 mb-3">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-5 5v-5zM12 17h3m-3 0v5m0-5V7a2 2 0 112 2m-2-2V5a2 2 0 012-2h.01M12 7V3.13a2 2 0 01.885-1.65l2-1.333a2 2 0 011.43-.133l1.774.443a2 2 0 011.61 1.955V7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-blue-900 mb-2">キャンセル待ち管理</h3>
-              <p className="text-blue-800 text-sm mb-4">登録中の監視状況と通知履歴</p>
-              <div className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 text-center">
-                🔔 管理
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">自動予約</h3>
+              <p className="text-gray-500 text-sm mb-4">空きが出たら自動で予約</p>
+              <div className="w-full bg-gray-400 text-white font-medium py-2 px-4 rounded-lg text-center">
+                🔒 要認証
               </div>
-            </a>
+              <p className="text-xs text-gray-500 mt-2 text-center">FEELCYCLE認証が必要</p>
+            </div>
             
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6 border border-green-200 hover:shadow-md transition-shadow">
-              <div className="text-green-600 mb-3">
+            {/* 受講履歴 - グレーアウト */}
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-6 border border-gray-200 opacity-50 cursor-not-allowed">
+              <div className="text-gray-400 mb-3">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-green-900 mb-2">履歴確認</h3>
-              <p className="text-green-800 text-sm mb-4">受講履歴とレッスン詳細</p>
-              <button className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
-                📊 確認
-              </button>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">受講履歴</h3>
+              <p className="text-gray-500 text-sm mb-4">過去のレッスン記録</p>
+              <div className="w-full bg-gray-400 text-white font-medium py-2 px-4 rounded-lg text-center">
+                🔒 要認証
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">FEELCYCLE認証が必要</p>
             </div>
             
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6 border border-purple-200 hover:shadow-md transition-shadow">
-              <div className="text-purple-600 mb-3">
+            {/* ユーザー設定 */}
+            <a 
+              href="/settings/"
+              className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200 hover:shadow-md transition-shadow block"
+            >
+              <div className="text-blue-600 mb-3">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-purple-900 mb-2">設定</h3>
-              <p className="text-purple-800 text-sm mb-4">通知設定と個人情報管理</p>
-              <button className="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">ユーザー設定</h3>
+              <p className="text-blue-800 text-sm mb-4">FEELCYCLE認証・通知設定</p>
+              <div className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 text-center">
                 ⚙️ 設定
-              </button>
-            </div>
+              </div>
+            </a>
           </div>
         </div>
       </main>

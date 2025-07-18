@@ -7,6 +7,7 @@ import { historyHandler } from './history';
 import { monitoringHandler } from './monitoring';
 import { handler as waitlistHandler } from './waitlist';
 import { handler as lessonsHandler } from './lessons';
+import { optimizedDailyRefresh } from '../scripts/optimized-daily-refresh';
 
 /**
  * メインLambda関数ハンドラー
@@ -20,9 +21,14 @@ export async function handler(
   
   try {
     // EventBridge からの定期実行
-    if ('source' in event && (event.source === 'eventbridge.monitoring' || event.source === 'eventbridge.cleanup')) {
-      await monitoringHandler(event);
-      return;
+    if ('source' in event) {
+      if (event.source === 'eventbridge.monitoring' || event.source === 'eventbridge.cleanup') {
+        await monitoringHandler(event);
+        return;
+      } else if (event.source === 'eventbridge.dataRefresh') {
+        await handleDataRefresh(event);
+        return;
+      }
     }
     
     // API Gateway からのHTTPリクエスト
@@ -92,5 +98,36 @@ export async function handler(
       },
       body: JSON.stringify(errorResponse),
     };
+  }
+}
+
+/**
+ * 毎日3時に実行されるデータ更新処理
+ */
+async function handleDataRefresh(event: LambdaEvent): Promise<void> {
+  console.log('🔄 Daily lesson data refresh started at:', new Date().toISOString());
+  
+  try {
+    const startTime = Date.now();
+    await optimizedDailyRefresh();
+    const duration = (Date.now() - startTime) / 1000;
+    
+    console.log('✅ Daily lesson data refresh completed successfully');
+    console.log('INFO: DAILY_REFRESH_SUCCESS', {
+      timestamp: new Date().toISOString(),
+      duration: `${duration.toFixed(1)} seconds`,
+      nextScheduled: '3:00 AM JST tomorrow'
+    });
+  } catch (error) {
+    console.error('❌ Daily lesson data refresh failed:', error);
+    
+    // CloudWatch Logs に ERROR レベルでログを出力（アラート設定で通知可能）
+    console.error('ALERT: DAILY_REFRESH_FAILED', {
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    
+    throw error;
   }
 }

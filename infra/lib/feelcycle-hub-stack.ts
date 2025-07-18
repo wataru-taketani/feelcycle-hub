@@ -86,6 +86,32 @@ export class FeelcycleHubStack extends cdk.Stack {
       sortKey: { name: 'lessonDate', type: dynamodb.AttributeType.STRING },
     });
 
+    // Lessons table for storing actual lesson data
+    const lessonsTable = new dynamodb.Table(this, 'LessonsTable', {
+      tableName: `feelcycle-hub-lessons-${environment}`,
+      partitionKey: { name: 'studioCode', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'lessonDateTime', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      timeToLiveAttribute: 'ttl',
+      pointInTimeRecovery: isProduction,
+      removalPolicy: isProduction ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
+    // GSI for date-based queries (all studios for a specific date)
+    lessonsTable.addGlobalSecondaryIndex({
+      indexName: 'DateStudioIndex',
+      partitionKey: { name: 'lessonDate', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'studioCode', type: dynamodb.AttributeType.STRING },
+    });
+
+    // GSI for availability-based queries
+    lessonsTable.addGlobalSecondaryIndex({
+      indexName: 'AvailabilityDateIndex',
+      partitionKey: { name: 'isAvailable', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'lessonDateTime', type: dynamodb.AttributeType.STRING },
+    });
+
     // Secrets Manager for storing user credentials
     const userCredentialsSecret = new secretsmanager.Secret(this, 'UserCredentials', {
       secretName: `feelcycle-hub/user-credentials/${environment}`,
@@ -127,14 +153,15 @@ export class FeelcycleHubStack extends cdk.Stack {
       architecture: lambda.Architecture.ARM_64,
       code: lambda.Code.fromAsset('../backend/dist'),
       handler: 'handlers/main.handler',
-      timeout: cdk.Duration.seconds(30),
-      memorySize: 256,
+      timeout: cdk.Duration.minutes(isProduction ? 10 : 15), // Data refresh needs more time
+      memorySize: 512, // Increased memory for web scraping
       layers: [sharedLayer],
       environment: {
         USERS_TABLE_NAME: usersTable.tableName,
         RESERVATIONS_TABLE_NAME: reservationsTable.tableName,
         LESSON_HISTORY_TABLE_NAME: lessonHistoryTable.tableName,
         WAITLIST_TABLE_NAME: waitlistTable.tableName,
+        LESSONS_TABLE_NAME: lessonsTable.tableName,
         USER_CREDENTIALS_SECRET_ARN: userCredentialsSecret.secretArn,
         LINE_API_SECRET_ARN: lineApiSecret.secretArn,
         ENVIRONMENT: environment,
@@ -148,6 +175,7 @@ export class FeelcycleHubStack extends cdk.Stack {
     reservationsTable.grantReadWriteData(mainLambda);
     lessonHistoryTable.grantReadWriteData(mainLambda);
     waitlistTable.grantReadWriteData(mainLambda);
+    lessonsTable.grantReadWriteData(mainLambda);
     userCredentialsSecret.grantRead(mainLambda);
     lineApiSecret.grantRead(mainLambda);
 
@@ -159,6 +187,7 @@ export class FeelcycleHubStack extends cdk.Stack {
         `${usersTable.tableArn}/index/*`,
         `${reservationsTable.tableArn}/index/*`,
         `${waitlistTable.tableArn}/index/*`,
+        `${lessonsTable.tableArn}/index/*`,
       ],
     }));
 
@@ -223,6 +252,9 @@ export class FeelcycleHubStack extends cdk.Stack {
     const lessons = api.root.addResource('lessons');
     lessons.addMethod('GET', lambdaIntegration); // Search lessons
     
+    const sampleData = lessons.addResource('sample-data');
+    sampleData.addMethod('GET', lambdaIntegration); // Create sample lesson data
+    
     const line = api.root.addResource('line');
     line.addResource('webhook').addMethod('POST', lambdaIntegration);
 
@@ -258,6 +290,24 @@ export class FeelcycleHubStack extends cdk.Stack {
       event: events.RuleTargetInput.fromObject({
         source: 'eventbridge.cleanup',
         action: 'cleanupExpired',
+      }),
+    }));
+
+    // EventBridge rule for daily lesson data refresh
+    const dataRefreshRule = new events.Rule(this, 'DataRefreshRule', {
+      ruleName: `feelcycle-hub-data-refresh-${environment}`,
+      description: 'Daily refresh of lesson data at 3:00 AM JST',
+      schedule: events.Schedule.cron({ 
+        hour: '3', 
+        minute: '0',
+        timeZone: 'Asia/Tokyo',
+      }),
+    });
+
+    dataRefreshRule.addTarget(new targets.LambdaFunction(mainLambda, {
+      event: events.RuleTargetInput.fromObject({
+        source: 'eventbridge.dataRefresh',
+        action: 'refreshLessonData',
       }),
     }));
 

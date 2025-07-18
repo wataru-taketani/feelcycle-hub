@@ -252,6 +252,19 @@ export default function WaitlistPage() {
           </div>
         </div>
 
+        {/* Add New Waitlist Button */}
+        <div className="mb-6">
+          <a
+            href="/lessons/"
+            className="inline-flex items-center px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-md"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            新しいキャンセル待ちを登録
+          </a>
+        </div>
+
         {/* Waitlists List */}
         <div className="bg-white rounded-lg shadow">
           {loading ? (
@@ -261,11 +274,27 @@ export default function WaitlistPage() {
             </div>
           ) : filteredWaitlists.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-600">
+              <div className="text-gray-400 mb-4">
+                <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-gray-600 mb-4">
                 {activeTab === 'active' && 'アクティブなキャンセル待ちはありません'}
                 {activeTab === 'paused' && '通知済みのキャンセル待ちはありません'}
                 {activeTab === 'ended' && '終了したキャンセル待ちはありません'}
               </p>
+              {activeTab === 'active' && (
+                <a
+                  href="/lessons/"
+                  className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  レッスンを検索してキャンセル待ち登録
+                </a>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-gray-200">

@@ -32,6 +32,7 @@ export class FeelcycleScraper {
       
       // Saitama
       { code: 'omiya', name: '大宮', region: 'saitama' },
+      { code: 'ksg', name: '越谷', region: 'saitama' },
       
       // Chiba
       { code: 'kashiwa', name: '柏', region: 'chiba' },
@@ -128,8 +129,8 @@ export class FeelcycleScraper {
           time: '10:30',
           instructor: 'YUKI',
           program: 'BSL House 1',
-          availableSlots: 0,
-          totalSlots: 20,
+          availableSlots: null,
+          totalSlots: null,
           isAvailable: false,
         },
         {
@@ -139,8 +140,8 @@ export class FeelcycleScraper {
           time: '12:00',
           instructor: 'MIKI',
           program: 'BB1 Beat',
-          availableSlots: 3,
-          totalSlots: 20,
+          availableSlots: null,
+          totalSlots: null,
           isAvailable: true,
         },
         {
@@ -150,8 +151,8 @@ export class FeelcycleScraper {
           time: '14:00',
           instructor: 'NANA',
           program: 'BSB Beats',
-          availableSlots: 0,
-          totalSlots: 20,
+          availableSlots: null,
+          totalSlots: null,
           isAvailable: false,
         },
         {
@@ -161,8 +162,8 @@ export class FeelcycleScraper {
           time: '19:30',
           instructor: 'Shiori.I',
           program: 'BSL House 1',
-          availableSlots: 0,
-          totalSlots: 20,
+          availableSlots: null,
+          totalSlots: null,
           isAvailable: false,
         },
       ];
@@ -213,7 +214,7 @@ export class FeelcycleScraper {
       // TODO: Implement actual FEELCYCLE website scraping
       // For now, return mock data with random availability
       const hasAvailability = Math.random() > 0.7;
-      const availableSlots = hasAvailability ? Math.floor(Math.random() * 5) + 1 : 0;
+      const availableSlots = null; // No real seat data available
       
       return {
         lessonId: `${studioCode}_${date}_${time.replace(':', '')}_${lessonName.replace(' ', '')}`,
@@ -223,8 +224,8 @@ export class FeelcycleScraper {
         instructor,
         program: lessonName,
         availableSlots,
-        totalSlots: 20,
-        isAvailable: availableSlots > 0,
+        totalSlots: null,
+        isAvailable: hasAvailability,
       };
       
     } catch (error) {

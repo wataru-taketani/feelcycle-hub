@@ -79,8 +79,8 @@ async function handleAvailabilityFound(waitlist: any): Promise<void> {
     const notificationId = `notif_${Date.now()}`;
     const notification = {
       sentAt: new Date().toISOString(),
-      availableSlots: 2, // TODO: 実際の空き数を取得
-      totalSlots: 20,    // TODO: 実際の定員を取得
+      availableSlots: null, // Seat data not available from scraping
+      totalSlots: null,     // Seat data not available from scraping
       notificationId,
     };
     

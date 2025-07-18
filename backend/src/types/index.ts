@@ -81,8 +81,8 @@ export interface LessonAvailability {
   time: string;
   instructor: string;
   program: string;
-  availableSlots: number;
-  totalSlots: number;
+  availableSlots?: number | null;
+  totalSlots?: number | null;
   isAvailable: boolean;
 }
 
@@ -114,8 +114,8 @@ export interface Waitlist {
 
 export interface NotificationRecord {
   sentAt: string; // ISO 8601 format
-  availableSlots: number;
-  totalSlots: number;
+  availableSlots?: number | null;
+  totalSlots?: number | null;
   notificationId: string;
 }
 
@@ -123,6 +123,33 @@ export interface StudioInfo {
   code: string;
   name: string;
   region: string;
+}
+
+// Real lesson data structure
+export interface LessonData {
+  studioCode: string;
+  lessonDateTime: string; // ISO string: "2025-07-17T10:30:00+09:00"
+  lessonDate: string; // "2025-07-17"
+  startTime: string; // "10:30"
+  endTime: string; // "11:15"
+  lessonName: string; // "BSL House 1"
+  instructor: string; // "YUKI"
+  availableSlots?: number | null; // Only if available from site
+  totalSlots?: number | null; // Only if available from site
+  isAvailable: string; // "true" or "false" (string for GSI)
+  program: string; // "BSL", "BB1", "BSB", etc.
+  lastUpdated: string; // ISO timestamp
+  ttl: number; // Unix timestamp for TTL
+}
+
+export interface LessonSearchFilters {
+  program?: string;
+  instructor?: string;
+  timeRange?: {
+    start: string;
+    end: string;
+  };
+  availableOnly?: boolean;
 }
 
 export interface LessonSearchParams {
