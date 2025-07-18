@@ -12,20 +12,26 @@ interface Lesson {
   lessonId: string;
   studio: string;
   date: string;
-  time: string;
+  startTime: string;
+  endTime: string;
   instructor: string;
   program: string;
-  availableSlots: number;
-  totalSlots: number;
+  availableSlots: number | null;
+  totalSlots: number | null;
   isAvailable: boolean;
+}
+
+interface DaySchedule {
+  date: string;
+  lessons: Lesson[];
+  isExpanded: boolean;
 }
 
 export default function LessonsPage() {
   const [studios, setStudios] = useState<Studio[]>([]);
   const [selectedStudio, setSelectedStudio] = useState<string>('');
-  const [availableDates, setAvailableDates] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [weekSchedule, setWeekSchedule] = useState<DaySchedule[]>([]);
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(new Date());
   const [loading, setLoading] = useState<boolean>(false);
   const [selectedFilters, setSelectedFilters] = useState({
     program: '',
@@ -37,99 +43,162 @@ export default function LessonsPage() {
     fetchStudios();
   }, []);
 
-  // Load dates when studio is selected
+  // Load lessons when studio is selected
   useEffect(() => {
     if (selectedStudio) {
-      fetchStudioDates(selectedStudio);
+      fetchWeekSchedule();
     }
-  }, [selectedStudio]);
+  }, [selectedStudio, currentWeekStart]);
 
-  // Load lessons when both studio and date are selected
+  // Initialize current week
   useEffect(() => {
-    if (selectedStudio && selectedDate) {
-      fetchLessons();
-    }
-  }, [selectedStudio, selectedDate, selectedFilters]);
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    setCurrentWeekStart(startOfWeek);
+  }, []);
 
   const fetchStudios = async () => {
     try {
       // Mock API call
       const mockStudios: Studio[] = [
-        { code: 'omotesando', name: '表参道', region: 'tokyo' },
         { code: 'ginza', name: '銀座', region: 'tokyo' },
+        { code: 'omotesando', name: '表参道', region: 'tokyo' },
         { code: 'shibuya', name: '渋谷', region: 'tokyo' },
         { code: 'shinjuku', name: '新宿', region: 'tokyo' },
         { code: 'sapporo', name: '札幌', region: 'hokkaido' },
       ];
       setStudios(mockStudios);
+      // Default to Ginza
+      if (!selectedStudio) {
+        setSelectedStudio('ginza');
+      }
     } catch (error) {
       console.error('Error fetching studios:', error);
     }
   };
 
-  const fetchStudioDates = async (studioCode: string) => {
+  const fetchWeekSchedule = async () => {
     try {
       setLoading(true);
-      // Mock API call - next 7 days
-      const dates: string[] = [];
-      const today = new Date();
+      // Mock API call - generate 7 days schedule
+      const schedule: DaySchedule[] = [];
+      
       for (let i = 0; i < 7; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        dates.push(date.toISOString().split('T')[0]);
+        const date = new Date(currentWeekStart);
+        date.setDate(currentWeekStart.getDate() + i);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        // Generate mock lessons for each day
+        const lessons: Lesson[] = [
+          {
+            lessonId: `${selectedStudio}_${dateStr}_0730_BSL1`,
+            studio: selectedStudio,
+            date: dateStr,
+            startTime: '07:30',
+            endTime: '08:15',
+            instructor: 'Y.Yuri',
+            program: 'BSL Deep 1',
+            availableSlots: null,
+            totalSlots: null,
+            isAvailable: false,
+          },
+          {
+            lessonId: `${selectedStudio}_${dateStr}_0845_BB2`,
+            studio: selectedStudio,
+            date: dateStr,
+            startTime: '08:45',
+            endTime: '09:30',
+            instructor: 'Y.Yuri',
+            program: 'BB2 BRIT 2025',
+            availableSlots: null,
+            totalSlots: null,
+            isAvailable: false,
+          },
+          {
+            lessonId: `${selectedStudio}_${dateStr}_1000_BB1`,
+            studio: selectedStudio,
+            date: dateStr,
+            startTime: '10:00',
+            endTime: '10:45',
+            instructor: 'Yuriko',
+            program: 'BB1 House 2',
+            availableSlots: null,
+            totalSlots: null,
+            isAvailable: true,
+          },
+          {
+            lessonId: `${selectedStudio}_${dateStr}_1115_BSB`,
+            studio: selectedStudio,
+            date: dateStr,
+            startTime: '11:15',
+            endTime: '12:00',
+            instructor: 'Yuriko',
+            program: 'BSB Jazz 1',
+            availableSlots: null,
+            totalSlots: null,
+            isAvailable: true,
+          },
+          {
+            lessonId: `${selectedStudio}_${dateStr}_1230_BSW`,
+            studio: selectedStudio,
+            date: dateStr,
+            startTime: '12:30',
+            endTime: '13:15',
+            instructor: 'Taiyo',
+            program: 'BSW House 3',
+            availableSlots: null,
+            totalSlots: null,
+            isAvailable: false,
+          },
+          {
+            lessonId: `${selectedStudio}_${dateStr}_1345_BB2`,
+            studio: selectedStudio,
+            date: dateStr,
+            startTime: '13:45',
+            endTime: '14:30',
+            instructor: 'Taiyo',
+            program: 'BB2 10s 3',
+            availableSlots: null,
+            totalSlots: null,
+            isAvailable: false,
+          },
+          {
+            lessonId: `${selectedStudio}_${dateStr}_1500_BB3`,
+            studio: selectedStudio,
+            date: dateStr,
+            startTime: '15:00',
+            endTime: '15:45',
+            instructor: 'Kentaro',
+            program: 'BB3 HipHop 2',
+            availableSlots: null,
+            totalSlots: null,
+            isAvailable: true,
+          },
+          {
+            lessonId: `${selectedStudio}_${dateStr}_1615_BB1`,
+            studio: selectedStudio,
+            date: dateStr,
+            startTime: '16:15',
+            endTime: '17:00',
+            instructor: 'Kentaro',
+            program: 'BB1 House 2',
+            availableSlots: null,
+            totalSlots: null,
+            isAvailable: true,
+          },
+        ];
+        
+        schedule.push({
+          date: dateStr,
+          lessons,
+          isExpanded: i === 0, // Expand first day by default
+        });
       }
-      setAvailableDates(dates);
-      setSelectedDate(''); // Reset date selection
-      setLessons([]); // Clear lessons
+      
+      setWeekSchedule(schedule);
     } catch (error) {
-      console.error('Error fetching studio dates:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchLessons = async () => {
-    try {
-      setLoading(true);
-      // Mock API call
-      const mockLessons: Lesson[] = [
-        {
-          lessonId: `${selectedStudio}_${selectedDate}_1030_BSL1`,
-          studio: selectedStudio,
-          date: selectedDate,
-          time: '10:30',
-          instructor: 'YUKI',
-          program: 'BSL House 1',
-          availableSlots: 0,
-          totalSlots: 20,
-          isAvailable: false,
-        },
-        {
-          lessonId: `${selectedStudio}_${selectedDate}_1200_BB1`,
-          studio: selectedStudio,
-          date: selectedDate,
-          time: '12:00',
-          instructor: 'MIKI',
-          program: 'BB1 Beat',
-          availableSlots: 3,
-          totalSlots: 20,
-          isAvailable: true,
-        },
-        {
-          lessonId: `${selectedStudio}_${selectedDate}_1930_BSL2`,
-          studio: selectedStudio,
-          date: selectedDate,
-          time: '19:30',
-          instructor: 'Shiori.I',
-          program: 'BSL House 1',
-          availableSlots: 0,
-          totalSlots: 20,
-          isAvailable: false,
-        },
-      ];
-      setLessons(mockLessons);
-    } catch (error) {
-      console.error('Error fetching lessons:', error);
+      console.error('Error fetching week schedule:', error);
     } finally {
       setLoading(false);
     }
@@ -139,11 +208,30 @@ export default function LessonsPage() {
     try {
       console.log('Creating waitlist for:', lesson);
       // Mock API call for creating waitlist
-      alert(`キャンセル待ちを作成しました:\n${lesson.program} ${lesson.time}`);
+      alert(`キャンセル待ちを作成しました:\n${lesson.program} ${lesson.startTime}`);
     } catch (error) {
       console.error('Error creating waitlist:', error);
       alert('キャンセル待ちの作成に失敗しました');
     }
+  };
+
+  const toggleDayExpansion = (date: string) => {
+    setWeekSchedule(prev => prev.map(day => 
+      day.date === date ? { ...day, isExpanded: !day.isExpanded } : day
+    ));
+  };
+
+  const navigateWeek = (direction: 'prev' | 'next') => {
+    const newWeekStart = new Date(currentWeekStart);
+    newWeekStart.setDate(currentWeekStart.getDate() + (direction === 'next' ? 7 : -7));
+    setCurrentWeekStart(newWeekStart);
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    setCurrentWeekStart(startOfWeek);
   };
 
   const formatDate = (dateString: string) => {
@@ -156,29 +244,67 @@ export default function LessonsPage() {
   };
 
   const getProgramColor = (program: string) => {
-    if (program.includes('BB1')) return 'bg-yellow-100 text-yellow-800';
-    if (program.includes('BB2')) return 'bg-orange-100 text-orange-800';
-    if (program.includes('BSL')) return 'bg-blue-100 text-blue-800';
-    if (program.includes('BSW')) return 'bg-purple-100 text-purple-800';
-    return 'bg-gray-100 text-gray-800';
+    if (program.includes('BB1')) return 'bg-gray-200 text-gray-800';
+    if (program.includes('BB2')) return 'bg-orange-500 text-white';
+    if (program.includes('BB3')) return 'bg-gray-200 text-gray-800';
+    if (program.includes('BSL')) return 'bg-blue-600 text-white';
+    if (program.includes('BSW')) return 'bg-purple-500 text-white';
+    if (program.includes('BSB')) return 'bg-gray-200 text-gray-800';
+    return 'bg-gray-200 text-gray-800';
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">
-          🚴‍♀️ レッスン検索 & キャンセル待ち
-        </h1>
+  const getSelectedStudioName = () => {
+    const studio = studios.find(s => s.code === selectedStudio);
+    return studio ? studio.name : '';
+  };
 
-        {/* Studio Selection */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4">📍 スタジオ選択</h2>
+  const getSelectedStudioCode = () => {
+    return selectedStudio.toUpperCase();
+  };
+
+  if (loading && weekSchedule.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <div className="bg-gray-600 text-white">
+        <div className="flex items-center justify-center py-4">
+          <div className="flex items-center space-x-2">
+            <button className="p-2 rounded-lg bg-gray-700 hover:bg-gray-800 text-white text-sm">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="text-center">
+              <div className="text-lg font-semibold">
+                {getSelectedStudioName()}
+              </div>
+              <div className="text-sm text-gray-300">
+                ({getSelectedStudioCode()})
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Studio Selection */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="px-4 py-3">
           <select
             value={selectedStudio}
             onChange={(e) => setSelectedStudio(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-sm"
           >
-            <option value="">スタジオを選択してください</option>
+            <option value="">スタジオを選択</option>
             {studios.map((studio) => (
               <option key={studio.code} value={studio.code}>
                 {studio.name}
@@ -186,140 +312,109 @@ export default function LessonsPage() {
             ))}
           </select>
         </div>
+      </div>
 
-        {/* Date Selection */}
-        {selectedStudio && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">📅 日付選択</h2>
-            <div className="grid grid-cols-7 gap-2">
-              {availableDates.map((date) => (
-                <button
-                  key={date}
-                  onClick={() => setSelectedDate(date)}
-                  className={`p-3 text-center rounded-lg border ${
-                    selectedDate === date
-                      ? 'bg-blue-500 text-white border-blue-500'
-                      : 'bg-white border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {formatDate(date)}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+      {/* Week Navigation */}
+      <div className="bg-gray-500 text-white py-3">
+        <div className="flex items-center justify-between px-4">
+          <button
+            onClick={() => navigateWeek('prev')}
+            className="px-4 py-2 text-sm font-medium hover:bg-gray-600 rounded transition-colors"
+          >
+            前週へ
+          </button>
+          <button
+            onClick={goToToday}
+            className="px-4 py-2 text-sm font-medium hover:bg-gray-600 rounded transition-colors"
+          >
+            今日に戻る
+          </button>
+          <button
+            onClick={() => navigateWeek('next')}
+            className="px-4 py-2 text-sm font-medium hover:bg-gray-600 rounded transition-colors"
+          >
+            最終週へ
+          </button>
+        </div>
+      </div>
 
-        {/* Filters */}
-        {selectedStudio && selectedDate && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-semibold mb-4">🔍 フィルター</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  プログラム
-                </label>
-                <select
-                  value={selectedFilters.program}
-                  onChange={(e) =>
-                    setSelectedFilters({ ...selectedFilters, program: e.target.value })
-                  }
-                  className="w-full p-2 border border-gray-300 rounded-lg"
-                >
-                  <option value="">全て</option>
-                  <option value="BB1">BB1</option>
-                  <option value="BB2">BB2</option>
-                  <option value="BSL">BSL</option>
-                  <option value="BSW">BSW</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  インストラクター
-                </label>
-                <input
-                  type="text"
-                  value={selectedFilters.instructor}
-                  onChange={(e) =>
-                    setSelectedFilters({ ...selectedFilters, instructor: e.target.value })
-                  }
-                  placeholder="インストラクター名"
-                  className="w-full p-2 border border-gray-300 rounded-lg"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Lessons List */}
-        {selectedStudio && selectedDate && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">
-              🎵 レッスン一覧 ({formatDate(selectedDate)})
-            </h2>
+      {/* Schedule */}
+      <div className="pb-4">
+        {weekSchedule.map((daySchedule, index) => (
+          <div key={daySchedule.date} className="border-b border-gray-200">
+            <button
+              onClick={() => toggleDayExpansion(daySchedule.date)}
+              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between"
+            >
+              <span className="font-medium text-gray-900">
+                {formatDate(daySchedule.date)}
+              </span>
+              <svg
+                className={`w-5 h-5 text-gray-400 transform transition-transform ${
+                  daySchedule.isExpanded ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
             
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="mt-4 text-gray-600">読み込み中...</p>
-              </div>
-            ) : lessons.length === 0 ? (
-              <p className="text-gray-600 text-center py-8">
-                レッスンが見つかりませんでした
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {lessons.map((lesson) => (
+            {daySchedule.isExpanded && (
+              <div className="bg-white">
+                {daySchedule.lessons.map((lesson) => (
                   <div
                     key={lesson.lessonId}
-                    className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className="flex items-center p-4 border-b border-gray-100 hover:bg-gray-50"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-lg font-semibold">
-                            {lesson.time}
-                          </span>
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${getProgramColor(
-                              lesson.program
-                            )}`}
-                          >
-                            {lesson.program}
-                          </span>
+                    {/* Time */}
+                    <div className="flex-shrink-0 w-16 text-center">
+                      <div className="text-sm font-medium text-gray-900">{lesson.startTime}</div>
+                      <div className="text-xs text-gray-500">{lesson.endTime}</div>
+                    </div>
+                    
+                    {/* Program */}
+                    <div className="flex-1 ml-4">
+                      <div className="flex items-center space-x-3">
+                        <div
+                          className={`px-3 py-1 rounded-md text-sm font-medium ${getProgramColor(lesson.program)}`}
+                        >
+                          {lesson.program}
                         </div>
-                        <p className="text-gray-600 mb-1">
-                          👤 {lesson.instructor}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          💺 {lesson.availableSlots}/{lesson.totalSlots}席
-                          {lesson.isAvailable ? (
-                            <span className="text-green-600 ml-2">✅ 空きあり</span>
-                          ) : (
-                            <span className="text-red-600 ml-2">❌ 満席</span>
-                          )}
-                        </p>
+                        <div className="text-sm text-gray-600">{lesson.instructor}</div>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        {lesson.isAvailable ? (
-                          <button className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
-                            📱 予約する
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => createWaitlist(lesson)}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                          >
-                            🔔 キャンセル待ち
-                          </button>
-                        )}
-                      </div>
+                    </div>
+                    
+                    {/* Action Button */}
+                    <div className="flex-shrink-0 ml-4">
+                      {lesson.isAvailable ? (
+                        <button
+                          onClick={() => window.open('https://www.feelcycle.com/', '_blank')}
+                          className="px-3 py-1 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors"
+                        >
+                          予約
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => createWaitlist(lesson)}
+                          className="px-3 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600 transition-colors"
+                        >
+                          キャンセル待ち
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        )}
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div className="text-center py-4 text-gray-500 text-sm">
+        feelcycle.com
       </div>
     </div>
   );
