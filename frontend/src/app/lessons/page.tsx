@@ -88,9 +88,18 @@ export default function LessonsPage() {
       if (response.data.success) {
         // 新しいAPIレスポンス構造: { data: { studioGroups: {...}, studios: [...] } }
         const { studioGroups: groups, studios: studiosData } = response.data.data;
-        console.log('API Response:', { groups, studiosData });
-        console.log('Groups keys:', Object.keys(groups || {}));
-        setStudioGroups(groups || {});
+        console.log('✅ API Response received:', response.data);
+        console.log('📊 Groups:', groups);
+        console.log('🔑 Groups keys:', Object.keys(groups || {}));
+        console.log('📍 Studios data:', studiosData?.length || 0);
+        
+        if (groups && Object.keys(groups).length > 0) {
+          console.log('✅ Setting studio groups:', Object.keys(groups));
+          setStudioGroups(groups);
+        } else {
+          console.log('⚠️ No groups found, using fallback');
+          setStudioGroups({});
+        }
         setStudios(studiosData || []);
       }
     } catch (error) {
@@ -292,8 +301,9 @@ export default function LessonsPage() {
                     </button>
                     
                     {(() => {
-                      console.log('StudioGroups:', studioGroups);
-                      console.log('Groups count:', Object.keys(studioGroups).length);
+                      console.log('🔄 Rendering check - StudioGroups:', studioGroups);
+                      console.log('🔄 Groups count:', Object.keys(studioGroups).length);
+                      console.log('🔄 Should show groups:', Object.keys(studioGroups).length > 0);
                       return Object.keys(studioGroups).length > 0;
                     })() ? (
                       // 地域グループ化表示
@@ -319,7 +329,9 @@ export default function LessonsPage() {
                       ))
                     ) : (
                       // フォールバック: フラットリスト
-                      studios.map(studio => (
+                      (() => {
+                        console.log('📋 Using fallback flat list. Studios count:', studios.length);
+                        return studios.map(studio => (
                         <button
                           key={studio.code}
                           type="button"
@@ -329,7 +341,8 @@ export default function LessonsPage() {
                           <div className="text-sm text-gray-900">{studio.name}</div>
                           <div className="text-xs text-gray-500">({studio.code})</div>
                         </button>
-                      ))
+                        ));
+                      })()
                     )}
                   </div>
                 </div>
