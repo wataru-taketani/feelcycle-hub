@@ -8,15 +8,16 @@ interface LessonData {
   studioCode: string;
   studioName?: string;
   lessonDate: string;
-  time: string;
+  startTime: string;
+  time?: string;
   lessonName: string;
   instructor: string;
   lastUpdated: string;
 }
 
 interface Studio {
-  studioCode: string;
-  studioName: string;
+  code: string;
+  name: string;
   region: string;
 }
 
@@ -38,10 +39,14 @@ export default function LessonsPage() {
       setLoadingStudios(true);
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/studios`);
       if (response.data.success) {
-        setStudios(response.data.data);
+        // APIレスポンスの構造に応じて調整
+        const studiosData = response.data.data.studios || response.data.data;
+        setStudios(studiosData);
       }
     } catch (error) {
       console.error('Failed to fetch studios:', error);
+      // フォールバック用にからの配列を設定
+      setStudios([]);
     } finally {
       setLoadingStudios(false);
     }
@@ -64,7 +69,9 @@ export default function LessonsPage() {
       });
       
       if (response.data.success) {
-        setLessons(response.data.data);
+        // APIレスポンスの構造に応じて調整
+        const lessonsData = response.data.data.lessons || response.data.data;
+        setLessons(lessonsData);
       }
     } catch (error) {
       console.error('Failed to fetch lessons:', error);
@@ -82,7 +89,7 @@ export default function LessonsPage() {
     }
 
     try {
-      const [startTime] = lesson.time.split(' - ');
+      const startTime = lesson.startTime || lesson.time?.split(' - ')[0] || '00:00';
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist`, {
         userId: apiUser.userId,
         studioCode: lesson.studioCode,
@@ -206,8 +213,8 @@ export default function LessonsPage() {
               >
                 <option value="">スタジオを選択</option>
                 {studios.map(studio => (
-                  <option key={studio.studioCode} value={studio.studioCode}>
-                    {studio.studioName} ({studio.region})
+                  <option key={studio.code} value={studio.code}>
+                    {studio.name} ({studio.region})
                   </option>
                 ))}
               </select>
@@ -286,7 +293,7 @@ export default function LessonsPage() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <span className="bg-orange-100 text-orange-800 text-sm font-medium px-2.5 py-0.5 rounded">
-                          {lesson.time}
+                          {lesson.time || lesson.startTime}
                         </span>
                         <h3 className="text-lg font-semibold text-gray-900">{lesson.lessonName}</h3>
                       </div>
