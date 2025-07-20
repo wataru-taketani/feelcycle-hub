@@ -18,7 +18,6 @@ interface LessonData {
 interface Studio {
   code: string;
   name: string;
-  region: string;
 }
 
 export default function LessonsPage() {
@@ -39,8 +38,8 @@ export default function LessonsPage() {
       setLoadingStudios(true);
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/studios`);
       if (response.data.success) {
-        // APIレスポンスの構造に応じて調整
-        const studiosData = response.data.data.studios || response.data.data;
+        // 新しいAPIレスポンス構造: { data: { studios: [...] } }
+        const studiosData = response.data.data.studios || [];
         setStudios(studiosData);
       }
     } catch (error) {
@@ -214,7 +213,7 @@ export default function LessonsPage() {
                 <option value="">スタジオを選択</option>
                 {studios.map(studio => (
                   <option key={studio.code} value={studio.code}>
-                    {studio.name} ({studio.region})
+                    {studio.name}
                   </option>
                 ))}
               </select>
