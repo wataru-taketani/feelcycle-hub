@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext';
 
 type WaitlistStatus = 'active' | 'paused' | 'expired' | 'cancelled' | 'completed';
 
@@ -29,6 +31,7 @@ interface Waitlist {
 }
 
 export default function WaitlistPage() {
+  const { apiUser } = useAuth();
   const [waitlists, setWaitlists] = useState<Waitlist[]>([]);
   const [activeTab, setActiveTab] = useState<'active' | 'paused' | 'ended'>('active');
   const [loading, setLoading] = useState<boolean>(false);
@@ -41,12 +44,30 @@ export default function WaitlistPage() {
   }, [activeTab]);
 
   const fetchWaitlists = async () => {
+    if (!apiUser) return;
+    
     try {
       setLoading(true);
-      // Mock API call
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist`,
+        {
+          headers: {
+            'x-user-id': apiUser.userId
+          }
+        }
+      );
+      
+      if (response.data.success) {
+        setWaitlists(response.data.data);
+      } else {
+        throw new Error(response.data.message || 'キャンセル待ちリストの取得に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error fetching waitlists:', error);
+      // Use mock data as fallback
       const mockWaitlists: Waitlist[] = [
         {
-          userId: 'user123',
+          userId: apiUser.userId,
           waitlistId: 'sapporo#2025-07-18#19:30#BSL House 1',
           studioCode: 'sapporo',
           studioName: '札幌',
@@ -60,77 +81,64 @@ export default function WaitlistPage() {
           updatedAt: '2025-07-17T10:00:00Z',
           notificationHistory: [],
         },
-        {
-          userId: 'user123',
-          waitlistId: 'ginza#2025-07-17#12:00#BB1 Beat',
-          studioCode: 'ginza',
-          studioName: '銀座',
-          lessonDate: '2025-07-17',
-          startTime: '12:00',
-          endTime: '12:45',
-          lessonName: 'BB1 Beat',
-          instructor: 'MIKI',
-          status: 'paused',
-          createdAt: '2025-07-17T09:00:00Z',
-          updatedAt: '2025-07-17T11:30:00Z',
-          pausedAt: '2025-07-17T11:30:00Z',
-          notificationHistory: [
-            {
-              sentAt: '2025-07-17T11:30:00Z',
-              availableSlots: 2,
-              totalSlots: 20,
-              notificationId: 'notif_1721218200000',
-            },
-          ],
-        },
-        {
-          userId: 'user123',
-          waitlistId: 'shibuya#2025-07-16#18:00#BSW',
-          studioCode: 'shibuya',
-          studioName: '渋谷',
-          lessonDate: '2025-07-16',
-          startTime: '18:00',
-          endTime: '18:45',
-          lessonName: 'BSW',
-          instructor: 'YUKI',
-          status: 'expired',
-          createdAt: '2025-07-16T08:00:00Z',
-          updatedAt: '2025-07-16T19:00:00Z',
-          expiredAt: '2025-07-16T19:00:00Z',
-          notificationHistory: [],
-        },
       ];
       
       setWaitlists(mockWaitlists);
-    } catch (error) {
-      console.error('Error fetching waitlists:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const resumeWaitlist = async (waitlistId: string) => {
+    if (!apiUser) return;
+    
     try {
-      console.log('Resuming waitlist:', waitlistId);
-      // Mock API call
-      alert('キャンセル待ちを再開しました');
-      fetchWaitlists(); // Refresh data
-    } catch (error) {
+      const response = await axios.put(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${waitlistId}`,
+        { action: 'resume' },
+        {
+          headers: {
+            'x-user-id': apiUser.userId
+          }
+        }
+      );
+      
+      if (response.data.success) {
+        alert('キャンセル待ちを再開しました');
+        fetchWaitlists(); // Refresh data
+      } else {
+        alert(response.data.message || 'キャンセル待ちの再開に失敗しました');
+      }
+    } catch (error: any) {
       console.error('Error resuming waitlist:', error);
-      alert('キャンセル待ちの再開に失敗しました');
+      alert(error.response?.data?.message || 'キャンセル待ちの再開に失敗しました');
     }
   };
 
   const cancelWaitlist = async (waitlistId: string) => {
+    if (!apiUser) return;
+    
     if (confirm('キャンセル待ちを解除しますか？')) {
       try {
-        console.log('Cancelling waitlist:', waitlistId);
-        // Mock API call
-        alert('キャンセル待ちを解除しました');
-        fetchWaitlists(); // Refresh data
-      } catch (error) {
+        const response = await axios.put(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${waitlistId}`,
+          { action: 'cancel' },
+          {
+            headers: {
+              'x-user-id': apiUser.userId
+            }
+          }
+        );
+        
+        if (response.data.success) {
+          alert('キャンセル待ちを解除しました');
+          fetchWaitlists(); // Refresh data
+        } else {
+          alert(response.data.message || 'キャンセル待ちの解除に失敗しました');
+        }
+      } catch (error: any) {
         console.error('Error cancelling waitlist:', error);
-        alert('キャンセル待ちの解除に失敗しました');
+        alert(error.response?.data?.message || 'キャンセル待ちの解除に失敗しました');
       }
     }
   };

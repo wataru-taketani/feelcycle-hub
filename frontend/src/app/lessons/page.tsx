@@ -1,421 +1,318 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+interface LessonData {
+  studioCode: string;
+  studioName?: string;
+  lessonDate: string;
+  time: string;
+  lessonName: string;
+  instructor: string;
+  lastUpdated: string;
+}
 
 interface Studio {
-  code: string;
-  name: string;
+  studioCode: string;
+  studioName: string;
   region: string;
 }
 
-interface Lesson {
-  lessonId: string;
-  studio: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  instructor: string;
-  program: string;
-  availableSlots: number | null;
-  totalSlots: number | null;
-  isAvailable: boolean;
-}
-
-interface DaySchedule {
-  date: string;
-  lessons: Lesson[];
-  isExpanded: boolean;
-}
-
 export default function LessonsPage() {
+  const { isAuthenticated, apiUser, loading } = useAuth();
+  const [lessons, setLessons] = useState<LessonData[]>([]);
   const [studios, setStudios] = useState<Studio[]>([]);
+  const [loadingLessons, setLoadingLessons] = useState(false);
+  const [loadingStudios, setLoadingStudios] = useState(false);
+  
+  // 検索フィルター
   const [selectedStudio, setSelectedStudio] = useState<string>('');
-  const [weekSchedule, setWeekSchedule] = useState<DaySchedule[]>([]);
-  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(new Date());
-  const [loading, setLoading] = useState<boolean>(false);
-  const [selectedFilters, setSelectedFilters] = useState({
-    program: '',
-    instructor: '',
-  });
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [searchKeyword, setSearchKeyword] = useState<string>('');
 
-  // Load studios on component mount
-  useEffect(() => {
-    fetchStudios();
-  }, []);
-
-  // Load lessons when studio is selected
-  useEffect(() => {
-    if (selectedStudio) {
-      fetchWeekSchedule();
-    }
-  }, [selectedStudio, currentWeekStart]);
-
-  // Initialize current week
-  useEffect(() => {
-    const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    setCurrentWeekStart(startOfWeek);
-  }, []);
-
+  // スタジオ一覧取得
   const fetchStudios = async () => {
     try {
-      // Mock API call
-      const mockStudios: Studio[] = [
-        { code: 'ginza', name: '銀座', region: 'tokyo' },
-        { code: 'omotesando', name: '表参道', region: 'tokyo' },
-        { code: 'shibuya', name: '渋谷', region: 'tokyo' },
-        { code: 'shinjuku', name: '新宿', region: 'tokyo' },
-        { code: 'sapporo', name: '札幌', region: 'hokkaido' },
-      ];
-      setStudios(mockStudios);
-      // Default to Ginza
-      if (!selectedStudio) {
-        setSelectedStudio('ginza');
+      setLoadingStudios(true);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/studios`);
+      if (response.data.success) {
+        setStudios(response.data.data);
       }
     } catch (error) {
-      console.error('Error fetching studios:', error);
-    }
-  };
-
-  const fetchWeekSchedule = async () => {
-    try {
-      setLoading(true);
-      // Mock API call - generate 7 days schedule
-      const schedule: DaySchedule[] = [];
-      
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(currentWeekStart);
-        date.setDate(currentWeekStart.getDate() + i);
-        const dateStr = date.toISOString().split('T')[0];
-        
-        // Generate mock lessons for each day
-        const lessons: Lesson[] = [
-          {
-            lessonId: `${selectedStudio}_${dateStr}_0730_BSL1`,
-            studio: selectedStudio,
-            date: dateStr,
-            startTime: '07:30',
-            endTime: '08:15',
-            instructor: 'Y.Yuri',
-            program: 'BSL Deep 1',
-            availableSlots: null,
-            totalSlots: null,
-            isAvailable: false,
-          },
-          {
-            lessonId: `${selectedStudio}_${dateStr}_0845_BB2`,
-            studio: selectedStudio,
-            date: dateStr,
-            startTime: '08:45',
-            endTime: '09:30',
-            instructor: 'Y.Yuri',
-            program: 'BB2 BRIT 2025',
-            availableSlots: null,
-            totalSlots: null,
-            isAvailable: false,
-          },
-          {
-            lessonId: `${selectedStudio}_${dateStr}_1000_BB1`,
-            studio: selectedStudio,
-            date: dateStr,
-            startTime: '10:00',
-            endTime: '10:45',
-            instructor: 'Yuriko',
-            program: 'BB1 House 2',
-            availableSlots: null,
-            totalSlots: null,
-            isAvailable: true,
-          },
-          {
-            lessonId: `${selectedStudio}_${dateStr}_1115_BSB`,
-            studio: selectedStudio,
-            date: dateStr,
-            startTime: '11:15',
-            endTime: '12:00',
-            instructor: 'Yuriko',
-            program: 'BSB Jazz 1',
-            availableSlots: null,
-            totalSlots: null,
-            isAvailable: true,
-          },
-          {
-            lessonId: `${selectedStudio}_${dateStr}_1230_BSW`,
-            studio: selectedStudio,
-            date: dateStr,
-            startTime: '12:30',
-            endTime: '13:15',
-            instructor: 'Taiyo',
-            program: 'BSW House 3',
-            availableSlots: null,
-            totalSlots: null,
-            isAvailable: false,
-          },
-          {
-            lessonId: `${selectedStudio}_${dateStr}_1345_BB2`,
-            studio: selectedStudio,
-            date: dateStr,
-            startTime: '13:45',
-            endTime: '14:30',
-            instructor: 'Taiyo',
-            program: 'BB2 10s 3',
-            availableSlots: null,
-            totalSlots: null,
-            isAvailable: false,
-          },
-          {
-            lessonId: `${selectedStudio}_${dateStr}_1500_BB3`,
-            studio: selectedStudio,
-            date: dateStr,
-            startTime: '15:00',
-            endTime: '15:45',
-            instructor: 'Kentaro',
-            program: 'BB3 HipHop 2',
-            availableSlots: null,
-            totalSlots: null,
-            isAvailable: true,
-          },
-          {
-            lessonId: `${selectedStudio}_${dateStr}_1615_BB1`,
-            studio: selectedStudio,
-            date: dateStr,
-            startTime: '16:15',
-            endTime: '17:00',
-            instructor: 'Kentaro',
-            program: 'BB1 House 2',
-            availableSlots: null,
-            totalSlots: null,
-            isAvailable: true,
-          },
-        ];
-        
-        schedule.push({
-          date: dateStr,
-          lessons,
-          isExpanded: i === 0, // Expand first day by default
-        });
-      }
-      
-      setWeekSchedule(schedule);
-    } catch (error) {
-      console.error('Error fetching week schedule:', error);
+      console.error('Failed to fetch studios:', error);
     } finally {
-      setLoading(false);
+      setLoadingStudios(false);
     }
   };
 
-  const createWaitlist = async (lesson: Lesson) => {
+  // レッスン検索
+  const searchLessons = async () => {
+    if (!selectedStudio || !selectedDate) {
+      alert('スタジオと日付を選択してください');
+      return;
+    }
+
     try {
-      console.log('Creating waitlist for:', lesson);
-      // Mock API call for creating waitlist
-      alert(`キャンセル待ちを作成しました:\n${lesson.program} ${lesson.startTime}`);
+      setLoadingLessons(true);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/lessons`, {
+        params: {
+          studioCode: selectedStudio,
+          date: selectedDate,
+        }
+      });
+      
+      if (response.data.success) {
+        setLessons(response.data.data);
+      }
     } catch (error) {
-      console.error('Error creating waitlist:', error);
-      alert('キャンセル待ちの作成に失敗しました');
+      console.error('Failed to fetch lessons:', error);
+      alert('レッスン情報の取得に失敗しました');
+    } finally {
+      setLoadingLessons(false);
     }
   };
 
-  const toggleDayExpansion = (date: string) => {
-    setWeekSchedule(prev => prev.map(day => 
-      day.date === date ? { ...day, isExpanded: !day.isExpanded } : day
-    ));
+  // キャンセル待ち登録
+  const registerWaitlist = async (lesson: LessonData) => {
+    if (!apiUser) {
+      alert('ログインが必要です');
+      return;
+    }
+
+    try {
+      const [startTime] = lesson.time.split(' - ');
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist`, {
+        userId: apiUser.userId,
+        studioCode: lesson.studioCode,
+        lessonDate: lesson.lessonDate,
+        startTime: startTime,
+        lessonName: lesson.lessonName,
+        instructor: lesson.instructor,
+      });
+
+      if (response.data.success) {
+        alert('キャンセル待ちを登録しました！空きが出たら通知します。');
+      } else {
+        alert(response.data.message || 'キャンセル待ち登録に失敗しました');
+      }
+    } catch (error: any) {
+      console.error('Failed to register waitlist:', error);
+      const errorMessage = error.response?.data?.message || 'キャンセル待ち登録に失敗しました';
+      alert(errorMessage);
+    }
   };
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newWeekStart = new Date(currentWeekStart);
-    newWeekStart.setDate(currentWeekStart.getDate() + (direction === 'next' ? 7 : -7));
-    setCurrentWeekStart(newWeekStart);
-  };
-
-  const goToToday = () => {
+  // 日付選択肢生成（今日から20日先まで）
+  const generateDateOptions = () => {
+    const dates = [];
     const today = new Date();
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    setCurrentWeekStart(startOfWeek);
+    
+    for (let i = 0; i < 20; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      const displayDate = date.toLocaleDateString('ja-JP', {
+        month: 'numeric',
+        day: 'numeric',
+        weekday: 'short'
+      });
+      dates.push({ value: dateString, label: displayDate });
+    }
+    
+    return dates;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekday = weekdays[date.getDay()];
-    return `${month}/${day}(${weekday})`;
-  };
+  // フィルタリング
+  const filteredLessons = lessons.filter(lesson => {
+    if (searchKeyword) {
+      const keyword = searchKeyword.toLowerCase();
+      return (
+        lesson.lessonName.toLowerCase().includes(keyword) ||
+        lesson.instructor.toLowerCase().includes(keyword)
+      );
+    }
+    return true;
+  });
 
-  const getProgramColor = (program: string) => {
-    if (program.includes('BB1')) return 'bg-gray-200 text-gray-800';
-    if (program.includes('BB2')) return 'bg-orange-500 text-white';
-    if (program.includes('BB3')) return 'bg-gray-200 text-gray-800';
-    if (program.includes('BSL')) return 'bg-blue-600 text-white';
-    if (program.includes('BSW')) return 'bg-purple-500 text-white';
-    if (program.includes('BSB')) return 'bg-gray-200 text-gray-800';
-    return 'bg-gray-200 text-gray-800';
-  };
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchStudios();
+    }
+  }, [isAuthenticated]);
 
-  const getSelectedStudioName = () => {
-    const studio = studios.find(s => s.code === selectedStudio);
-    return studio ? studio.name : '';
-  };
+  // 今日の日付を初期値に設定
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+  }, []);
 
-  const getSelectedStudioCode = () => {
-    return selectedStudio.toUpperCase();
-  };
-
-  if (loading && weekSchedule.length === 0) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-4"></div>
           <p className="text-gray-600">読み込み中...</p>
         </div>
       </div>
     );
   }
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-lg shadow-md p-8 text-center">
+          <p className="text-gray-600">ログインが必要です</p>
+          <a href="/" className="mt-4 inline-block bg-green-500 text-white px-4 py-2 rounded-lg">
+            ホームに戻る
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gray-600 text-white">
-        <div className="flex items-center justify-center py-4">
-          <div className="flex items-center space-x-2">
-            <button className="p-2 rounded-lg bg-gray-700 hover:bg-gray-800 text-white text-sm">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div className="text-center">
-              <div className="text-lg font-semibold">
-                {getSelectedStudioName()}
-              </div>
-              <div className="text-sm text-gray-300">
-                ({getSelectedStudioCode()})
-              </div>
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">レッスン検索</h1>
+              <div className="w-8 h-1 bg-orange-400 rounded-full mt-1"></div>
+            </div>
+            <a href="/" className="text-orange-600 hover:text-orange-700 font-medium">
+              ← ホームに戻る
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        {/* 検索フィルター */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">レッスン検索</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            {/* スタジオ選択 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">スタジオ</label>
+              <select
+                value={selectedStudio}
+                onChange={(e) => setSelectedStudio(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                disabled={loadingStudios}
+              >
+                <option value="">スタジオを選択</option>
+                {studios.map(studio => (
+                  <option key={studio.studioCode} value={studio.studioCode}>
+                    {studio.studioName} ({studio.region})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 日付選択 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">日付</label>
+              <select
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              >
+                {generateDateOptions().map(date => (
+                  <option key={date.value} value={date.value}>
+                    {date.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* キーワード検索 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">キーワード</label>
+              <input
+                type="text"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                placeholder="レッスン名・インストラクター"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              />
+            </div>
+
+            {/* 検索ボタン */}
+            <div className="flex items-end">
+              <button
+                onClick={searchLessons}
+                disabled={loadingLessons || !selectedStudio || !selectedDate}
+                className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+              >
+                {loadingLessons ? '検索中...' : '🔍 検索'}
+              </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Studio Selection */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="px-4 py-3">
-          <select
-            value={selectedStudio}
-            onChange={(e) => setSelectedStudio(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-sm"
-          >
-            <option value="">スタジオを選択</option>
-            {studios.map((studio) => (
-              <option key={studio.code} value={studio.code}>
-                {studio.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+        {/* レッスン一覧 */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">
+              検索結果 ({filteredLessons.length}件)
+            </h2>
+          </div>
 
-      {/* Week Navigation */}
-      <div className="bg-gray-500 text-white py-3">
-        <div className="flex items-center justify-between px-4">
-          <button
-            onClick={() => navigateWeek('prev')}
-            className="px-4 py-2 text-sm font-medium hover:bg-gray-600 rounded transition-colors"
-          >
-            前週へ
-          </button>
-          <button
-            onClick={goToToday}
-            className="px-4 py-2 text-sm font-medium hover:bg-gray-600 rounded transition-colors"
-          >
-            今日に戻る
-          </button>
-          <button
-            onClick={() => navigateWeek('next')}
-            className="px-4 py-2 text-sm font-medium hover:bg-gray-600 rounded transition-colors"
-          >
-            最終週へ
-          </button>
-        </div>
-      </div>
-
-      {/* Schedule */}
-      <div className="pb-4">
-        {weekSchedule.map((daySchedule, index) => (
-          <div key={daySchedule.date} className="border-b border-gray-200">
-            <button
-              onClick={() => toggleDayExpansion(daySchedule.date)}
-              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between"
-            >
-              <span className="font-medium text-gray-900">
-                {formatDate(daySchedule.date)}
-              </span>
-              <svg
-                className={`w-5 h-5 text-gray-400 transform transition-transform ${
-                  daySchedule.isExpanded ? 'rotate-180' : ''
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            
-            {daySchedule.isExpanded && (
-              <div className="bg-white">
-                {daySchedule.lessons.map((lesson) => (
-                  <div
-                    key={lesson.lessonId}
-                    className="flex items-center p-4 border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    {/* Time */}
-                    <div className="flex-shrink-0 w-16 text-center">
-                      <div className="text-sm font-medium text-gray-900">{lesson.startTime}</div>
-                      <div className="text-xs text-gray-500">{lesson.endTime}</div>
-                    </div>
-                    
-                    {/* Program */}
-                    <div className="flex-1 ml-4">
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`px-3 py-1 rounded-md text-sm font-medium ${getProgramColor(lesson.program)}`}
-                        >
-                          {lesson.program}
-                        </div>
-                        <div className="text-sm text-gray-600">{lesson.instructor}</div>
+          {loadingLessons ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">検索中...</p>
+            </div>
+          ) : filteredLessons.length === 0 ? (
+            <div className="p-8 text-center">
+              <div className="text-gray-400 mb-2">
+                <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="text-gray-500">
+                {lessons.length === 0 ? 'スタジオと日付を選択して検索してください' : '条件に合うレッスンが見つかりません'}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200">
+              {filteredLessons.map((lesson, index) => (
+                <div key={index} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className="bg-orange-100 text-orange-800 text-sm font-medium px-2.5 py-0.5 rounded">
+                          {lesson.time}
+                        </span>
+                        <h3 className="text-lg font-semibold text-gray-900">{lesson.lessonName}</h3>
+                      </div>
+                      <div className="text-gray-600 space-y-1">
+                        <p>👨‍🏫 {lesson.instructor}</p>
+                        <p>📍 {lesson.studioName || lesson.studioCode}</p>
+                        <p className="text-xs text-gray-500">
+                          最終更新: {new Date(lesson.lastUpdated).toLocaleString('ja-JP')}
+                        </p>
                       </div>
                     </div>
-                    
-                    {/* Action Button */}
-                    <div className="flex-shrink-0 ml-4">
-                      {lesson.isAvailable ? (
-                        <button
-                          onClick={() => window.open('https://www.feelcycle.com/', '_blank')}
-                          className="px-3 py-1 bg-green-500 text-white text-xs rounded-md hover:bg-green-600 transition-colors"
-                        >
-                          予約
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => createWaitlist(lesson)}
-                          className="px-3 py-1 bg-blue-500 text-white text-xs rounded-md hover:bg-blue-600 transition-colors"
-                        >
-                          キャンセル待ち
-                        </button>
-                      )}
+                    <div>
+                      <button
+                        onClick={() => registerWaitlist(lesson)}
+                        className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+                      >
+                        🔔 キャンセル待ち登録
+                      </button>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Footer */}
-      <div className="text-center py-4 text-gray-500 text-sm">
-        feelcycle.com
-      </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

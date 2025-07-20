@@ -1,7 +1,9 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-import { Waitlist, WaitlistStatus, WaitlistCreateRequest, NotificationRecord } from '../types';
+import { Waitlist, WaitlistStatus, WaitlistCreateRequest, NotificationRecord, LessonData } from '../types';
+import { LessonsService } from './lessons-service';
+import { studiosService } from './studios-service';
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 const docClient = DynamoDBDocumentClient.from(client);
@@ -9,31 +11,44 @@ const docClient = DynamoDBDocumentClient.from(client);
 const WAITLIST_TABLE_NAME = process.env.WAITLIST_TABLE_NAME!;
 
 export class WaitlistService {
+  private lessonsService = new LessonsService();
+
   /**
-   * Create a new waitlist entry
+   * Create a new waitlist entry with lesson data validation
    */
   async createWaitlist(userId: string, request: WaitlistCreateRequest): Promise<Waitlist> {
+    // 1. Validate lesson exists in our database
+    const lesson = await this.validateLessonExists(request);
+    if (!lesson) {
+      throw new Error('指定されたレッスンが見つかりません。最新のレッスン情報をご確認ください。');
+    }
+
+    // 2. Check if user already has waitlist for this lesson
+    const existingWaitlist = await this.getUserWaitlistForLesson(userId, request);
+    if (existingWaitlist) {
+      throw new Error('このレッスンには既にキャンセル待ち登録済みです。');
+    }
+
     const now = new Date();
     const waitlistId = `${request.studioCode}#${request.lessonDate}#${request.startTime}#${request.lessonName}`;
     
-    // Calculate lesson datetime for comparison
-    const lessonDateTime = `${request.lessonDate}T${request.startTime}:00+09:00`;
-    const lessonDate = new Date(lessonDateTime);
+    // Calculate lesson datetime for TTL
+    const lessonDateTime = new Date(`${request.lessonDate}T${request.startTime}:00+09:00`);
     
-    // Set TTL to 1 hour after lesson end time (assuming 45min lessons)
-    const ttl = Math.floor((lessonDate.getTime() + 105 * 60 * 1000) / 1000); // 1h45m after start
+    // Set TTL to 2 hours after lesson end time (safety buffer)
+    const ttl = Math.floor((lessonDateTime.getTime() + 150 * 60 * 1000) / 1000);
     
     const waitlist: Waitlist = {
       userId,
       waitlistId,
       studioCode: request.studioCode,
-      studioName: this.getStudioName(request.studioCode),
+      studioName: await this.getStudioName(request.studioCode),
       lessonDate: request.lessonDate,
       startTime: request.startTime,
       endTime: this.calculateEndTime(request.startTime),
       lessonName: request.lessonName,
       instructor: request.instructor,
-      lessonDateTime,
+      lessonDateTime: lessonDateTime.toISOString(),
       status: 'active',
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
@@ -223,22 +238,49 @@ export class WaitlistService {
   }
 
   /**
-   * Get studio name from code
+   * Validate that the lesson exists in our database
    */
-  private getStudioName(studioCode: string): string {
-    const studioMap: Record<string, string> = {
-      'omotesando': '表参道',
-      'ginza': '銀座',
-      'roppongi': '六本木',
-      'shibuya': '渋谷',
-      'shinjuku': '新宿',
-      // Add all 37 studios...
-    };
-    return studioMap[studioCode] || studioCode;
+  private async validateLessonExists(request: WaitlistCreateRequest): Promise<LessonData | null> {
+    const lessonDateTime = `${request.startTime} - ${this.calculateEndTime(request.startTime)}`;
+    const lessons = await this.lessonsService.getLessonsForStudioAndDate(
+      request.studioCode, 
+      request.lessonDate
+    );
+    
+    return lessons.find(lesson => 
+      lesson.startTime === request.startTime && 
+      lesson.lessonName === request.lessonName
+    ) || null;
   }
 
   /**
-   * Calculate end time (assuming 45-minute lessons)
+   * Check if user already has waitlist for this specific lesson
+   */
+  private async getUserWaitlistForLesson(userId: string, request: WaitlistCreateRequest): Promise<Waitlist | null> {
+    const waitlistId = `${request.studioCode}#${request.lessonDate}#${request.startTime}#${request.lessonName}`;
+    
+    try {
+      const result = await docClient.send(new GetCommand({
+        TableName: WAITLIST_TABLE_NAME,
+        Key: { userId, waitlistId }
+      }));
+      
+      return result.Item as Waitlist || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  /**
+   * Get studio name from studios service
+   */
+  private async getStudioName(studioCode: string): Promise<string> {
+    const studio = await studiosService.getStudioByCode(studioCode);
+    return studio?.studioName || studioCode;
+  }
+
+  /**
+   * Calculate end time based on start time (assuming 45min lessons)
    */
   private calculateEndTime(startTime: string): string {
     const [hours, minutes] = startTime.split(':').map(Number);
