@@ -20,9 +20,14 @@ interface Studio {
   name: string;
 }
 
+interface StudioGroups {
+  [groupName: string]: Studio[];
+}
+
 export default function LessonsPage() {
   const { isAuthenticated, apiUser, loading } = useAuth();
   const [lessons, setLessons] = useState<LessonData[]>([]);
+  const [studioGroups, setStudioGroups] = useState<StudioGroups>({});
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loadingLessons, setLoadingLessons] = useState(false);
   const [loadingStudios, setLoadingStudios] = useState(false);
@@ -31,6 +36,49 @@ export default function LessonsPage() {
   const [selectedStudio, setSelectedStudio] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
+  
+  // カスタムドロップダウン用の状態
+  const [isStudioDropdownOpen, setIsStudioDropdownOpen] = useState(false);
+  const [selectedStudioName, setSelectedStudioName] = useState<string>('');
+  
+  // 日付カレンダー用の状態
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+  // スタジオ選択ハンドラー
+  const handleStudioSelect = (studioCode: string, studioName: string) => {
+    setSelectedStudio(studioCode);
+    setSelectedStudioName(studioName);
+    setIsStudioDropdownOpen(false);
+  };
+
+  // スタジオ選択リセット
+  const handleStudioReset = () => {
+    setSelectedStudio('');
+    setSelectedStudioName('');
+    setIsStudioDropdownOpen(false);
+  };
+
+  // ドロップダウン外をクリックした時の処理
+  const handleDropdownClose = () => {
+    setIsStudioDropdownOpen(false);
+  };
+
+  // 日付選択ハンドラー
+  const handleDateSelect = (date: string) => {
+    setSelectedDate(date);
+    setIsDatePickerOpen(false);
+  };
+
+  // 日付表示用フォーマット
+  const formatDateDisplay = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('ja-JP', {
+      month: 'numeric',
+      day: 'numeric',
+      weekday: 'short'
+    });
+  };
 
   // スタジオ一覧取得
   const fetchStudios = async () => {
@@ -38,13 +86,17 @@ export default function LessonsPage() {
       setLoadingStudios(true);
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/studios`);
       if (response.data.success) {
-        // 新しいAPIレスポンス構造: { data: { studios: [...] } }
-        const studiosData = response.data.data.studios || [];
-        setStudios(studiosData);
+        // 新しいAPIレスポンス構造: { data: { studioGroups: {...}, studios: [...] } }
+        const { studioGroups: groups, studios: studiosData } = response.data.data;
+        console.log('API Response:', { groups, studiosData });
+        console.log('Groups keys:', Object.keys(groups || {}));
+        setStudioGroups(groups || {});
+        setStudios(studiosData || []);
       }
     } catch (error) {
       console.error('Failed to fetch studios:', error);
-      // フォールバック用にからの配列を設定
+      // フォールバック用に空の配列を設定
+      setStudioGroups({});
       setStudios([]);
     } finally {
       setLoadingStudios(false);
@@ -202,37 +254,133 @@ export default function LessonsPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             {/* スタジオ選択 */}
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">スタジオ</label>
-              <select
-                value={selectedStudio}
-                onChange={(e) => setSelectedStudio(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              
+              {/* カスタムドロップダウンボタン */}
+              <button
+                type="button"
+                onClick={() => setIsStudioDropdownOpen(!isStudioDropdownOpen)}
                 disabled={loadingStudios}
+                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-left focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100 flex items-center justify-between"
               >
-                <option value="">スタジオを選択</option>
-                {studios.map(studio => (
-                  <option key={studio.code} value={studio.code}>
-                    {studio.name}
-                  </option>
-                ))}
-              </select>
+                <span className={selectedStudioName ? "text-gray-900" : "text-gray-500"}>
+                  {selectedStudioName || "スタジオを選択"}
+                </span>
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {/* ドロップダウンメニュー */}
+              {isStudioDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+                  {/* 背景クリック用のオーバーレイ */}
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={handleDropdownClose}
+                  ></div>
+                  
+                  <div className="relative z-50">
+                    {/* リセットオプション */}
+                    <button
+                      type="button"
+                      onClick={handleStudioReset}
+                      className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 border-b border-gray-200 sticky top-0 bg-white"
+                    >
+                      <div className="text-sm text-gray-600 italic">スタジオを選択</div>
+                    </button>
+                    
+                    {(() => {
+                      console.log('StudioGroups:', studioGroups);
+                      console.log('Groups count:', Object.keys(studioGroups).length);
+                      return Object.keys(studioGroups).length > 0;
+                    })() ? (
+                      // 地域グループ化表示
+                      Object.entries(studioGroups).map(([groupName, groupStudios]) => (
+                        <div key={groupName}>
+                          {/* 地域ヘッダー */}
+                          <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-200 sticky top-0">
+                            {groupName}
+                          </div>
+                          {/* スタジオリスト */}
+                          {groupStudios.map(studio => (
+                            <button
+                              key={studio.code}
+                              type="button"
+                              onClick={() => handleStudioSelect(studio.code, studio.name)}
+                              className="w-full px-3 py-2 text-left hover:bg-orange-50 focus:bg-orange-50 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="text-sm text-gray-900">{studio.name}</div>
+                              <div className="text-xs text-gray-500">({studio.code})</div>
+                            </button>
+                          ))}
+                        </div>
+                      ))
+                    ) : (
+                      // フォールバック: フラットリスト
+                      studios.map(studio => (
+                        <button
+                          key={studio.code}
+                          type="button"
+                          onClick={() => handleStudioSelect(studio.code, studio.name)}
+                          className="w-full px-3 py-2 text-left hover:bg-orange-50 focus:bg-orange-50 border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="text-sm text-gray-900">{studio.name}</div>
+                          <div className="text-xs text-gray-500">({studio.code})</div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 日付選択 */}
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">日付</label>
-              <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              
+              {/* カスタム日付ボタン */}
+              <button
+                type="button"
+                onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-left focus:ring-2 focus:ring-orange-500 focus:border-orange-500 flex items-center justify-between"
               >
-                {generateDateOptions().map(date => (
-                  <option key={date.value} value={date.value}>
-                    {date.label}
-                  </option>
-                ))}
-              </select>
+                <span className={selectedDate ? "text-gray-900" : "text-gray-500"}>
+                  {selectedDate ? formatDateDisplay(selectedDate) : "日付を選択"}
+                </span>
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+
+              {/* カレンダードロップダウン */}
+              {isDatePickerOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                  {/* 背景クリック用のオーバーレイ */}
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsDatePickerOpen(false)}
+                  ></div>
+                  
+                  <div className="relative z-50 p-2">
+                    <div className="grid grid-cols-1 gap-1">
+                      {generateDateOptions().map(date => (
+                        <button
+                          key={date.value}
+                          type="button"
+                          onClick={() => handleDateSelect(date.value)}
+                          className={`w-full px-3 py-2 text-left hover:bg-orange-50 focus:bg-orange-50 rounded ${
+                            selectedDate === date.value ? 'bg-orange-100 text-orange-900' : 'text-gray-900'
+                          }`}
+                        >
+                          <div className="text-sm">{date.label}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* キーワード検索 */}

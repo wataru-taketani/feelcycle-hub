@@ -90,10 +90,71 @@ async function getStudios(): Promise<APIGatewayProxyResult> {
       }
     });
     
-    const studios = Array.from(studioMap.values())
-      .sort((a, b) => a.name.localeCompare(b.name));
+    // 公式サイトと同じ地域別グループ化と順番
+    const studioGroups = {
+      'EAST AREA│関東': [
+        { code: 'GKBS', name: '銀座京橋' },
+        { code: 'GNZ', name: '銀座' },
+        { code: 'GTD', name: '五反田' },
+        { code: 'IKB', name: '池袋' },
+        { code: 'JYO', name: '自由が丘' },
+        { code: 'KCJ', name: '吉祥寺' },
+        { code: 'NMG', name: '中目黒' },
+        { code: 'MCD', name: '町田' },
+        { code: 'TCK', name: '立川' },
+        { code: 'SBY', name: '渋谷' },
+        { code: 'SDM', name: '汐留' },
+        { code: 'SJK', name: '新宿' },
+        { code: 'TMC', name: '多摩センター' },
+        { code: 'UEN', name: '上野' },
+        { code: 'AZN', name: 'あざみ野' },
+        { code: 'AZNP', name: 'あざみ野Pilates' },
+        { code: 'KOK', name: '上大岡' },
+        { code: 'KWS', name: '川崎' },
+        { code: 'MKG', name: '武蔵小杉' },
+        { code: 'YKH', name: '横浜' },
+        { code: 'YSC', name: '横須賀中央' },
+        { code: 'KSG', name: '越谷' },
+        { code: 'OMY', name: '大宮' },
+        { code: 'FNB', name: '船橋' },
+        { code: 'KHM', name: '海浜幕張' },
+        { code: 'KSW', name: '柏' },
+      ],
+      'NORTH AREA│北海道': [
+        { code: 'SPR', name: '札幌' },
+      ],
+      'WEST AREA│東海・関西': [
+        { code: 'NGY', name: '名古屋' },
+        { code: 'SKE', name: '栄' },
+        { code: 'GIF', name: '岐阜' },
+        { code: 'OKBS', name: '大阪京橋' },
+        { code: 'SSB', name: '心斎橋' },
+        { code: 'UMDC', name: '梅田茶屋町' },
+        { code: 'KTK', name: '京都河原町' },
+        { code: 'SMY', name: '三ノ宮' },
+      ],
+      'SOUTH AREA│中国・四国・九州': [
+        { code: 'HSM', name: '広島' },
+        { code: 'TKM', name: '高松' },
+        { code: 'FTJ', name: '福岡天神' },
+      ]
+    };
     
-    console.log(`Processed ${studios.length} unique studios`);
+    // 実際にDBに存在するスタジオのみをフィルタリング
+    const filteredGroups: { [key: string]: { code: string; name: string }[] } = {};
+    Object.entries(studioGroups).forEach(([groupName, studios]) => {
+      const availableStudios = studios.filter(studio => {
+        return studioMap.has(studio.name);
+      });
+      if (availableStudios.length > 0) {
+        filteredGroups[groupName] = availableStudios;
+      }
+    });
+    
+    // フラット化したスタジオリストも提供（後方互換性のため）
+    const flatStudios = Object.values(filteredGroups).flat();
+    
+    console.log(`Processed ${flatStudios.length} unique studios in ${Object.keys(filteredGroups).length} groups`);
 
     return {
       statusCode: 200,
@@ -104,15 +165,16 @@ async function getStudios(): Promise<APIGatewayProxyResult> {
       body: JSON.stringify({
         success: true,
         data: {
-          studios
+          studioGroups: filteredGroups,
+          studios: flatStudios  // 後方互換性のため
         },
       } as ApiResponse),
     };
   } catch (error) {
     console.error('Error getting studios from DB:', error);
     
-    // フォールバック: 旧スタジオリスト（地域情報も削除）
-    const studios = FeelcycleScraper.getStudios().map(studio => ({
+    // フォールバック: 旧スタジオリスト
+    const fallbackStudios = FeelcycleScraper.getStudios().map(studio => ({
       code: studio.code,
       name: studio.name
     }));
@@ -126,7 +188,8 @@ async function getStudios(): Promise<APIGatewayProxyResult> {
       body: JSON.stringify({
         success: true,
         data: {
-          studios
+          studioGroups: {}, // 空のグループ
+          studios: fallbackStudios
         },
       } as ApiResponse),
     };
@@ -221,7 +284,31 @@ async function searchLessons(params: Record<string, string | undefined> | null):
     };
   }
 
-  const studioInfo = FeelcycleScraper.getStudioInfo(studioCode);
+  // Validate studio exists in actual scraping data (no longer use hardcoded list)
+  let studioInfo;
+  try {
+    const allStudios = await studiosService.getAllStudios();
+    const foundStudio = allStudios.find(studio => 
+      studio.studioCode === studioCode || 
+      studio.studioCode === studioCode.toLowerCase() ||
+      studio.studioCode === studioCode.toUpperCase()
+    );
+    
+    if (foundStudio) {
+      studioInfo = {
+        code: foundStudio.studioCode,
+        name: foundStudio.studioName,
+        region: 'unknown' // Not needed but kept for compatibility
+      };
+    } else {
+      // Fallback to old validation for compatibility
+      studioInfo = FeelcycleScraper.getStudioInfo(studioCode);
+    }
+  } catch (error) {
+    console.log('Failed to validate studio from DB, using fallback:', error);
+    studioInfo = FeelcycleScraper.getStudioInfo(studioCode);
+  }
+
   if (!studioInfo) {
     return {
       statusCode: 404,
@@ -232,6 +319,7 @@ async function searchLessons(params: Record<string, string | undefined> | null):
       body: JSON.stringify({
         success: false,
         error: 'Studio not found',
+        message: `Studio code "${studioCode}" not found in available studios`,
       } as ApiResponse),
     };
   }
