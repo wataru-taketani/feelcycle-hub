@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { FeelcycleScraper } from '../services/feelcycle-scraper';
 import { lessonsService } from '../services/lessons-service';
 import { studiosService } from '../services/studios-service';
-import { ApiResponse, LessonSearchParams, LessonSearchFilters, normalizeStudioCode } from '../types';
+import { ApiResponse, LessonSearchParams, LessonSearchFilters, LessonData, normalizeStudioCode } from '../types';
 
 /**
  * Lessons search API handler
@@ -35,6 +35,8 @@ export async function handler(event: APIGatewayProxyEvent | any): Promise<APIGat
         return await getStudioDates(studioCode);
       } else if (path === '/lessons') {
         return await searchLessons(queryStringParameters || {});
+      } else if (path === '/lessons/range') {
+        return await searchLessonsRange(queryStringParameters || {});
       } else if (path === '/lessons/sample-data') {
         return await createSampleData(queryStringParameters || {});
       } else if (path === '/lessons/real-scrape') {
@@ -253,6 +255,14 @@ async function getStudioDates(studioCode: string): Promise<APIGatewayProxyResult
  * Search lessons with filters
  */
 async function searchLessons(params: Record<string, string | undefined> | null): Promise<APIGatewayProxyResult> {
+  console.log('🔍 searchLessons called with params:', JSON.stringify(params));
+  
+  // Check if this is a range request
+  if (params?.range === 'true' && params?.studioCode) {
+    console.log('📊 Detected range request, delegating to searchLessonsRange');
+    return await searchLessonsRange(params);
+  }
+  
   if (!params?.studioCode || !params?.date) {
     return {
       statusCode: 400,
@@ -392,6 +402,145 @@ async function searchLessons(params: Record<string, string | undefined> | null):
       body: JSON.stringify({
         success: false,
         error: 'Failed to search lessons',
+      } as ApiResponse),
+    };
+  }
+}
+
+/**
+ * Search lessons across multiple dates for a studio
+ */
+async function searchLessonsRange(params: Record<string, string | undefined> | null): Promise<APIGatewayProxyResult> {
+  console.log('🔍 searchLessonsRange called with params:', JSON.stringify(params));
+  
+  if (!params?.studioCode) {
+    return {
+      statusCode: 400,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({
+        success: false,
+        error: 'Missing required parameter: studioCode',
+      } as ApiResponse),
+    };
+  }
+
+  const { studioCode, startDate, endDate, program, instructor, startTime, endTime } = params;
+  
+  // Default to 7 days if no date range specified
+  const start = startDate || new Date().toISOString().split('T')[0];
+  const end = endDate || (() => {
+    const date = new Date();
+    date.setDate(date.getDate() + 6);
+    return date.toISOString().split('T')[0];
+  })();
+
+  // Validate studio exists
+  const normalizedStudioCode = normalizeStudioCode(studioCode);
+  let studioInfo;
+  try {
+    const allStudios = await studiosService.getAllStudios();
+    const foundStudio = allStudios.find(studio => 
+      studio.studioCode === normalizedStudioCode
+    );
+    
+    if (foundStudio) {
+      studioInfo = {
+        code: foundStudio.studioCode,
+        name: foundStudio.studioName,
+        region: 'unknown'
+      };
+    } else {
+      studioInfo = FeelcycleScraper.getStudioInfo(studioCode);
+    }
+  } catch (error) {
+    console.log('Failed to validate studio from DB, using fallback:', error);
+    studioInfo = FeelcycleScraper.getStudioInfo(studioCode);
+  }
+
+  if (!studioInfo) {
+    return {
+      statusCode: 404,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({
+        success: false,
+        error: 'Studio not found',
+        message: `Studio code "${studioCode}" not found in available studios`,
+      } as ApiResponse),
+    };
+  }
+
+  try {
+    console.log(`✅ Studio validation passed: ${studioCode} -> ${normalizedStudioCode}`);
+    console.log(`📅 Date range: ${start} to ${end}`);
+    
+    const filters: LessonSearchFilters = {};
+    
+    if (program) filters.program = program;
+    if (instructor) filters.instructor = instructor;
+    if (startTime && endTime) {
+      filters.timeRange = { start: startTime, end: endTime };
+    }
+
+    console.log(`🔍 Filters applied:`, JSON.stringify(filters));
+
+    // Get lessons for date range
+    console.log(`🔎 Calling getLessonsForStudioAndDateRange...`);
+    const lessons = await lessonsService.getLessonsForStudioAndDateRange(normalizedStudioCode, start, end, filters);
+    console.log(`📊 Database query result: ${lessons.length} lessons found`);
+    
+    // Group lessons by date
+    console.log(`📊 Grouping lessons by date...`);
+    const lessonsByDate: { [date: string]: LessonData[] } = {};
+    lessons.forEach(lesson => {
+      const date = lesson.lessonDate;
+      if (!lessonsByDate[date]) {
+        lessonsByDate[date] = [];
+      }
+      lessonsByDate[date].push(lesson);
+    });
+    
+    const dateKeys = Object.keys(lessonsByDate);
+    console.log(`📅 Grouped into ${dateKeys.length} dates:`, dateKeys);
+    console.log(`💡 Sample lesson structure:`, lessons[0] ? JSON.stringify(lessons[0]) : 'No lessons found');
+    
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({
+        success: true,
+        data: {
+          studio: studioInfo,
+          dateRange: { start, end },
+          lessonsByDate,
+          total: lessons.length,
+          available: lessons.filter(l => l.isAvailable === 'true').length,
+        },
+      } as ApiResponse),
+    };
+  } catch (error) {
+    console.error(`❌ Error in searchLessonsRange:`, error);
+    console.error(`❌ Error stack:`, error instanceof Error ? error.stack : 'No stack available');
+    console.error(`❌ Error details:`, JSON.stringify(error, null, 2));
+    
+    return {
+      statusCode: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify({
+        success: false,
+        error: 'Failed to search lessons',
+        details: error instanceof Error ? error.message : 'Unknown error',
       } as ApiResponse),
     };
   }

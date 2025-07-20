@@ -15,6 +15,10 @@ interface LessonData {
   lastUpdated: string;
 }
 
+interface LessonsByDate {
+  [date: string]: LessonData[];
+}
+
 interface Studio {
   code: string;
   name: string;
@@ -26,7 +30,7 @@ interface StudioGroups {
 
 export default function LessonsPage() {
   const { isAuthenticated, apiUser, loading } = useAuth();
-  const [lessons, setLessons] = useState<LessonData[]>([]);
+  const [lessonsByDate, setLessonsByDate] = useState<LessonsByDate>({});
   const [studioGroups, setStudioGroups] = useState<StudioGroups>({});
   const [studios, setStudios] = useState<Studio[]>([]);
   const [loadingLessons, setLoadingLessons] = useState(false);
@@ -36,6 +40,9 @@ export default function LessonsPage() {
   const [selectedStudio, setSelectedStudio] = useState<string>('');
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
+  
+  // 日付タブ管理
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
   
   // カスタムドロップダウン用の状態
   const [isStudioDropdownOpen, setIsStudioDropdownOpen] = useState(false);
@@ -49,6 +56,9 @@ export default function LessonsPage() {
     setSelectedStudio(studioCode);
     setSelectedStudioName(studioName);
     setIsStudioDropdownOpen(false);
+    
+    // スタジオ選択と同時にレッスンを取得
+    fetchLessonsForStudio(studioCode);
   };
 
   // スタジオ選択リセット
@@ -135,26 +145,35 @@ export default function LessonsPage() {
     }
   };
 
-  // レッスン検索
-  const searchLessons = async () => {
-    if (!selectedStudio || !selectedDate) {
-      alert('スタジオと日付を選択してください');
-      return;
-    }
+  // スタジオが選択されたときに自動でレッスンを取得
+  const fetchLessonsForStudio = async (studioCode: string) => {
+    if (!studioCode) return;
 
     try {
       setLoadingLessons(true);
+      console.log('Fetching lessons for studio:', studioCode);
+      
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/lessons`, {
         params: {
-          studioCode: selectedStudio,
-          date: selectedDate,
+          studioCode: studioCode,
+          range: 'true'
         }
       });
       
       if (response.data.success) {
-        // APIレスポンスの構造に応じて調整
-        const lessonsData = response.data.data.lessons || response.data.data;
-        setLessons(lessonsData);
+        const { lessonsByDate: lessonsData, dateRange } = response.data.data;
+        console.log('Received lessons data:', lessonsData);
+        
+        setLessonsByDate(lessonsData);
+        
+        // 利用可能な日付を設定
+        const dates = Object.keys(lessonsData).sort();
+        setAvailableDates(dates);
+        
+        // 最初の日付を自動選択
+        if (dates.length > 0 && !selectedDate) {
+          setSelectedDate(dates[0]);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch lessons:', error);
@@ -214,8 +233,16 @@ export default function LessonsPage() {
     return dates;
   };
 
+  // 選択された日付のレッスンを取得
+  const getCurrentLessons = () => {
+    if (!selectedDate || !lessonsByDate[selectedDate]) {
+      return [];
+    }
+    return lessonsByDate[selectedDate];
+  };
+
   // フィルタリング
-  const filteredLessons = lessons.filter(lesson => {
+  const filteredLessons = getCurrentLessons().filter(lesson => {
     if (searchKeyword) {
       const keyword = searchKeyword.toLowerCase();
       return (
@@ -284,7 +311,7 @@ export default function LessonsPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">レッスン検索</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             {/* スタジオ選択 */}
             <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">スタジオ</label>
@@ -374,105 +401,52 @@ export default function LessonsPage() {
               )}
             </div>
 
-            {/* 日付選択 */}
-            <div className="relative">
+            {/* 日付タブ */}
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">日付</label>
               
-              {/* カスタム日付ボタン */}
-              <button
-                type="button"
-                onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-left focus:ring-2 focus:ring-orange-500 focus:border-orange-500 flex items-center justify-between"
-              >
-                <span className={selectedDate ? "text-gray-900" : "text-gray-500"}>
-                  {selectedDate ? formatDateDisplay(selectedDate) : "日付を選択"}
-                </span>
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </button>
-
-              {/* カレンダードロップダウン */}
-              {isDatePickerOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
-                  {/* 背景クリック用のオーバーレイ */}
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setIsDatePickerOpen(false)}
-                  ></div>
-                  
-                  <div className="relative z-50 p-4">
-                    {/* カレンダーヘッダー */}
-                    <div className="text-center mb-3">
-                      <h3 className="text-sm font-semibold text-gray-900">日付を選択</h3>
-                    </div>
+              {/* 日付タブ表示 */}
+              {availableDates.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {availableDates.map(date => {
+                    const dateObj = new Date(date);
+                    const today = new Date();
+                    const isToday = dateObj.toDateString() === today.toDateString();
+                    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
                     
-                    {/* カレンダーグリッド */}
-                    <div className="max-h-60 overflow-y-auto">
-                      {/* 週表示のヘッダー */}
-                      <div className="grid grid-cols-7 gap-1 mb-2 text-xs text-gray-500 font-medium">
-                        <div className="text-center py-1">日</div>
-                        <div className="text-center py-1">月</div>
-                        <div className="text-center py-1">火</div>
-                        <div className="text-center py-1">水</div>
-                        <div className="text-center py-1">木</div>
-                        <div className="text-center py-1">金</div>
-                        <div className="text-center py-1">土</div>
-                      </div>
-                      
-                      {/* 日付選択ボタン（縦並び） */}
-                      <div className="space-y-1">
-                        {generateCalendarDates().map(dateInfo => (
-                          <button
-                            key={dateInfo.value}
-                            type="button"
-                            onClick={() => handleDateSelect(dateInfo.value)}
-                            className={`
-                              w-full p-3 text-left rounded-lg transition-colors flex items-center justify-between
-                              ${selectedDate === dateInfo.value 
-                                ? 'bg-orange-500 text-white' 
-                                : 'hover:bg-orange-50 text-gray-700 border border-gray-200'
-                              }
-                              ${dateInfo.isToday 
-                                ? 'ring-2 ring-orange-200' 
-                                : ''
-                              }
-                            `}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className={`text-lg font-semibold ${
-                                selectedDate === dateInfo.value ? 'text-white' : 'text-gray-900'
-                              }`}>
-                                {dateInfo.month}/{dateInfo.date}
-                              </div>
-                              <div className={`text-sm ${
-                                selectedDate === dateInfo.value ? 'text-orange-100' : 'text-gray-500'
-                              }`}>
-                                {dateInfo.weekday}
-                              </div>
-                              {dateInfo.isToday && (
-                                <span className={`text-xs px-2 py-1 rounded-full ${
-                                  selectedDate === dateInfo.value 
-                                    ? 'bg-orange-400 text-white' 
-                                    : 'bg-orange-100 text-orange-600'
-                                }`}>
-                                  今日
-                                </span>
-                              )}
+                    return (
+                      <button
+                        key={date}
+                        type="button"
+                        onClick={() => setSelectedDate(date)}
+                        className={`
+                          px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                          ${selectedDate === date 
+                            ? 'bg-orange-500 text-white' 
+                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-orange-50'
+                          }
+                          ${isToday ? 'ring-2 ring-orange-200' : ''}
+                        `}
+                      >
+                        <div className="text-center">
+                          <div className={`text-xs ${selectedDate === date ? 'text-orange-100' : 'text-gray-500'}`}>
+                            {dateObj.toLocaleDateString('ja-JP', { weekday: 'short' })}
+                          </div>
+                          <div className={`font-semibold ${isWeekend ? 'text-red-500' : ''} ${selectedDate === date ? 'text-white' : ''}`}>
+                            {dateObj.getMonth() + 1}/{dateObj.getDate()}
+                          </div>
+                          {isToday && (
+                            <div className={`text-xs ${selectedDate === date ? 'text-orange-200' : 'text-orange-600'}`}>
+                              今日
                             </div>
-                            {dateInfo.isWeekend && (
-                              <div className={`text-xs ${
-                                selectedDate === dateInfo.value ? 'text-orange-200' : 'text-red-500'
-                              }`}>
-                                休日
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
+              ) : (
+                <div className="text-gray-500 text-sm">スタジオを選択すると日付が表示されます</div>
               )}
             </div>
 
@@ -488,16 +462,6 @@ export default function LessonsPage() {
               />
             </div>
 
-            {/* 検索ボタン */}
-            <div className="flex items-end">
-              <button
-                onClick={searchLessons}
-                disabled={loadingLessons || !selectedStudio || !selectedDate}
-                className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-              >
-                {loadingLessons ? '検索中...' : '🔍 検索'}
-              </button>
-            </div>
           </div>
         </div>
 

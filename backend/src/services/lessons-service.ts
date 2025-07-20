@@ -1,5 +1,5 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand, QueryCommand, ScanCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, PutCommand, QueryCommand, ScanCommand, UpdateCommand, DeleteCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { LessonData, LessonSearchFilters } from '../types';
 
 const client = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
@@ -19,11 +19,58 @@ export class LessonsService {
   }
 
   /**
-   * Store multiple lessons in batch
+   * Store multiple lessons using DynamoDB BatchWrite (much more efficient)
    */
   async storeLessonsData(lessons: LessonData[]): Promise<void> {
-    const promises = lessons.map(lesson => this.storeLessonData(lesson));
-    await Promise.all(promises);
+    if (lessons.length === 0) return;
+
+    const BATCH_SIZE = 25; // DynamoDB BatchWrite limit
+    const batches = [];
+    
+    for (let i = 0; i < lessons.length; i += BATCH_SIZE) {
+      batches.push(lessons.slice(i, i + BATCH_SIZE));
+    }
+
+    console.log(`📝 Writing ${lessons.length} lessons in ${batches.length} batches...`);
+
+    for (const [batchIndex, batch] of batches.entries()) {
+      try {
+        const putRequests = batch.map(lesson => ({
+          PutRequest: {
+            Item: lesson
+          }
+        }));
+
+        await docClient.send(new BatchWriteCommand({
+          RequestItems: {
+            [LESSONS_TABLE_NAME]: putRequests
+          }
+        }));
+
+        console.log(`   ✅ Batch ${batchIndex + 1}/${batches.length} completed (${batch.length} items)`);
+        
+        // Clear batch from memory immediately after processing
+        batch.length = 0;
+        
+        // Small delay between batches to respect DynamoDB limits
+        if (batchIndex < batches.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+      } catch (error) {
+        console.error(`❌ Failed to write batch ${batchIndex + 1}:`, error);
+        
+        // Fallback to individual writes for this batch
+        console.log(`🔄 Falling back to individual writes for batch ${batchIndex + 1}...`);
+        for (const lesson of batch) {
+          try {
+            await this.storeLessonData(lesson);
+          } catch (individualError) {
+            console.error(`❌ Failed to write individual lesson:`, individualError);
+          }
+        }
+      }
+    }
   }
 
   /**
@@ -44,6 +91,59 @@ export class LessonsService {
     };
 
     // Add filters
+    if (filters) {
+      const filterExpressions: string[] = [];
+      
+      if (filters.program) {
+        filterExpressions.push('#program = :program');
+        params.ExpressionAttributeNames = params.ExpressionAttributeNames || {};
+        params.ExpressionAttributeNames['#program'] = 'program';
+        params.ExpressionAttributeValues[':program'] = filters.program;
+      }
+
+      if (filters.instructor) {
+        filterExpressions.push('instructor = :instructor');
+        params.ExpressionAttributeValues[':instructor'] = filters.instructor;
+      }
+
+      if (filters.availableOnly) {
+        filterExpressions.push('isAvailable = :isAvailable');
+        params.ExpressionAttributeValues[':isAvailable'] = 'true';
+      }
+
+      if (filters.timeRange) {
+        filterExpressions.push('startTime BETWEEN :startTime AND :endTime');
+        params.ExpressionAttributeValues[':startTime'] = filters.timeRange.start;
+        params.ExpressionAttributeValues[':endTime'] = filters.timeRange.end;
+      }
+
+      if (filterExpressions.length > 0) {
+        params.FilterExpression = filterExpressions.join(' AND ');
+      }
+    }
+
+    const result = await docClient.send(new QueryCommand(params));
+    return (result.Items || []) as LessonData[];
+  }
+
+  /**
+   * Get lessons for a specific studio across multiple dates
+   */
+  async getLessonsForStudioAndDateRange(studioCode: string, startDate: string, endDate: string, filters?: LessonSearchFilters): Promise<LessonData[]> {
+    const startDateTime = `${startDate}T00:00:00+09:00`;
+    const endDateTime = `${endDate}T23:59:59+09:00`;
+
+    const params: any = {
+      TableName: LESSONS_TABLE_NAME,
+      KeyConditionExpression: 'studioCode = :studioCode AND lessonDateTime BETWEEN :startDateTime AND :endDateTime',
+      ExpressionAttributeValues: {
+        ':studioCode': studioCode,
+        ':startDateTime': startDateTime,
+        ':endDateTime': endDateTime,
+      },
+    };
+
+    // Add filters (same as single date function)
     if (filters) {
       const filterExpressions: string[] = [];
       
@@ -220,8 +320,8 @@ export class LessonsService {
         endTime: '07:45',
         lessonName: 'BSL House 1',
         instructor: 'YUKI',
-        availableSlots: null,
-        totalSlots: null,
+        availableSlots: 0,
+        totalSlots: 20,
         isAvailable: 'false',
         program: 'BSL',
         lastUpdated: new Date().toISOString(),
@@ -235,8 +335,8 @@ export class LessonsService {
         endTime: '11:15',
         lessonName: 'BB1 Beat',
         instructor: 'MIKI',
-        availableSlots: null,
-        totalSlots: null,
+        availableSlots: 3,
+        totalSlots: 22,
         isAvailable: 'true',
         program: 'BB1',
         lastUpdated: new Date().toISOString(),
@@ -250,8 +350,8 @@ export class LessonsService {
         endTime: '12:45',
         lessonName: 'BSB Beats',
         instructor: 'NANA',
-        availableSlots: null,
-        totalSlots: null,
+        availableSlots: 0,
+        totalSlots: 20,
         isAvailable: 'false',
         program: 'BSB',
         lastUpdated: new Date().toISOString(),
@@ -265,8 +365,8 @@ export class LessonsService {
         endTime: '20:15',
         lessonName: 'BSL House 1',
         instructor: 'Shiori.I',
-        availableSlots: null,
-        totalSlots: null,
+        availableSlots: 6,
+        totalSlots: 20,
         isAvailable: 'true',
         program: 'BSL',
         lastUpdated: new Date().toISOString(),
@@ -280,8 +380,8 @@ export class LessonsService {
         endTime: '21:45',
         lessonName: 'BSW Hip Hop',
         instructor: 'RYO',
-        availableSlots: null,
-        totalSlots: null,
+        availableSlots: 2,
+        totalSlots: 24,
         isAvailable: 'true',
         program: 'BSW',
         lastUpdated: new Date().toISOString(),
@@ -291,6 +391,43 @@ export class LessonsService {
 
     await this.storeLessonsData(sampleLessons);
     return sampleLessons;
+  }
+
+  /**
+   * Execute real scraping and store data
+   */
+  async executeRealScraping(studioCode: string, date: string): Promise<any[]> {
+    console.log(`🚴‍♀️ Starting real scraping for ${studioCode} on ${date}`);
+    
+    try {
+      // Import real scraper
+      const { RealFeelcycleScraper } = await import('./real-scraper');
+      
+      let lessons: any[] = [];
+      
+      if (studioCode === 'all') {
+        // All studios scraping
+        console.log('🌏 Scraping ALL studios...');
+        lessons = await RealFeelcycleScraper.searchAllStudiosRealLessons(date);
+        console.log(`✅ Found ${lessons.length} real lessons from ALL studios`);
+      } else {
+        // Single studio scraping
+        console.log(`🏢 Scraping studio: ${studioCode}`);
+        lessons = await RealFeelcycleScraper.searchRealLessons(studioCode, date);
+        console.log(`✅ Found ${lessons.length} real lessons from ${studioCode}`);
+      }
+      
+      if (lessons.length > 0) {
+        // Store lessons in DynamoDB
+        await this.storeLessonsData(lessons);
+        console.log(`💾 Stored ${lessons.length} lessons in DynamoDB`);
+      }
+      
+      return lessons;
+    } catch (error) {
+      console.error('Real scraping failed:', error);
+      throw error;
+    }
   }
 
   /**
