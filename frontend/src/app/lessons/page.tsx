@@ -401,11 +401,11 @@ export default function LessonsPage() {
               )}
             </div>
 
-            {/* 日付タブ */}
+            {/* 日付選択 */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">日付</label>
               
-              {/* 日付タブ表示 */}
+              {/* 日付タブ表示（スタジオ選択後） */}
               {availableDates.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {availableDates.map(date => {
@@ -446,7 +446,75 @@ export default function LessonsPage() {
                   })}
                 </div>
               ) : (
-                <div className="text-gray-500 text-sm">スタジオを選択すると日付が表示されます</div>
+                /* カレンダー表示（スタジオ未選択時） */
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                    className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-left focus:ring-2 focus:ring-orange-500 focus:border-orange-500 flex items-center justify-between"
+                  >
+                    <span className={selectedDate ? "text-gray-900" : "text-gray-500"}>
+                      {selectedDate ? formatDateDisplay(selectedDate) : "日付を選択"}
+                    </span>
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </button>
+
+                  {/* カレンダードロップダウン */}
+                  {isDatePickerOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                      {/* 背景クリック用のオーバーレイ */}
+                      <div 
+                        className="fixed inset-0 z-40" 
+                        onClick={() => setIsDatePickerOpen(false)}
+                      ></div>
+                      
+                      <div className="relative z-50 p-4">
+                        {/* カレンダーヘッダー */}
+                        <div className="mb-3">
+                          <h3 className="text-sm font-medium text-gray-900 text-center">
+                            {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}
+                          </h3>
+                        </div>
+                        
+                        {/* カレンダーグリッド */}
+                        <div className="grid grid-cols-7 gap-1 text-xs">
+                          {/* 曜日ヘッダー */}
+                          {['日', '月', '火', '水', '木', '金', '土'].map(day => (
+                            <div key={day} className="p-2 text-center text-gray-500 font-medium">
+                              {day}
+                            </div>
+                          ))}
+                          
+                          {/* カレンダー日付 */}
+                          {generateCalendarDates().map(dateInfo => (
+                            <button
+                              key={dateInfo.value}
+                              type="button"
+                              onClick={() => handleDateSelect(dateInfo.value)}
+                              className={`
+                                p-2 text-center rounded transition-colors
+                                ${selectedDate === dateInfo.value 
+                                  ? 'bg-orange-500 text-white' 
+                                  : 'hover:bg-orange-50 text-gray-700'
+                                }
+                                ${dateInfo.isToday ? 'ring-1 ring-orange-300' : ''}
+                                ${dateInfo.isWeekend ? 'text-red-500' : ''}
+                              `}
+                            >
+                              <div className="font-medium">{dateInfo.date}</div>
+                              <div className="text-xs opacity-75">{dateInfo.weekday}</div>
+                              {dateInfo.isToday && (
+                                <div className="text-xs opacity-75">今日</div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -486,7 +554,7 @@ export default function LessonsPage() {
                 </svg>
               </div>
               <p className="text-gray-500">
-                {lessons.length === 0 ? 'スタジオと日付を選択して検索してください' : '条件に合うレッスンが見つかりません'}
+                {Object.keys(lessonsByDate).length === 0 ? 'スタジオと日付を選択して検索してください' : '条件に合うレッスンが見つかりません'}
               </p>
             </div>
           ) : (
