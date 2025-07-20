@@ -80,6 +80,29 @@ export default function LessonsPage() {
     });
   };
 
+  // カレンダー表示用の日付生成
+  const generateCalendarDates = () => {
+    const dates = [];
+    const today = new Date();
+    
+    for (let i = 0; i < 20; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      
+      dates.push({
+        value: dateString,
+        date: date.getDate(),
+        month: date.getMonth() + 1,
+        weekday: date.toLocaleDateString('ja-JP', { weekday: 'short' }),
+        isToday: i === 0,
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
+      });
+    }
+    
+    return dates;
+  };
+
   // スタジオ一覧取得
   const fetchStudios = async () => {
     try {
@@ -371,27 +394,82 @@ export default function LessonsPage() {
 
               {/* カレンダードロップダウン */}
               {isDatePickerOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
                   {/* 背景クリック用のオーバーレイ */}
                   <div 
                     className="fixed inset-0 z-40" 
                     onClick={() => setIsDatePickerOpen(false)}
                   ></div>
                   
-                  <div className="relative z-50 p-2">
-                    <div className="grid grid-cols-1 gap-1">
-                      {generateDateOptions().map(date => (
-                        <button
-                          key={date.value}
-                          type="button"
-                          onClick={() => handleDateSelect(date.value)}
-                          className={`w-full px-3 py-2 text-left hover:bg-orange-50 focus:bg-orange-50 rounded ${
-                            selectedDate === date.value ? 'bg-orange-100 text-orange-900' : 'text-gray-900'
-                          }`}
-                        >
-                          <div className="text-sm">{date.label}</div>
-                        </button>
-                      ))}
+                  <div className="relative z-50 p-4">
+                    {/* カレンダーヘッダー */}
+                    <div className="text-center mb-3">
+                      <h3 className="text-sm font-semibold text-gray-900">日付を選択</h3>
+                    </div>
+                    
+                    {/* カレンダーグリッド */}
+                    <div className="max-h-60 overflow-y-auto">
+                      {/* 週表示のヘッダー */}
+                      <div className="grid grid-cols-7 gap-1 mb-2 text-xs text-gray-500 font-medium">
+                        <div className="text-center py-1">日</div>
+                        <div className="text-center py-1">月</div>
+                        <div className="text-center py-1">火</div>
+                        <div className="text-center py-1">水</div>
+                        <div className="text-center py-1">木</div>
+                        <div className="text-center py-1">金</div>
+                        <div className="text-center py-1">土</div>
+                      </div>
+                      
+                      {/* 日付選択ボタン（縦並び） */}
+                      <div className="space-y-1">
+                        {generateCalendarDates().map(dateInfo => (
+                          <button
+                            key={dateInfo.value}
+                            type="button"
+                            onClick={() => handleDateSelect(dateInfo.value)}
+                            className={`
+                              w-full p-3 text-left rounded-lg transition-colors flex items-center justify-between
+                              ${selectedDate === dateInfo.value 
+                                ? 'bg-orange-500 text-white' 
+                                : 'hover:bg-orange-50 text-gray-700 border border-gray-200'
+                              }
+                              ${dateInfo.isToday 
+                                ? 'ring-2 ring-orange-200' 
+                                : ''
+                              }
+                            `}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className={`text-lg font-semibold ${
+                                selectedDate === dateInfo.value ? 'text-white' : 'text-gray-900'
+                              }`}>
+                                {dateInfo.month}/{dateInfo.date}
+                              </div>
+                              <div className={`text-sm ${
+                                selectedDate === dateInfo.value ? 'text-orange-100' : 'text-gray-500'
+                              }`}>
+                                {dateInfo.weekday}
+                              </div>
+                              {dateInfo.isToday && (
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  selectedDate === dateInfo.value 
+                                    ? 'bg-orange-400 text-white' 
+                                    : 'bg-orange-100 text-orange-600'
+                                }`}>
+                                  今日
+                                </span>
+                              )}
+                            </div>
+                            {dateInfo.isWeekend && (
+                              <div className={`text-xs ${
+                                selectedDate === dateInfo.value ? 'text-orange-200' : 'text-red-500'
+                              }`}>
+                                休日
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand, GetCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { v4 as uuidv4 } from 'uuid';
-import { Waitlist, WaitlistStatus, WaitlistCreateRequest, NotificationRecord, LessonData } from '../types';
+import { Waitlist, WaitlistStatus, WaitlistCreateRequest, NotificationRecord, LessonData, normalizeStudioCode } from '../types';
 import { LessonsService } from './lessons-service';
 import { studiosService } from './studios-service';
 
@@ -30,7 +30,8 @@ export class WaitlistService {
     }
 
     const now = new Date();
-    const waitlistId = `${request.studioCode}#${request.lessonDate}#${request.startTime}#${request.lessonName}`;
+    const normalizedStudioCode = normalizeStudioCode(request.studioCode);
+    const waitlistId = `${normalizedStudioCode}#${request.lessonDate}#${request.startTime}#${request.lessonName}`;
     
     // Calculate lesson datetime for TTL
     const lessonDateTime = new Date(`${request.lessonDate}T${request.startTime}:00+09:00`);
@@ -242,8 +243,9 @@ export class WaitlistService {
    */
   private async validateLessonExists(request: WaitlistCreateRequest): Promise<LessonData | null> {
     const lessonDateTime = `${request.startTime} - ${this.calculateEndTime(request.startTime)}`;
+    const normalizedStudioCode = normalizeStudioCode(request.studioCode);
     const lessons = await this.lessonsService.getLessonsForStudioAndDate(
-      request.studioCode, 
+      normalizedStudioCode, 
       request.lessonDate
     );
     
@@ -257,7 +259,8 @@ export class WaitlistService {
    * Check if user already has waitlist for this specific lesson
    */
   private async getUserWaitlistForLesson(userId: string, request: WaitlistCreateRequest): Promise<Waitlist | null> {
-    const waitlistId = `${request.studioCode}#${request.lessonDate}#${request.startTime}#${request.lessonName}`;
+    const normalizedStudioCode = normalizeStudioCode(request.studioCode);
+    const waitlistId = `${normalizedStudioCode}#${request.lessonDate}#${request.startTime}#${request.lessonName}`;
     
     try {
       const result = await docClient.send(new GetCommand({
@@ -275,7 +278,8 @@ export class WaitlistService {
    * Get studio name from studios service
    */
   private async getStudioName(studioCode: string): Promise<string> {
-    const studio = await studiosService.getStudioByCode(studioCode);
+    const normalizedStudioCode = normalizeStudioCode(studioCode);
+    const studio = await studiosService.getStudioByCode(normalizedStudioCode);
     return studio?.studioName || studioCode;
   }
 

@@ -2,7 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { FeelcycleScraper } from '../services/feelcycle-scraper';
 import { lessonsService } from '../services/lessons-service';
 import { studiosService } from '../services/studios-service';
-import { ApiResponse, LessonSearchParams, LessonSearchFilters } from '../types';
+import { ApiResponse, LessonSearchParams, LessonSearchFilters, normalizeStudioCode } from '../types';
 
 /**
  * Lessons search API handler
@@ -334,8 +334,10 @@ async function searchLessons(params: Record<string, string | undefined> | null):
     }
 
     // Try to get real data from database first
-    console.log(`Searching for real lesson data: studio=${studioCode}, date=${date}`);
-    let lessons = await lessonsService.getLessonsForStudioAndDate(studioCode, date, filters);
+    // DynamoDB stores studio codes in lowercase, so normalize the query
+    const normalizedStudioCode = normalizeStudioCode(studioCode);
+    console.log(`Searching for real lesson data: studio=${studioCode} (normalized: ${normalizedStudioCode}), date=${date}`);
+    let lessons = await lessonsService.getLessonsForStudioAndDate(normalizedStudioCode, date, filters);
     console.log(`Found ${lessons.length} real lessons in database`);
     
     // If no real data exists, use mock data as fallback

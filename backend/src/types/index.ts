@@ -1,5 +1,12 @@
 // Common types for FEELCYCLE Hub
 
+/**
+ * Normalize studio code to lowercase for consistent data storage and querying
+ */
+export const normalizeStudioCode = (studioCode: string): string => {
+  return studioCode.toLowerCase();
+};
+
 export interface User {
   userId: string;
   lineUserId?: string;
@@ -169,4 +176,25 @@ export interface WaitlistCreateRequest {
 
 export interface WaitlistUpdateRequest {
   action: 'resume' | 'cancel';
+}
+
+// Studio types for studio information management
+export interface StudioData {
+  studioCode: string;
+  studioName: string;
+  region: string;
+  address?: string;
+  phoneNumber?: string;
+  businessHours?: string;
+  lastUpdated: string;
+  ttl: number; // Unix timestamp for DynamoDB TTL
+}
+
+export interface StudioCreateRequest {
+  studioCode: string;
+  studioName: string;
+  region: string;
+  address?: string;
+  phoneNumber?: string;
+  businessHours?: string;
 }
