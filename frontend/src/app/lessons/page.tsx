@@ -321,8 +321,9 @@ export default function LessonsPage() {
                               onClick={() => handleStudioSelect(studio.code, studio.name)}
                               className="w-full px-3 py-2 text-left hover:bg-orange-50 focus:bg-orange-50 border-b border-gray-100 last:border-b-0"
                             >
-                              <div className="text-sm text-gray-900">{studio.name}</div>
-                              <div className="text-xs text-gray-500">({studio.code})</div>
+                              <div className="text-sm text-gray-900">
+                                {studio.name} <span className="text-xs text-gray-500">({studio.code})</span>
+                              </div>
                             </button>
                           ))}
                         </div>
@@ -338,8 +339,9 @@ export default function LessonsPage() {
                           onClick={() => handleStudioSelect(studio.code, studio.name)}
                           className="w-full px-3 py-2 text-left hover:bg-orange-50 focus:bg-orange-50 border-b border-gray-100 last:border-b-0"
                         >
-                          <div className="text-sm text-gray-900">{studio.name}</div>
-                          <div className="text-xs text-gray-500">({studio.code})</div>
+                          <div className="text-sm text-gray-900">
+                            {studio.name} <span className="text-xs text-gray-500">({studio.code})</span>
+                          </div>
                         </button>
                         ));
                       })()
