@@ -37,11 +37,13 @@ export default function WaitlistPage() {
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    fetchWaitlists();
-    // Set up real-time updates
-    const interval = setInterval(fetchWaitlists, 30000); // Update every 30 seconds
-    return () => clearInterval(interval);
-  }, [activeTab]);
+    if (apiUser) {
+      fetchWaitlists();
+      // Set up real-time updates
+      const interval = setInterval(fetchWaitlists, 30000); // Update every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, apiUser]);
 
   const fetchWaitlists = async () => {
     if (!apiUser) return;

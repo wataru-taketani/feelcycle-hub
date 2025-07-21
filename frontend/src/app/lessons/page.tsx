@@ -161,6 +161,67 @@ export default function LessonsPage() {
     }
   };
 
+  // キャンセル待ち解除
+  const cancelWaitlist = async (lesson: LessonData) => {
+    if (!apiUser) {
+      setSuccessMessage('ログインが必要です');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    const lessonId = getLessonId(lesson);
+    
+    if (!registeredWaitlists.has(lessonId)) {
+      setSuccessMessage('このレッスンはキャンセル待ち登録されていません');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    if (!confirm('キャンセル待ちを解除しますか？')) {
+      return;
+    }
+
+    // 解除中状態を設定
+    setRegisteringLessons(prev => new Set([...prev, lessonId]));
+
+    try {
+      // waitlistIdを生成（studioCode#lessonDate#startTime#lessonName）
+      const startTime = lesson.startTime || lesson.time?.split(' - ')[0] || '00:00';
+      const waitlistId = `${lesson.studioCode.toLowerCase()}#${lesson.lessonDate}#${startTime}#${lesson.lessonName}`;
+      
+      const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${waitlistId}`, {
+        action: 'cancel',
+        userId: apiUser.userId
+      });
+
+      if (response.data.success) {
+        // 解除成功時の処理
+        setRegisteredWaitlists(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(lessonId);
+          return newSet;
+        });
+        setSuccessMessage(`キャンセル待ちを解除しました\\n${lesson.lessonName} - ${lesson.instructor}`);
+        setShowSuccessModal(true);
+      } else {
+        setSuccessMessage(response.data.message || 'キャンセル待ち解除に失敗しました');
+        setShowSuccessModal(true);
+      }
+    } catch (error: any) {
+      console.error('Failed to cancel waitlist:', error);
+      const errorMessage = error.response?.data?.message || 'キャンセル待ち解除に失敗しました';
+      setSuccessMessage(errorMessage);
+      setShowSuccessModal(true);
+    } finally {
+      // 解除中状態を解除
+      setRegisteringLessons(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(lessonId);
+        return newSet;
+      });
+    }
+  };
+
   // キャンセル待ち登録
   const registerWaitlist = async (lesson: LessonData) => {
     if (!apiUser) {
@@ -560,9 +621,22 @@ export default function LessonsPage() {
                                       
                                       if (isRegistered) {
                                         return (
-                                          <div className="flex items-center text-green-600">
-                                            <span className="mr-2">✅</span>
-                                            <span className="text-sm font-medium">登録済み</span>
+                                          <div className="flex items-center space-x-2">
+                                            <div className="flex items-center text-green-600">
+                                              <span className="mr-2">✅</span>
+                                              <span className="text-sm font-medium">登録済み</span>
+                                            </div>
+                                            <button
+                                              onClick={() => cancelWaitlist(lesson)}
+                                              disabled={isRegistering}
+                                              className={`${
+                                                isRegistering 
+                                                  ? 'bg-gray-400 cursor-not-allowed' 
+                                                  : 'bg-red-500 hover:bg-red-600'
+                                              } text-white font-medium py-1 px-3 rounded text-sm transition duration-200`}
+                                            >
+                                              {isRegistering ? '処理中...' : '解除'}
+                                            </button>
                                           </div>
                                         );
                                       }
