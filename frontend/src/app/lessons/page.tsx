@@ -189,18 +189,14 @@ export default function LessonsPage() {
       const startTime = lesson.startTime || lesson.time?.split(' - ')[0] || '00:00';
       const waitlistId = `${lesson.studioCode.toLowerCase()}#${lesson.lessonDate}#${startTime}#${lesson.lessonName}`;
       
-      const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${waitlistId}`, {
+      const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${encodeURIComponent(waitlistId)}`, {
         action: 'cancel',
         userId: apiUser.userId
       });
 
       if (response.data.success) {
-        // 解除成功時の処理
-        setRegisteredWaitlists(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(lessonId);
-          return newSet;
-        });
+        // 解除成功時の処理 - 最新状態を取得
+        await fetchRegisteredWaitlists();
         setSuccessMessage(`キャンセル待ちを解除しました\\n${lesson.lessonName} - ${lesson.instructor}`);
         setShowSuccessModal(true);
       } else {
@@ -255,8 +251,8 @@ export default function LessonsPage() {
       });
 
       if (response.data.success) {
-        // 登録成功時の処理
-        setRegisteredWaitlists(prev => new Set([...prev, lessonId]));
+        // 登録成功時の処理 - 最新状態を取得
+        await fetchRegisteredWaitlists();
         setSuccessMessage(`キャンセル待ちを登録しました！\n${lesson.lessonName} - ${lesson.instructor}\n空きが出たらLINEで通知します。`);
         setShowSuccessModal(true);
       } else {
