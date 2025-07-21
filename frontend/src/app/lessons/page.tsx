@@ -44,6 +44,10 @@ export default function LessonsPage() {
   const [isStudioDropdownOpen, setIsStudioDropdownOpen] = useState(false);
   const [selectedStudioName, setSelectedStudioName] = useState<string>('');
   
+  // 日付選択用の状態
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  
   // キャンセル待ち関連状態
   const [registeredWaitlists, setRegisteredWaitlists] = useState<Set<string>>(new Set());
   const [registeringLessons, setRegisteringLessons] = useState<Set<string>>(new Set());
@@ -70,6 +74,45 @@ export default function LessonsPage() {
   // ドロップダウン外をクリックした時の処理
   const handleDropdownClose = () => {
     setIsStudioDropdownOpen(false);
+  };
+
+  // 日付ピッカー外をクリックした時の処理
+  const handleDatePickerClose = () => {
+    setIsDatePickerOpen(false);
+  };
+
+  // 今日の日付を基準にしたカレンダー日付生成
+  const generateCalendarDates = () => {
+    const today = new Date();
+    const dates = [];
+    
+    for (let i = 0; i < 20; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      
+      const dateString = date.toLocaleDateString('sv-SE'); // YYYY-MM-DD format
+      dates.push({
+        value: dateString,
+        date: date.getDate(),
+        weekday: date.toLocaleDateString('ja-JP', { weekday: 'short' }),
+        monthDay: date.toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' }),
+        isToday: i === 0,
+        isWeekend: date.getDay() === 0 || date.getDay() === 6
+      });
+    }
+    return dates;
+  };
+
+  // 日付選択ハンドラー
+  const handleDateSelect = (dateValue: string, monthDay: string) => {
+    setSelectedDate(dateValue);
+    setIsDatePickerOpen(false);
+  };
+
+  // 日付選択リセット
+  const handleDateReset = () => {
+    setSelectedDate('');
+    setIsDatePickerOpen(false);
   };
 
 
@@ -197,6 +240,7 @@ export default function LessonsPage() {
         instructor: lesson.instructor,
       }, {
         headers: {
+          'Content-Type': 'application/json',
           'x-user-id': apiUser.userId
         }
       });
@@ -236,6 +280,12 @@ export default function LessonsPage() {
 
   // フィルタリング
   const filteredLessons = getAllLessons().filter(lesson => {
+    // 日付フィルター
+    if (selectedDate && lesson.lessonDate !== selectedDate) {
+      return false;
+    }
+    
+    // キーワードフィルター
     if (searchKeyword) {
       const keyword = searchKeyword.toLowerCase();
       return (
@@ -429,6 +479,76 @@ export default function LessonsPage() {
               )}
             </div>
 
+            {/* 日付選択 */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-2">日付</label>
+              
+              {/* カスタムドロップダウンボタン */}
+              <button
+                type="button"
+                onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
+                className="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-left focus:ring-2 focus:ring-orange-500 focus:border-orange-500 flex items-center justify-between"
+              >
+                <span className={selectedDate ? "text-gray-900" : "text-gray-500"}>
+                  {selectedDate ? (
+                    new Date(selectedDate).toLocaleDateString('ja-JP', {
+                      month: 'numeric',
+                      day: 'numeric',
+                      weekday: 'short'
+                    })
+                  ) : "日付を選択"}
+                </span>
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </button>
+
+              {/* カレンダードロップダウンメニュー */}
+              {isDatePickerOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                  {/* 背景クリック用のオーバーレイ */}
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={handleDatePickerClose}
+                  ></div>
+                  
+                  <div className="relative z-50 p-3">
+                    {/* リセットオプション */}
+                    <button
+                      type="button"
+                      onClick={handleDateReset}
+                      className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 border-b border-gray-200 mb-2 text-sm text-gray-600 italic"
+                    >
+                      すべての日付を表示
+                    </button>
+                    
+                    {/* カレンダーグリッド */}
+                    <div className="grid grid-cols-4 gap-2 max-h-64 overflow-y-auto">
+                      {generateCalendarDates().map((dateItem) => (
+                        <button
+                          key={dateItem.value}
+                          type="button"
+                          onClick={() => handleDateSelect(dateItem.value, dateItem.monthDay)}
+                          className={`p-2 text-center rounded-lg text-sm font-medium transition-colors ${
+                            dateItem.isToday
+                              ? 'bg-orange-500 text-white'
+                              : dateItem.isWeekend
+                                ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          } ${selectedDate === dateItem.value ? 'ring-2 ring-orange-300' : ''}`}
+                        >
+                          <div className="text-xs text-gray-500">{dateItem.weekday}</div>
+                          <div className="font-semibold">{dateItem.date}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 gap-4">
             {/* キーワード検索 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">キーワード</label>
