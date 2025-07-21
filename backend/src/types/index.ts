@@ -176,6 +176,7 @@ export interface WaitlistCreateRequest {
 
 export interface WaitlistUpdateRequest {
   action: 'resume' | 'cancel';
+  userId?: string; // フロントエンドから送信されるユーザーID
 }
 
 // Studio types for studio information management

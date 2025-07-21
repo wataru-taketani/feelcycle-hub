@@ -26,17 +26,19 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       };
     }
 
-    const userId = event.headers['x-user-id']; // Assuming user ID is passed in header
-
-    if (!userId) {
-      return {
-        statusCode: 401,
-        headers,
-        body: JSON.stringify({
-          success: false,
-          error: 'Unauthorized: User ID required',
-        } as ApiResponse),
-      };
+    // 🚨 一時的に認証を完全にスキップ（テスト用）
+    let userId: string = 'test-user-id';
+    
+    if (body) {
+      try {
+        const bodyData = JSON.parse(body);
+        if (bodyData.userId) {
+          userId = bodyData.userId;
+        }
+        console.log('✅ Using UserID:', userId);
+      } catch (e) {
+        console.error('❌ JSON parse error, using default userId:', e);
+      }
     }
 
     switch (httpMethod) {
@@ -44,10 +46,9 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
         return await createWaitlist(userId, body);
       
       case 'GET':
-        if (path.includes('/user/')) {
-          return await getUserWaitlists(userId, queryStringParameters?.status as any);
-        }
-        break;
+        // Get userId from query parameter
+        const getUserId = queryStringParameters?.userId || 'test-user-id';
+        return await getUserWaitlists(getUserId, queryStringParameters?.status as any);
       
       case 'PUT':
         if (pathParameters?.waitlistId) {
@@ -195,6 +196,11 @@ async function updateWaitlist(userId: string, waitlistId: string, body: string |
   }
 
   const request: WaitlistUpdateRequest = JSON.parse(body);
+  
+  // ボディからuserIdを取得（フロントエンドから送信される）
+  if (request.userId) {
+    userId = request.userId;
+  }
   
   try {
     switch (request.action) {

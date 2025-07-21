@@ -49,12 +49,7 @@ export default function WaitlistPage() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist`,
-        {
-          headers: {
-            'x-user-id': apiUser.userId
-          }
-        }
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist?userId=${apiUser.userId}`
       );
       
       if (response.data.success) {
@@ -64,26 +59,8 @@ export default function WaitlistPage() {
       }
     } catch (error) {
       console.error('Error fetching waitlists:', error);
-      // Use mock data as fallback
-      const mockWaitlists: Waitlist[] = [
-        {
-          userId: apiUser.userId,
-          waitlistId: 'sapporo#2025-07-18#19:30#BSL House 1',
-          studioCode: 'sapporo',
-          studioName: '札幌',
-          lessonDate: '2025-07-18',
-          startTime: '19:30',
-          endTime: '20:15',
-          lessonName: 'BSL House 1',
-          instructor: 'Shiori.I',
-          status: 'active',
-          createdAt: '2025-07-17T10:00:00Z',
-          updatedAt: '2025-07-17T10:00:00Z',
-          notificationHistory: [],
-        },
-      ];
-      
-      setWaitlists(mockWaitlists);
+      // Set empty array and let the UI show appropriate message
+      setWaitlists([]);
     } finally {
       setLoading(false);
     }
@@ -95,11 +72,9 @@ export default function WaitlistPage() {
     try {
       const response = await axios.put(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${waitlistId}`,
-        { action: 'resume' },
-        {
-          headers: {
-            'x-user-id': apiUser.userId
-          }
+        { 
+          action: 'resume',
+          userId: apiUser.userId
         }
       );
       
@@ -122,11 +97,9 @@ export default function WaitlistPage() {
       try {
         const response = await axios.put(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${waitlistId}`,
-          { action: 'cancel' },
-          {
-            headers: {
-              'x-user-id': apiUser.userId
-            }
+          { 
+            action: 'cancel',
+            userId: apiUser.userId
           }
         );
         

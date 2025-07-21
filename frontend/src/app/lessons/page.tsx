@@ -228,6 +228,15 @@ export default function LessonsPage() {
 
   // フィルタリング
   const filteredLessons = getAllLessons().filter(lesson => {
+    // 今日以降のレッスンのみ表示
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 時間をリセットして日付のみで比較
+    const lessonDate = new Date(lesson.lessonDate);
+    
+    if (lessonDate < today) {
+      return false; // 過去のレッスンは除外
+    }
+    
     if (searchKeyword) {
       const keyword = searchKeyword.toLowerCase();
       return (
