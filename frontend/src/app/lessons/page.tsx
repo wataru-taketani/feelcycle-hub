@@ -186,8 +186,9 @@ export default function LessonsPage() {
 
     try {
       // waitlistIdを生成（studioCode#lessonDate#startTime#lessonName）
+      // 注意: studioCodeは大文字のまま使用（DBの保存形式に合わせる）
       const startTime = lesson.startTime || lesson.time?.split(' - ')[0] || '00:00';
-      const waitlistId = `${lesson.studioCode.toLowerCase()}#${lesson.lessonDate}#${startTime}#${lesson.lessonName}`;
+      const waitlistId = `${lesson.studioCode}#${lesson.lessonDate}#${startTime}#${lesson.lessonName}`;
       
       const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${encodeURIComponent(waitlistId)}`, {
         action: 'cancel',
