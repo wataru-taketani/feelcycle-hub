@@ -43,6 +43,12 @@ export default function LessonsPage() {
   // カスタムドロップダウン用の状態
   const [isStudioDropdownOpen, setIsStudioDropdownOpen] = useState(false);
   const [selectedStudioName, setSelectedStudioName] = useState<string>('');
+  
+  // キャンセル待ち関連状態
+  const [registeredWaitlists, setRegisteredWaitlists] = useState<Set<string>>(new Set());
+  const [registeringLessons, setRegisteringLessons] = useState<Set<string>>(new Set());
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // スタジオ選択ハンドラー
   const handleStudioSelect = (studioCode: string, studioName: string) => {
@@ -128,12 +134,54 @@ export default function LessonsPage() {
     }
   };
 
+  // レッスンのIDを生成
+  const getLessonId = (lesson: LessonData) => {
+    return `${lesson.studioCode}-${lesson.lessonDate}-${lesson.startTime}-${lesson.lessonName}`;
+  };
+
+  // 登録済みキャンセル待ちを取得
+  const fetchRegisteredWaitlists = async () => {
+    if (!apiUser) return;
+    
+    try {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist`, {
+        params: { userId: apiUser.userId }
+      });
+      
+      if (response.data.success) {
+        const registered = new Set<string>();
+        response.data.data.forEach((waitlist: any) => {
+          if (waitlist.status === 'active') {
+            const id = `${waitlist.studioCode}-${waitlist.lessonDate}-${waitlist.startTime}-${waitlist.lessonName}`;
+            registered.add(id);
+          }
+        });
+        setRegisteredWaitlists(registered);
+      }
+    } catch (error) {
+      console.error('Failed to fetch waitlists:', error);
+    }
+  };
+
   // キャンセル待ち登録
   const registerWaitlist = async (lesson: LessonData) => {
     if (!apiUser) {
-      alert('ログインが必要です');
+      setSuccessMessage('ログインが必要です');
+      setShowSuccessModal(true);
       return;
     }
+
+    const lessonId = getLessonId(lesson);
+    
+    // 重複登録チェック
+    if (registeredWaitlists.has(lessonId)) {
+      setSuccessMessage('このレッスンはすでにキャンセル待ち登録済みです');
+      setShowSuccessModal(true);
+      return;
+    }
+
+    // 登録中状態を設定
+    setRegisteringLessons(prev => new Set([...prev, lessonId]));
 
     try {
       const startTime = lesson.startTime || lesson.time?.split(' - ')[0] || '00:00';
@@ -147,14 +195,26 @@ export default function LessonsPage() {
       });
 
       if (response.data.success) {
-        alert('キャンセル待ちを登録しました！空きが出たら通知します。');
+        // 登録成功時の処理
+        setRegisteredWaitlists(prev => new Set([...prev, lessonId]));
+        setSuccessMessage(`キャンセル待ちを登録しました！\n${lesson.lessonName} - ${lesson.instructor}\n空きが出たらLINEで通知します。`);
+        setShowSuccessModal(true);
       } else {
-        alert(response.data.message || 'キャンセル待ち登録に失敗しました');
+        setSuccessMessage(response.data.message || 'キャンセル待ち登録に失敗しました');
+        setShowSuccessModal(true);
       }
     } catch (error: any) {
       console.error('Failed to register waitlist:', error);
       const errorMessage = error.response?.data?.message || 'キャンセル待ち登録に失敗しました';
-      alert(errorMessage);
+      setSuccessMessage(errorMessage);
+      setShowSuccessModal(true);
+    } finally {
+      // 登録中状態を解除
+      setRegisteringLessons(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(lessonId);
+        return newSet;
+      });
     }
   };
 
@@ -215,8 +275,16 @@ export default function LessonsPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchStudios();
+      fetchRegisteredWaitlists();
     }
   }, [isAuthenticated]);
+
+  // スタジオ選択時にキャンセル待ち状態を更新
+  useEffect(() => {
+    if (selectedStudio) {
+      fetchRegisteredWaitlists();
+    }
+  }, [selectedStudio]);
 
   if (loading) {
     return (
@@ -477,13 +545,44 @@ export default function LessonsPage() {
                                     </div>
                                   </div>
                                   <div className="ml-4">
-                                    <button
-                                      onClick={() => registerWaitlist(lesson)}
-                                      className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg flex items-center"
-                                    >
-                                      <span className="mr-2">🔔</span>
-                                      キャンセル待ち登録
-                                    </button>
+                                    {(() => {
+                                      const lessonId = getLessonId(lesson);
+                                      const isRegistered = registeredWaitlists.has(lessonId);
+                                      const isRegistering = registeringLessons.has(lessonId);
+                                      
+                                      if (isRegistered) {
+                                        return (
+                                          <div className="flex items-center text-green-600">
+                                            <span className="mr-2">✅</span>
+                                            <span className="text-sm font-medium">登録済み</span>
+                                          </div>
+                                        );
+                                      }
+                                      
+                                      return (
+                                        <button
+                                          onClick={() => registerWaitlist(lesson)}
+                                          disabled={isRegistering}
+                                          className={`${
+                                            isRegistering 
+                                              ? 'bg-gray-400 cursor-not-allowed' 
+                                              : 'bg-orange-500 hover:bg-orange-600'
+                                          } text-white font-medium py-2 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg flex items-center`}
+                                        >
+                                          {isRegistering ? (
+                                            <>
+                                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                              登録中...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <span className="mr-2">🔔</span>
+                                              キャンセル待ち登録
+                                            </>
+                                          )}
+                                        </button>
+                                      );
+                                    })()}
                                   </div>
                                 </div>
                               </div>
@@ -497,6 +596,42 @@ export default function LessonsPage() {
           )}
         </div>
       </main>
+
+      {/* 成功/エラーモーダル */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-orange-100 mb-4">
+                <span className="text-2xl">🔔</span>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                キャンセル待ち登録
+              </h3>
+              <p className="text-sm text-gray-600 whitespace-pre-line mb-6">
+                {successMessage}
+              </p>
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => setShowSuccessModal(false)}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+                >
+                  OK
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSuccessModal(false);
+                    window.location.href = '/waitlist/';
+                  }}
+                  className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
+                >
+                  一覧を見る
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
