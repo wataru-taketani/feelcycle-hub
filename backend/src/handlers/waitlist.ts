@@ -8,15 +8,30 @@ import { ApiResponse, WaitlistCreateRequest, WaitlistUpdateRequest } from '../ty
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
     const { httpMethod, path, body, pathParameters, queryStringParameters } = event;
+    
+    // CORS ヘッダー
+    const headers = {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-user-id',
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    };
+
+    // OPTIONS リクエスト（CORS プリフライト）
+    if (httpMethod === 'OPTIONS') {
+      return {
+        statusCode: 200,
+        headers,
+        body: '',
+      };
+    }
+
     const userId = event.headers['x-user-id']; // Assuming user ID is passed in header
 
     if (!userId) {
       return {
         statusCode: 401,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+        headers,
         body: JSON.stringify({
           success: false,
           error: 'Unauthorized: User ID required',
@@ -49,10 +64,7 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 
     return {
       statusCode: 404,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers,
       body: JSON.stringify({
         success: false,
         error: 'Endpoint not found',
@@ -65,6 +77,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-user-id',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
       },
       body: JSON.stringify({
         success: false,
@@ -75,13 +89,17 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
 }
 
 async function createWaitlist(userId: string, body: string | null): Promise<APIGatewayProxyResult> {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-user-id',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+  };
+
   if (!body) {
     return {
       statusCode: 400,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
+      headers,
       body: JSON.stringify({
         success: false,
         error: 'Request body required',
@@ -98,6 +116,8 @@ async function createWaitlist(userId: string, body: string | null): Promise<APIG
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-user-id',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
       },
       body: JSON.stringify({
         success: false,
@@ -114,6 +134,8 @@ async function createWaitlist(userId: string, body: string | null): Promise<APIG
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-user-id',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
       },
       body: JSON.stringify({
         success: true,
@@ -162,6 +184,8 @@ async function updateWaitlist(userId: string, waitlistId: string, body: string |
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-user-id',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
       },
       body: JSON.stringify({
         success: false,
@@ -199,6 +223,8 @@ async function updateWaitlist(userId: string, waitlistId: string, body: string |
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type,Authorization,x-user-id',
+        'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
       },
       body: JSON.stringify({
         success: true,
