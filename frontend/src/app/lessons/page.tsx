@@ -144,7 +144,7 @@ export default function LessonsPage() {
     if (!apiUser) return;
     
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/user/${apiUser.userId}`);
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist?userId=${apiUser.userId}`);
       
       if (response.data.success) {
         const registered = new Set<string>();
