@@ -189,6 +189,29 @@ export default function LessonsPage() {
     return groups;
   }, {});
 
+  // プログラム別カラー取得
+  const getProgramColor = (lessonName: string) => {
+    if (lessonName.includes('BB1')) return 'bg-yellow-100 text-yellow-800';
+    if (lessonName.includes('BB2')) return 'bg-orange-100 text-orange-800';
+    if (lessonName.includes('BSL')) return 'bg-blue-100 text-blue-800';
+    if (lessonName.includes('BSW')) return 'bg-purple-100 text-purple-800';
+    if (lessonName.includes('BST')) return 'bg-green-100 text-green-800';
+    if (lessonName.includes('Hip Hop')) return 'bg-pink-100 text-pink-800';
+    return 'bg-gray-100 text-gray-800';
+  };
+
+  // スタジオ状態表示
+  const getAvailabilityStatus = (lesson: LessonData) => {
+    if (lesson.isAvailable === 'false') {
+      return { text: '満席', color: 'bg-red-100 text-red-800' };
+    }
+    // 残席数が少ない時のみ表示（正確な数はログイン後のみ）
+    if (lesson.availableSlots !== null && lesson.availableSlots !== undefined && lesson.availableSlots <= 3 && lesson.availableSlots > 0) {
+      return { text: `残り${lesson.availableSlots}席`, color: 'bg-yellow-100 text-yellow-800' };
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchStudios();
@@ -236,9 +259,9 @@ export default function LessonsPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-4xl mx-auto px-4 py-6">
         {/* 検索フィルター */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-lg shadow mb-6 p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">レッスン検索</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -347,7 +370,7 @@ export default function LessonsPage() {
         </div>
 
         {/* レッスン一覧 */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="bg-white rounded-lg shadow">
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900">
               レッスン一覧 ({filteredLessons.length}件)
@@ -382,22 +405,36 @@ export default function LessonsPage() {
                   return (
                     <div key={date} className="border-b border-gray-200 last:border-b-0">
                       {/* 日付ヘッダー */}
-                      <div className={`sticky top-0 bg-gray-50 px-6 py-3 border-b border-gray-200 ${isToday ? 'bg-orange-50' : ''}`}>
-                        <div className="flex items-center space-x-2">
-                          <h3 className={`text-lg font-semibold ${isWeekend ? 'text-red-600' : 'text-gray-900'} ${isToday ? 'text-orange-600' : ''}`}>
-                            {dateObj.toLocaleDateString('ja-JP', { 
-                              month: 'long', 
-                              day: 'numeric',
-                              weekday: 'short'
-                            })}
-                          </h3>
-                          {isToday && (
-                            <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded">
-                              今日
-                            </span>
-                          )}
-                          <span className="text-sm text-gray-500">
-                            ({lessons.length}件)
+                      <div className={`sticky top-0 px-6 py-4 border-b border-gray-200 ${
+                        isToday 
+                          ? 'bg-orange-50 border-orange-200' 
+                          : isWeekend 
+                            ? 'bg-red-50 border-red-200'
+                            : 'bg-gray-50'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <h3 className={`text-lg font-bold ${
+                              isToday 
+                                ? 'text-orange-700' 
+                                : isWeekend 
+                                  ? 'text-red-700'
+                                  : 'text-gray-900'
+                            }`}>
+                              {dateObj.toLocaleDateString('ja-JP', { 
+                                month: 'numeric', 
+                                day: 'numeric',
+                                weekday: 'short'
+                              })}
+                            </h3>
+                            {isToday && (
+                              <span className="bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                                TODAY
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-sm font-medium text-gray-600">
+                            {lessons.length}件
                           </span>
                         </div>
                       </div>
@@ -406,46 +443,52 @@ export default function LessonsPage() {
                       <div className="divide-y divide-gray-100">
                         {lessons
                           .sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''))
-                          .map((lesson, index) => (
-                            <div key={`${date}-${index}`} className="p-6 hover:bg-gray-50 transition-colors">
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-3 mb-2">
-                                    <span className="bg-orange-100 text-orange-800 text-sm font-medium px-2.5 py-0.5 rounded">
-                                      {lesson.startTime}
-                                    </span>
-                                    <h4 className="text-lg font-semibold text-gray-900">{lesson.lessonName}</h4>
-                                    {lesson.isAvailable === 'false' && (
-                                      <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
-                                        満席
+                          .map((lesson, index) => {
+                            const availabilityStatus = getAvailabilityStatus(lesson);
+                            return (
+                              <div key={`${date}-${index}`} className="p-6 hover:bg-gray-50 transition-colors">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center flex-wrap gap-2 mb-3">
+                                      <span className="bg-gray-700 text-white text-sm font-bold px-3 py-1 rounded">
+                                        {lesson.startTime}
                                       </span>
-                                    )}
-                                  </div>
-                                  <div className="text-gray-600 space-y-1">
-                                    <p>👨‍🏫 {lesson.instructor}</p>
-                                    <p>📍 {selectedStudioName}</p>
-                                    {lesson.availableSlots !== null && lesson.availableSlots !== undefined && (
-                                      <p className="text-sm">
-                                        🪑 空き: {lesson.availableSlots}席
-                                        {lesson.totalSlots && ` / ${lesson.totalSlots}席`}
+                                      <span className={`text-sm font-medium px-3 py-1 rounded ${getProgramColor(lesson.lessonName)}`}>
+                                        {lesson.lessonName}
+                                      </span>
+                                      {availabilityStatus && (
+                                        <span className={`text-xs font-bold px-2 py-1 rounded ${availabilityStatus.color}`}>
+                                          {availabilityStatus.text}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center text-gray-600">
+                                        <span className="text-lg mr-2">👨‍🏫</span>
+                                        <span className="font-medium">{lesson.instructor}</span>
+                                      </div>
+                                      <div className="flex items-center text-gray-600">
+                                        <span className="text-lg mr-2">📍</span>
+                                        <span>{selectedStudioName}</span>
+                                      </div>
+                                      <p className="text-xs text-gray-400">
+                                        最終更新: {new Date(lesson.lastUpdated).toLocaleDateString('ja-JP')} {new Date(lesson.lastUpdated).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                                       </p>
-                                    )}
-                                    <p className="text-xs text-gray-500">
-                                      最終更新: {new Date(lesson.lastUpdated).toLocaleString('ja-JP')}
-                                    </p>
+                                    </div>
                                   </div>
-                                </div>
-                                <div>
-                                  <button
-                                    onClick={() => registerWaitlist(lesson)}
-                                    className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200"
-                                  >
-                                    🔔 キャンセル待ち登録
-                                  </button>
+                                  <div className="ml-4">
+                                    <button
+                                      onClick={() => registerWaitlist(lesson)}
+                                      className="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition duration-200 shadow-md hover:shadow-lg flex items-center"
+                                    >
+                                      <span className="mr-2">🔔</span>
+                                      キャンセル待ち登録
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                       </div>
                     </div>
                   );
