@@ -145,7 +145,10 @@ export default function LessonsPage() {
     
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist`, {
-        params: { userId: apiUser.userId }
+        params: { userId: apiUser.userId },
+        headers: {
+          'x-user-id': apiUser.userId
+        }
       });
       
       if (response.data.success) {
@@ -192,6 +195,10 @@ export default function LessonsPage() {
         startTime: startTime,
         lessonName: lesson.lessonName,
         instructor: lesson.instructor,
+      }, {
+        headers: {
+          'x-user-id': apiUser.userId
+        }
       });
 
       if (response.data.success) {
