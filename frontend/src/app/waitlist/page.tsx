@@ -50,8 +50,9 @@ export default function WaitlistPage() {
     
     try {
       setLoading(true);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist?userId=${apiUser.userId}`
+        `${apiBaseUrl}/waitlist?userId=${apiUser.userId}`
       );
       
       if (response.data.success) {
@@ -72,8 +73,9 @@ export default function WaitlistPage() {
     if (!apiUser) return;
     
     try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${waitlistId}`,
+        `${apiBaseUrl}/waitlist/${waitlistId}`,
         { 
           action: 'resume',
           userId: apiUser.userId
@@ -97,8 +99,9 @@ export default function WaitlistPage() {
     
     if (confirm('キャンセル待ちを解除しますか？')) {
       try {
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
         const response = await axios.put(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${waitlistId}`,
+          `${apiBaseUrl}/waitlist/${waitlistId}`,
           { 
             action: 'cancel',
             userId: apiUser.userId

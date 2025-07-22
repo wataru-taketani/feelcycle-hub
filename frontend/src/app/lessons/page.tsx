@@ -77,7 +77,8 @@ export default function LessonsPage() {
   const fetchStudios = async () => {
     try {
       setLoadingStudios(true);
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/studios`);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      const response = await axios.get(`${apiBaseUrl}/studios`);
       if (response.data.success) {
         // 新しいAPIレスポンス構造: { data: { studioGroups: {...}, studios: [...] } }
         const { studioGroups: groups, studios: studiosData } = response.data.data;
@@ -113,7 +114,8 @@ export default function LessonsPage() {
       setLoadingLessons(true);
       console.log('Fetching lessons for studio:', studioCode);
       
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/lessons`, {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      const response = await axios.get(`${apiBaseUrl}/lessons`, {
         params: {
           studioCode: studioCode,
           range: 'true'
@@ -144,7 +146,8 @@ export default function LessonsPage() {
     if (!apiUser) return;
     
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist?userId=${apiUser.userId}`);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      const response = await axios.get(`${apiBaseUrl}/waitlist?userId=${apiUser.userId}`);
       
       if (response.data.success) {
         const registered = new Set<string>();
@@ -190,7 +193,8 @@ export default function LessonsPage() {
       const startTime = lesson.startTime || lesson.time?.split(' - ')[0] || '00:00';
       const waitlistId = `${lesson.studioCode.toLowerCase()}#${lesson.lessonDate}#${startTime}#${lesson.lessonName}`;
       
-      const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist/${encodeURIComponent(waitlistId)}`, {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      const response = await axios.put(`${apiBaseUrl}/waitlist/${encodeURIComponent(waitlistId)}`, {
         action: 'cancel',
         userId: apiUser.userId
       });
@@ -242,7 +246,8 @@ export default function LessonsPage() {
     try {
       const startTime = lesson.startTime || lesson.time?.split(' - ')[0] || '00:00';
       // 一時的にヘッダーを削除してテスト
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/waitlist`, {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      const response = await axios.post(`${apiBaseUrl}/waitlist`, {
         userId: apiUser.userId,
         studioCode: lesson.studioCode,
         lessonDate: lesson.lessonDate,

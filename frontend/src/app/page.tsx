@@ -23,8 +23,9 @@ export default function HomePage() {
 
     try {
       setLoadingSummary(true);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/history/summary`,
+        `${apiBaseUrl}/history/summary`,
         {
           params: { userId: apiUser.userId },
         }

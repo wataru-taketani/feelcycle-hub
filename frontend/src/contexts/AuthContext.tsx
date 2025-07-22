@@ -42,8 +42,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const fetchApiUser = async (lineUserId: string): Promise<ApiUser | null> => {
     try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/user`,
+        `${apiBaseUrl}/auth/user`,
         {
           params: { lineUserId },
           timeout: 10000, // 10秒タイムアウト
@@ -67,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const createApiUser = async (user: LiffUser): Promise<ApiUser> => {
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/line/register`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev'}/auth/line/register`,
         {
           lineUserId: user.userId,
           displayName: user.displayName,

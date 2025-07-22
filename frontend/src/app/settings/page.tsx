@@ -56,8 +56,9 @@ export default function SettingsPage() {
   const fetchUserSettings = async () => {
     try {
       setLoading(true);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/settings`,
+        `${apiBaseUrl}/user/settings`,
         {
           params: { userId: apiUser?.userId },
         }
@@ -109,7 +110,7 @@ export default function SettingsPage() {
     try {
       setSaving(true);
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/feelcycle-credentials`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev'}/user/feelcycle-credentials`,
         {
           userId: apiUser?.userId,
           email: credentials.email,
@@ -146,7 +147,7 @@ export default function SettingsPage() {
     try {
       setSaving(true);
       const response = await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/feelcycle-credentials`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev'}/user/feelcycle-credentials`,
         {
           params: { userId: apiUser?.userId },
         }
@@ -174,7 +175,7 @@ export default function SettingsPage() {
     try {
       setSaving(true);
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/notification-settings`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev'}/user/notification-settings`,
         {
           userId: apiUser?.userId,
           notificationSettings: settings.notificationSettings,
