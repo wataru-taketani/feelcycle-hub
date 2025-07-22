@@ -39,9 +39,9 @@ export default function WaitlistPage() {
   useEffect(() => {
     if (apiUser) {
       fetchWaitlists();
-      // Set up real-time updates
-      const interval = setInterval(fetchWaitlists, 30000); // Update every 30 seconds
-      return () => clearInterval(interval);
+      // Set up real-time updates (temporarily disabled for debugging)
+      // const interval = setInterval(fetchWaitlists, 30000); // Update every 30 seconds
+      // return () => clearInterval(interval);
     }
   }, [activeTab, apiUser]);
 
@@ -56,6 +56,8 @@ export default function WaitlistPage() {
       );
       
       if (response.data.success) {
+        console.log('🔧 DEBUG: Fetched waitlists:', response.data.data.length, 'items');
+        console.log('🔧 DEBUG: Active waitlists:', response.data.data.filter((w: any) => w.status === 'active').length);
         setWaitlists(response.data.data);
       } else {
         throw new Error(response.data.message || 'キャンセル待ちリストの取得に失敗しました');
@@ -110,7 +112,9 @@ export default function WaitlistPage() {
         
         if (response.data.success) {
           alert('キャンセル待ちを解除しました');
-          fetchWaitlists(); // Refresh data
+          console.log('🔧 DEBUG: Cancel success, refreshing waitlists...');
+          await fetchWaitlists(); // Refresh data
+          console.log('🔧 DEBUG: Waitlists refreshed, current count:', waitlists.length);
         } else {
           alert(response.data.message || 'キャンセル待ちの解除に失敗しました');
         }
