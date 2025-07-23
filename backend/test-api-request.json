@@ -1,0 +1,11 @@
+{
+  "httpMethod": "GET",
+  "path": "/lessons",
+  "queryStringParameters": {
+    "studioCode": "gnz",
+    "date": "2025-07-23"
+  },
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}

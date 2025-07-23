@@ -54,3 +54,9 @@ secrets.json
 credentials.json
 # Local Netlify folder
 .netlify
+backend/layers/shared/layer-*.zip
+backend/temp-layer*/
+backend/lambda-*.zip
+backend/function-*.zip
+lambda-*.zip
+backend/cdk.out/

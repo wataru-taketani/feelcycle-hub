@@ -1,0 +1,8 @@
+{
+  "source": "eventbridge.scheduler",
+  "detail-type": "Scheduled Event",
+  "detail": {
+    "taskType": "waitlist-monitoring",
+    "scheduledTime": "rate(1 minute)"
+  }
+}

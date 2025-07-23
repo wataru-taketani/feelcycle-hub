@@ -1,5 +1,6 @@
 import { RealFeelcycleScraper } from '../services/real-scraper';
 import { LessonsService } from '../services/lessons-service';
+import { studiosService } from '../services/studios-service';
 
 async function optimizedDailyRefresh() {
   console.log('🔄 Starting optimized daily data refresh');
@@ -12,10 +13,15 @@ async function optimizedDailyRefresh() {
   const startTime = Date.now();
   
   try {
-    // Step 1: Get all studios
+    // Step 1: Get all studios and update studio information
     console.log('\n📍 Step 1: Getting studio list...');
     const studios = await RealFeelcycleScraper.getRealStudios();
     console.log(`✅ Found ${studios.length} studios`);
+    
+    // Step 1.5: Update studio information in database
+    console.log('\n📍 Step 1.5: Updating studio information...');
+    const studioUpdateResult = await studiosService.refreshStudiosFromScraping(studios);
+    console.log(`✅ Studio update completed: ${studioUpdateResult.created} created, ${studioUpdateResult.updated} updated, ${studioUpdateResult.total} total`);
     
     // Step 2: Clear existing lessons
     console.log('\n📍 Step 2: Clearing existing lessons...');
@@ -26,8 +32,8 @@ async function optimizedDailyRefresh() {
       console.log('⚠️  データクリアでエラーが発生しましたが、処理を続行します:', error);
     }
     
-    // Step 3: Process each studio with optimized approach
-    console.log(`\n📍 Step 3: Processing ${studios.length} studios (optimized approach)...`);
+    // Step 3: Process studios one by one (most reliable approach)
+    console.log(`\n📍 Step 3: Processing ${studios.length} studios (one-by-one approach)...`);
     
     for (const [index, studio] of studios.entries()) {
       const studioStartTime = Date.now();
@@ -76,8 +82,10 @@ async function optimizedDailyRefresh() {
         // Continue with next studio instead of failing completely
       }
       
-      // Small delay to be respectful to the server (reduced for scheduled execution)
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Small delay between studios
+      if (index < studios.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
     
     const endTime = Date.now();

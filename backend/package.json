@@ -19,6 +19,7 @@
     "@aws-sdk/client-dynamodb": "^3.614.0",
     "@aws-sdk/client-secrets-manager": "^3.614.0",
     "@aws-sdk/lib-dynamodb": "^3.614.0",
+    "@sparticuz/chromium": "^138.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/puppeteer": "^5.4.7",

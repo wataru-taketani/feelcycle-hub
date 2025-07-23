@@ -1,0 +1,1 @@
+{"source":"eventbridge.scheduler","detail-type":"Scheduled Event","detail":{"taskType":"waitlist-monitoring"}}

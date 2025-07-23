@@ -1,0 +1,9 @@
+{
+  "httpMethod": "GET",
+  "path": "/debug-modules",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "queryStringParameters": null,
+  "body": null
+}

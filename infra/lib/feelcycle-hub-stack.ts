@@ -86,6 +86,24 @@ export class FeelcycleHubStack extends cdk.Stack {
       sortKey: { name: 'lessonDate', type: dynamodb.AttributeType.STRING },
     });
 
+    // Studios table for storing studio information
+    const studiosTable = new dynamodb.Table(this, 'StudiosTable', {
+      tableName: `feelcycle-hub-studios-${environment}`,
+      partitionKey: { name: 'studioCode', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      timeToLiveAttribute: 'ttl',
+      pointInTimeRecovery: isProduction,
+      removalPolicy: isProduction ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
+    // GSI for region-based queries
+    studiosTable.addGlobalSecondaryIndex({
+      indexName: 'RegionIndex',
+      partitionKey: { name: 'region', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'studioName', type: dynamodb.AttributeType.STRING },
+    });
+
     // Lessons table for storing actual lesson data
     const lessonsTable = new dynamodb.Table(this, 'LessonsTable', {
       tableName: `feelcycle-hub-lessons-${environment}`,
@@ -137,20 +155,20 @@ export class FeelcycleHubStack extends cdk.Stack {
       },
     });
 
-    // Lambda Layer for shared dependencies
+    // Lambda Layer for shared dependencies (復旧: 動作していたv9構成)
     const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
       layerVersionName: `feelcycle-hub-shared-${environment}`,
       code: lambda.Code.fromAsset('../backend/layers/shared'),
       compatibleRuntimes: [lambda.Runtime.NODEJS_20_X],
-      compatibleArchitectures: [lambda.Architecture.ARM_64],
-      description: 'Shared dependencies for FEELCYCLE Hub',
+      compatibleArchitectures: [lambda.Architecture.ARM_64], // 復旧: 元の動作環境
+      description: 'Restored working v9 configuration with puppeteer-core',
     });
 
     // Main Lambda function
     const mainLambda = new lambda.Function(this, 'MainFunction', {
       functionName: `feelcycle-hub-main-${environment}`,
       runtime: lambda.Runtime.NODEJS_20_X,
-      architecture: lambda.Architecture.ARM_64,
+      architecture: lambda.Architecture.ARM_64, // 復旧: 元の動作環境
       code: lambda.Code.fromAsset('../backend/dist'),
       handler: 'handlers/main.handler',
       timeout: cdk.Duration.minutes(isProduction ? 10 : 15), // Data refresh needs more time
@@ -161,6 +179,7 @@ export class FeelcycleHubStack extends cdk.Stack {
         RESERVATIONS_TABLE_NAME: reservationsTable.tableName,
         LESSON_HISTORY_TABLE_NAME: lessonHistoryTable.tableName,
         WAITLIST_TABLE_NAME: waitlistTable.tableName,
+        STUDIOS_TABLE_NAME: studiosTable.tableName,
         LESSONS_TABLE_NAME: lessonsTable.tableName,
         USER_CREDENTIALS_SECRET_ARN: userCredentialsSecret.secretArn,
         LINE_API_SECRET_ARN: lineApiSecret.secretArn,
@@ -175,6 +194,7 @@ export class FeelcycleHubStack extends cdk.Stack {
     reservationsTable.grantReadWriteData(mainLambda);
     lessonHistoryTable.grantReadWriteData(mainLambda);
     waitlistTable.grantReadWriteData(mainLambda);
+    studiosTable.grantReadWriteData(mainLambda);
     lessonsTable.grantReadWriteData(mainLambda);
     userCredentialsSecret.grantRead(mainLambda);
     lineApiSecret.grantRead(mainLambda);
@@ -187,6 +207,7 @@ export class FeelcycleHubStack extends cdk.Stack {
         `${usersTable.tableArn}/index/*`,
         `${reservationsTable.tableArn}/index/*`,
         `${waitlistTable.tableArn}/index/*`,
+        `${studiosTable.tableArn}/index/*`,
         `${lessonsTable.tableArn}/index/*`,
       ],
     }));
@@ -252,8 +273,14 @@ export class FeelcycleHubStack extends cdk.Stack {
     const lessons = api.root.addResource('lessons');
     lessons.addMethod('GET', lambdaIntegration); // Search lessons
     
+    const lessonsRange = lessons.addResource('range');
+    lessonsRange.addMethod('GET', lambdaIntegration); // Search lessons across date range
+    
     const sampleData = lessons.addResource('sample-data');
     sampleData.addMethod('GET', lambdaIntegration); // Create sample lesson data
+    
+    const realScrape = lessons.addResource('real-scrape');
+    realScrape.addMethod('GET', lambdaIntegration); // Execute real scraping
     
     const line = api.root.addResource('line');
     line.addResource('webhook').addMethod('POST', lambdaIntegration);
@@ -282,7 +309,6 @@ export class FeelcycleHubStack extends cdk.Stack {
       schedule: events.Schedule.cron({ 
         hour: '2', 
         minute: '0',
-        timeZone: 'Asia/Tokyo',
       }),
     });
 
@@ -300,7 +326,6 @@ export class FeelcycleHubStack extends cdk.Stack {
       schedule: events.Schedule.cron({ 
         hour: '3', 
         minute: '0',
-        timeZone: 'Asia/Tokyo',
       }),
     });
 

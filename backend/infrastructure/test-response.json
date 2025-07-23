@@ -1,0 +1,1 @@
+{"statusCode":200,"headers":{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"},"body":"{\"success\":true,\"message\":\"No active waitlists to monitor\",\"data\":{\"checkedCount\":0,\"notifiedCount\":0}}"}

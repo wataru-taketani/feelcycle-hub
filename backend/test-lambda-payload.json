@@ -1,0 +1,9 @@
+{
+  "httpMethod": "GET",
+  "path": "/studios",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "queryStringParameters": null,
+  "body": null
+}

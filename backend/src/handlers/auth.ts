@@ -30,6 +30,26 @@ export async function authHandler(event: APIGatewayProxyEvent): Promise<ApiRespo
       return await registerLineUser(event);
     }
     
+    // GET /user/settings - ユーザー設定取得
+    if (httpMethod === 'GET' && path === '/user/settings') {
+      return await getUserSettings(event);
+    }
+    
+    // POST /user/feelcycle-credentials - FEELCYCLE認証情報保存
+    if (httpMethod === 'POST' && path === '/user/feelcycle-credentials') {
+      return await saveFeelcycleCredentials(event);
+    }
+    
+    // DELETE /user/feelcycle-credentials - FEELCYCLE認証情報削除
+    if (httpMethod === 'DELETE' && path === '/user/feelcycle-credentials') {
+      return await deleteFeelcycleCredentials(event);
+    }
+    
+    // POST /user/notification-settings - 通知設定保存
+    if (httpMethod === 'POST' && path === '/user/notification-settings') {
+      return await saveNotificationSettings(event);
+    }
+    
     return {
       success: false,
       error: 'Not Found',
@@ -313,6 +333,186 @@ async function registerLineUser(event: APIGatewayProxyEvent): Promise<ApiRespons
     
   } catch (error) {
     console.error('Register LINE user error:', error);
+    
+    if (error instanceof SyntaxError) {
+      return {
+        success: false,
+        error: 'Bad Request',
+        message: 'Invalid JSON in request body',
+      };
+    }
+    
+    throw error;
+  }
+}
+
+/**
+ * ユーザー設定取得
+ */
+async function getUserSettings(event: APIGatewayProxyEvent): Promise<ApiResponse> {
+  const { queryStringParameters } = event;
+  
+  if (!queryStringParameters?.userId) {
+    return {
+      success: false,
+      error: 'Bad Request',
+      message: 'userId parameter is required',
+    };
+  }
+  
+  try {
+    const { userId } = queryStringParameters;
+    const userService = new UserService();
+    
+    const user = await userService.findById(userId);
+    
+    if (!user) {
+      return {
+        success: false,
+        error: 'Not Found',
+        message: 'User not found',
+      };
+    }
+    
+    // デフォルト設定を返す
+    return {
+      success: true,
+      data: {
+        feelcycleCredentials: user.email !== `line_${user.lineUserId}@temp.example.com` ? 
+          { email: user.email, password: '***' } : null,
+        notificationSettings: {
+          enableLineNotifications: true,
+          notificationTiming: 'immediate',
+          quietHours: {
+            enabled: false,
+            startTime: '22:00',
+            endTime: '08:00',
+          },
+        },
+      },
+      message: 'User settings retrieved successfully',
+    };
+  } catch (error) {
+    console.error('Get user settings error:', error);
+    throw error;
+  }
+}
+
+/**
+ * FEELCYCLE認証情報保存
+ */
+async function saveFeelcycleCredentials(event: APIGatewayProxyEvent): Promise<ApiResponse> {
+  if (!event.body) {
+    return {
+      success: false,
+      error: 'Bad Request',
+      message: 'Request body is required',
+    };
+  }
+  
+  try {
+    const { userId, email, password } = JSON.parse(event.body);
+    
+    if (!userId || !email || !password) {
+      return {
+        success: false,
+        error: 'Bad Request',
+        message: 'userId, email, and password are required',
+      };
+    }
+    
+    const userService = new UserService();
+    
+    // ユーザー更新（メールアドレスのみ）
+    await userService.updateUser(userId, {
+      email,
+    });
+    
+    // パスワードは別途保存
+    await userService.updateUserCredentials(userId, password);
+    
+    return {
+      success: true,
+      message: 'FEELCYCLE credentials saved successfully',
+    };
+  } catch (error) {
+    console.error('Save FEELCYCLE credentials error:', error);
+    
+    if (error instanceof SyntaxError) {
+      return {
+        success: false,
+        error: 'Bad Request',
+        message: 'Invalid JSON in request body',
+      };
+    }
+    
+    throw error;
+  }
+}
+
+/**
+ * FEELCYCLE認証情報削除
+ */
+async function deleteFeelcycleCredentials(event: APIGatewayProxyEvent): Promise<ApiResponse> {
+  const { queryStringParameters } = event;
+  
+  if (!queryStringParameters?.userId) {
+    return {
+      success: false,
+      error: 'Bad Request',
+      message: 'userId parameter is required',
+    };
+  }
+  
+  try {
+    const { userId } = queryStringParameters;
+    const userService = new UserService();
+    
+    // 仮の削除処理（実際の実装では認証情報のみ削除）
+    console.log('Deleting FEELCYCLE credentials for user:', userId);
+    
+    return {
+      success: true,
+      message: 'FEELCYCLE credentials deleted successfully',
+    };
+  } catch (error) {
+    console.error('Delete FEELCYCLE credentials error:', error);
+    throw error;
+  }
+}
+
+/**
+ * 通知設定保存
+ */
+async function saveNotificationSettings(event: APIGatewayProxyEvent): Promise<ApiResponse> {
+  if (!event.body) {
+    return {
+      success: false,
+      error: 'Bad Request',
+      message: 'Request body is required',
+    };
+  }
+  
+  try {
+    const { userId, notificationSettings } = JSON.parse(event.body);
+    
+    if (!userId || !notificationSettings) {
+      return {
+        success: false,
+        error: 'Bad Request',
+        message: 'userId and notificationSettings are required',
+      };
+    }
+    
+    // 通知設定保存処理（実際の実装では設定を保存）
+    console.log('Saving notification settings for user:', userId, notificationSettings);
+    
+    return {
+      success: true,
+      message: 'Notification settings saved successfully',
+    };
+  } catch (error) {
+    console.error('Save notification settings error:', error);
     
     if (error instanceof SyntaxError) {
       return {

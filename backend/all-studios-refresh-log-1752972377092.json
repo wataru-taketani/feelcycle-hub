@@ -1,0 +1,269 @@
+{
+  "startTime": "2025-07-20T00:36:31.908Z",
+  "studios": {
+    "SDM": {
+      "startTime": "2025-07-20T00:36:31.998Z",
+      "lessonsFound": 149,
+      "lessonsSaved": 149,
+      "errors": [],
+      "duration": 11.159
+    },
+    "YSC": {
+      "startTime": "2025-07-20T00:36:48.139Z",
+      "lessonsFound": 129,
+      "lessonsSaved": 129,
+      "errors": [],
+      "duration": 10.634
+    },
+    "JYO": {
+      "startTime": "2025-07-20T00:37:03.474Z",
+      "lessonsFound": 196,
+      "lessonsSaved": 196,
+      "errors": [],
+      "duration": 10.455
+    },
+    "OKBS": {
+      "startTime": "2025-07-20T00:37:19.435Z",
+      "lessonsFound": 183,
+      "lessonsSaved": 183,
+      "errors": [],
+      "duration": 10.578
+    },
+    "KWS": {
+      "startTime": "2025-07-20T00:37:35.435Z",
+      "lessonsFound": 165,
+      "lessonsSaved": 165,
+      "errors": [],
+      "duration": 10.442
+    },
+    "MKG": {
+      "startTime": "2025-07-20T00:37:51.029Z",
+      "lessonsFound": 166,
+      "lessonsSaved": 166,
+      "errors": [],
+      "duration": 10.4
+    },
+    "GTD": {
+      "startTime": "2025-07-20T00:38:06.594Z",
+      "lessonsFound": 169,
+      "lessonsSaved": 169,
+      "errors": [],
+      "duration": 10.417
+    },
+    "GKBS": {
+      "startTime": "2025-07-20T00:38:22.150Z",
+      "lessonsFound": 178,
+      "lessonsSaved": 178,
+      "errors": [],
+      "duration": 10.465
+    },
+    "AZN": {
+      "startTime": "2025-07-20T00:38:37.900Z",
+      "lessonsFound": 152,
+      "lessonsSaved": 152,
+      "errors": [],
+      "duration": 10.41
+    },
+    "IKB": {
+      "startTime": "2025-07-20T00:38:53.272Z",
+      "lessonsFound": 192,
+      "lessonsSaved": 192,
+      "errors": [],
+      "duration": 10.411
+    },
+    "MCD": {
+      "startTime": "2025-07-20T00:39:11.840Z",
+      "lessonsFound": 144,
+      "lessonsSaved": 144,
+      "errors": [],
+      "duration": 11.408
+    },
+    "HSM": {
+      "startTime": "2025-07-20T00:39:28.789Z",
+      "lessonsFound": 147,
+      "lessonsSaved": 147,
+      "errors": [],
+      "duration": 10.461
+    },
+    "SMY": {
+      "startTime": "2025-07-20T00:39:44.361Z",
+      "lessonsFound": 151,
+      "lessonsSaved": 151,
+      "errors": [],
+      "duration": 10.541
+    },
+    "AZNP": {
+      "startTime": "2025-07-20T00:39:59.874Z",
+      "lessonsFound": 138,
+      "lessonsSaved": 138,
+      "errors": [],
+      "duration": 10.385
+    },
+    "SSB": {
+      "startTime": "2025-07-20T00:40:15.017Z",
+      "lessonsFound": 187,
+      "lessonsSaved": 187,
+      "errors": [],
+      "duration": 10.459
+    },
+    "SKE": {
+      "startTime": "2025-07-20T00:40:30.864Z",
+      "lessonsFound": 170,
+      "lessonsSaved": 170,
+      "errors": [],
+      "duration": 10.398
+    },
+    "GIF": {
+      "startTime": "2025-07-20T00:40:46.414Z",
+      "lessonsFound": 132,
+      "lessonsSaved": 132,
+      "errors": [],
+      "duration": 10.506
+    },
+    "TMC": {
+      "startTime": "2025-07-20T00:41:01.862Z",
+      "lessonsFound": 168,
+      "lessonsSaved": 168,
+      "errors": [],
+      "duration": 10.527
+    },
+    "NMG": {
+      "startTime": "2025-07-20T00:41:17.907Z",
+      "lessonsFound": 135,
+      "lessonsSaved": 135,
+      "errors": [],
+      "duration": 10.666
+    },
+    "KHM": {
+      "startTime": "2025-07-20T00:41:33.579Z",
+      "lessonsFound": 140,
+      "lessonsSaved": 140,
+      "errors": [],
+      "duration": 10.915
+    },
+    "FNB": {
+      "startTime": "2025-07-20T00:41:49.606Z",
+      "lessonsFound": 139,
+      "lessonsSaved": 139,
+      "errors": [],
+      "duration": 10.901
+    },
+    "KSW": {
+      "startTime": "2025-07-20T00:42:05.602Z",
+      "lessonsFound": 129,
+      "lessonsSaved": 129,
+      "errors": [],
+      "duration": 10.53
+    },
+    "KOK": {
+      "startTime": "2025-07-20T00:42:21.120Z",
+      "lessonsFound": 154,
+      "lessonsSaved": 154,
+      "errors": [],
+      "duration": 10.629
+    },
+    "FTJ": {
+      "startTime": "2025-07-20T00:42:37.031Z",
+      "lessonsFound": 152,
+      "lessonsSaved": 152,
+      "errors": [],
+      "duration": 10.653
+    },
+    "YKH": {
+      "startTime": "2025-07-20T00:42:52.973Z",
+      "lessonsFound": 177,
+      "lessonsSaved": 177,
+      "errors": [],
+      "duration": 10.394
+    },
+    "OMY": {
+      "startTime": "2025-07-20T00:43:09.016Z",
+      "lessonsFound": 129,
+      "lessonsSaved": 129,
+      "errors": [],
+      "duration": 10.796
+    },
+    "SBY": {
+      "startTime": "2025-07-20T00:43:24.702Z",
+      "lessonsFound": 173,
+      "lessonsSaved": 173,
+      "errors": [],
+      "duration": 10.466
+    },
+    "KTK": {
+      "startTime": "2025-07-20T00:43:40.652Z",
+      "lessonsFound": 153,
+      "lessonsSaved": 153,
+      "errors": [],
+      "duration": 10.699
+    },
+    "NGY": {
+      "startTime": "2025-07-20T00:43:56.628Z",
+      "lessonsFound": 174,
+      "lessonsSaved": 174,
+      "errors": [],
+      "duration": 10.54
+    },
+    "SJK": {
+      "startTime": "2025-07-20T00:44:12.489Z",
+      "lessonsFound": 201,
+      "lessonsSaved": 201,
+      "errors": [],
+      "duration": 10.55
+    },
+    "SPR": {
+      "startTime": "2025-07-20T00:44:28.816Z",
+      "lessonsFound": 183,
+      "lessonsSaved": 183,
+      "errors": [],
+      "duration": 10.439
+    },
+    "UMDC": {
+      "startTime": "2025-07-20T00:44:44.723Z",
+      "lessonsFound": 159,
+      "lessonsSaved": 159,
+      "errors": [],
+      "duration": 10.698
+    },
+    "KCJ": {
+      "startTime": "2025-07-20T00:45:00.603Z",
+      "lessonsFound": 178,
+      "lessonsSaved": 178,
+      "errors": [],
+      "duration": 10.465
+    },
+    "KSG": {
+      "startTime": "2025-07-20T00:45:16.515Z",
+      "lessonsFound": 138,
+      "lessonsSaved": 138,
+      "errors": [],
+      "duration": 10.682
+    },
+    "TKM": {
+      "startTime": "2025-07-20T00:45:32.052Z",
+      "lessonsFound": 154,
+      "lessonsSaved": 154,
+      "errors": [],
+      "duration": 10.486
+    },
+    "UEN": {
+      "startTime": "2025-07-20T00:45:47.603Z",
+      "lessonsFound": 187,
+      "lessonsSaved": 187,
+      "errors": [],
+      "duration": 10.943
+    },
+    "GNZ": {
+      "startTime": "2025-07-20T00:46:04.072Z",
+      "lessonsFound": 180,
+      "lessonsSaved": 180,
+      "errors": [],
+      "duration": 10.616
+    }
+  },
+  "totalProcessed": 37,
+  "totalLessonsSaved": 5951,
+  "errors": [],
+  "endTime": "2025-07-20T00:46:17.092Z",
+  "duration": 585.184
+}

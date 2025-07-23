@@ -1,0 +1,8 @@
+{
+  "httpMethod": "PUT",
+  "path": "/waitlist/gin%232025-07-22%2319%3A30%23BB1%20House%201",
+  "pathParameters": {
+    "waitlistId": "gin%232025-07-22%2319%3A30%23BB1%20House%201"
+  },
+  "body": "{\"action\":\"cancel\",\"userId\":\"test-user-id\"}"
+}

@@ -1,0 +1,12 @@
+{
+  "httpMethod": "POST",
+  "path": "/waitlist",
+  "headers": {
+    "Content-Type": "application/json",
+    "x-user-id": "e95c2ed9-ff3d-4350-bab5-0dcb3be44abc"
+  },
+  "body": "{\"studioCode\": \"sdm\", \"lessonDate\": \"2025-07-25\", \"startTime\": \"19:30\", \"endTime\": \"20:15\", \"lessonName\": \"BB1 BRIT 2024\", \"instructor\": \"TARO\", \"reservationUrl\": \"https://feelcycle.com/sdm/reserve/12345\"}",
+  "isBase64Encoded": false,
+  "pathParameters": null,
+  "queryStringParameters": null
+}

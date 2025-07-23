@@ -1,12 +1,29 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+const chromium = require('@sparticuz/chromium').default;
 
 async function finalVerification() {
   console.log('🔍 最終検証 - 7/24新宿レッスンの正確な取得');
   console.log('='.repeat(70));
 
   const browser = await puppeteer.launch({
+    args: [
+      ...chromium.args,
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-accelerated-2d-canvas',
+      '--no-first-run',
+      '--no-zygote',
+      '--single-process',
+      '--disable-gpu',
+      '--disable-extensions',
+      '--disable-background-timer-throttling',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-renderer-backgrounding'
+    ],
+    defaultViewport: { width: 1920, height: 1080 },
+    executablePath: await chromium.executablePath(),
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
     timeout: 60000
   });
 

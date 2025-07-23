@@ -26,8 +26,11 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       };
     }
 
-    // 🚨 一時的に認証を完全にスキップ（テスト用）
-    let userId: string = 'test-user-id';
+    // x-user-idヘッダーからユーザーIDを取得（APIGateway対応）
+    const requestHeaders = (event as any).headers || {};
+    console.log('🔍 Available headers:', Object.keys(requestHeaders));
+    console.log('🔍 x-user-id header:', requestHeaders['x-user-id']);
+    let userId: string = requestHeaders['x-user-id'] || requestHeaders['X-User-Id'] || 'test-user-id';
     
     if (body) {
       try {
@@ -52,13 +55,19 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       
       case 'PUT':
         if (pathParameters?.waitlistId) {
-          return await updateWaitlist(userId, pathParameters.waitlistId, body);
+          // URL decode the waitlistId from path parameter
+          const decodedWaitlistId = decodeURIComponent(pathParameters.waitlistId);
+          console.log('🔧 PUT waitlistId - Original:', pathParameters.waitlistId, 'Decoded:', decodedWaitlistId);
+          return await updateWaitlist(userId, decodedWaitlistId, body);
         }
         break;
       
       case 'DELETE':
         if (pathParameters?.waitlistId) {
-          return await deleteWaitlist(userId, pathParameters.waitlistId);
+          // URL decode the waitlistId from path parameter
+          const decodedWaitlistId = decodeURIComponent(pathParameters.waitlistId);
+          console.log('🔧 DELETE waitlistId - Original:', pathParameters.waitlistId, 'Decoded:', decodedWaitlistId);
+          return await deleteWaitlist(userId, decodedWaitlistId);
         }
         break;
     }
@@ -145,6 +154,7 @@ async function createWaitlist(userId: string, body: string | null): Promise<APIG
       } as ApiResponse),
     };
   } catch (error: any) {
+    // Handle specific error types with appropriate status codes
     if (error.name === 'ConditionalCheckFailedException') {
       return {
         statusCode: 409,
@@ -158,6 +168,30 @@ async function createWaitlist(userId: string, body: string | null): Promise<APIG
         } as ApiResponse),
       };
     }
+    
+    // Handle validation errors (return 400 instead of 500)
+    if (error.message && (
+      error.message.includes('過去の日付') ||
+      error.message.includes('30日より先') ||
+      error.message.includes('必須項目が不足') ||
+      error.message.includes('形式が正しくありません') ||
+      error.message.includes('スタジオコードが正しくありません') ||
+      error.message.includes('長すぎます') ||
+      error.message.includes('既にキャンセル待ち登録済み')
+    )) {
+      return {
+        statusCode: 400,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+        body: JSON.stringify({
+          success: false,
+          error: error.message,
+        } as ApiResponse),
+      };
+    }
+    
     throw error;
   }
 }

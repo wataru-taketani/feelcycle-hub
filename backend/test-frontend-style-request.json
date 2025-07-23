@@ -1,0 +1,11 @@
+{
+  "httpMethod": "POST",
+  "path": "/waitlist",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"userId\": \"e95c2ed9-ff3d-4350-bab5-0dcb3be44abc\", \"studioCode\": \"sdm\", \"lessonDate\": \"2025-07-23\", \"startTime\": \"20:30\", \"lessonName\": \"BB1 BRIT 2024\", \"instructor\": \"TARO\"}",
+  "isBase64Encoded": false,
+  "pathParameters": null,
+  "queryStringParameters": null
+}

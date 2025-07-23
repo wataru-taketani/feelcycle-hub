@@ -1,0 +1,141 @@
+{
+  "startTime": "2025-07-20T00:31:54.033Z",
+  "studios": {
+    "sby": {
+      "startTime": "2025-07-20T00:31:54.116Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio sby not found in site"
+      ]
+    },
+    "shibuya": {
+      "startTime": "2025-07-20T00:32:02.158Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio shibuya not found in site"
+      ]
+    },
+    "ginza": {
+      "startTime": "2025-07-20T00:32:09.641Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio ginza not found in site"
+      ]
+    },
+    "shimbashi": {
+      "startTime": "2025-07-20T00:32:17.096Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio shimbashi not found in site"
+      ]
+    },
+    "shinjuku": {
+      "startTime": "2025-07-20T00:32:24.571Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio shinjuku not found in site"
+      ]
+    },
+    "harajuku": {
+      "startTime": "2025-07-20T00:32:31.988Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio harajuku not found in site"
+      ]
+    },
+    "osaki": {
+      "startTime": "2025-07-20T00:32:39.402Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio osaki not found in site"
+      ]
+    },
+    "ebisu": {
+      "startTime": "2025-07-20T00:32:46.824Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio ebisu not found in site"
+      ]
+    },
+    "odaiba": {
+      "startTime": "2025-07-20T00:32:54.258Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio odaiba not found in site"
+      ]
+    },
+    "roppongi": {
+      "startTime": "2025-07-20T00:33:01.721Z",
+      "lessonsFound": 0,
+      "lessonsSaved": 0,
+      "errors": [
+        "Studio roppongi not found in site"
+      ]
+    }
+  },
+  "totalProcessed": 10,
+  "totalLessonsSaved": 0,
+  "errors": [
+    {
+      "studio": "sby",
+      "phase": "scraping",
+      "error": "Studio sby not found in site"
+    },
+    {
+      "studio": "shibuya",
+      "phase": "scraping",
+      "error": "Studio shibuya not found in site"
+    },
+    {
+      "studio": "ginza",
+      "phase": "scraping",
+      "error": "Studio ginza not found in site"
+    },
+    {
+      "studio": "shimbashi",
+      "phase": "scraping",
+      "error": "Studio shimbashi not found in site"
+    },
+    {
+      "studio": "shinjuku",
+      "phase": "scraping",
+      "error": "Studio shinjuku not found in site"
+    },
+    {
+      "studio": "harajuku",
+      "phase": "scraping",
+      "error": "Studio harajuku not found in site"
+    },
+    {
+      "studio": "osaki",
+      "phase": "scraping",
+      "error": "Studio osaki not found in site"
+    },
+    {
+      "studio": "ebisu",
+      "phase": "scraping",
+      "error": "Studio ebisu not found in site"
+    },
+    {
+      "studio": "odaiba",
+      "phase": "scraping",
+      "error": "Studio odaiba not found in site"
+    },
+    {
+      "studio": "roppongi",
+      "phase": "scraping",
+      "error": "Studio roppongi not found in site"
+    }
+  ],
+  "endTime": "2025-07-20T00:33:06.193Z",
+  "duration": 72.16
+}

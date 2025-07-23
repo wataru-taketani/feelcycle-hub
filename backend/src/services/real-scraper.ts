@@ -1,4 +1,5 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+const chromium = require('@sparticuz/chromium').default;
 import { LessonData } from '../types';
 
 export class RealFeelcycleScraper {
@@ -9,9 +10,10 @@ export class RealFeelcycleScraper {
    */
   static async initBrowser() {
     if (!this.browser) {
+      // 復旧: 動作していたv9パターンに戻す
       this.browser = await puppeteer.launch({
-        headless: true,
         args: [
+          ...chromium.args,
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
@@ -25,6 +27,9 @@ export class RealFeelcycleScraper {
           '--disable-backgrounding-occluded-windows',
           '--disable-renderer-backgrounding'
         ],
+        defaultViewport: { width: 1920, height: 1080 },
+        executablePath: await chromium.executablePath(),
+        headless: true,
         timeout: 60000
       });
     }
@@ -278,6 +283,54 @@ export class RealFeelcycleScraper {
   }
 
   /**
+   * Search for lessons from all studios for a specific date
+   */
+  static async searchAllStudiosRealLessons(date: string): Promise<LessonData[]> {
+    console.log(`🌏 Fetching lessons from ALL studios for ${date}...`);
+    
+    try {
+      // First get all available studios
+      const studios = await this.getRealStudios();
+      console.log(`Found ${studios.length} studios to scrape`);
+      
+      const allLessons: LessonData[] = [];
+      
+      // Process studios in batches to avoid overwhelming the site
+      const batchSize = 5;
+      for (let i = 0; i < studios.length; i += batchSize) {
+        const batch = studios.slice(i, i + batchSize);
+        console.log(`Processing studio batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(studios.length/batchSize)}...`);
+        
+        const batchPromises = batch.map(async (studio) => {
+          try {
+            const lessons = await this.searchRealLessons(studio.code, date);
+            console.log(`${studio.name}(${studio.code}): ${lessons.length} lessons`);
+            return lessons;
+          } catch (error) {
+            console.error(`Error scraping ${studio.name}(${studio.code}):`, error);
+            return [];
+          }
+        });
+        
+        const batchResults = await Promise.all(batchPromises);
+        batchResults.forEach(lessons => allLessons.push(...lessons));
+        
+        // Small delay between batches
+        if (i + batchSize < studios.length) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      console.log(`✅ Total lessons found across all studios: ${allLessons.length}`);
+      return allLessons;
+      
+    } catch (error) {
+      console.error('Error in searchAllStudiosRealLessons:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Extract available slots from status text
    */
   private static extractAvailableSlots(statusText: string): number {
@@ -286,12 +339,19 @@ export class RealFeelcycleScraper {
   }
 
   /**
-   * Cleanup browser
+   * Cleanup browser resources and force garbage collection
    */
   static async cleanup() {
     if (this.browser) {
+      console.log('🧹 Cleaning up browser resources...');
       await this.browser.close();
       this.browser = null;
+      
+      // Force garbage collection if available
+      if (global.gc) {
+        console.log('🗑️  Running garbage collection...');
+        global.gc();
+      }
     }
   }
 }

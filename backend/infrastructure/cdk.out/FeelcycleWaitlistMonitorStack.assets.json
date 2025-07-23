@@ -1,0 +1,36 @@
+{
+  "version": "45.0.0",
+  "files": {
+    "d167ba3fb1f445c745d9ce162745435513dee9f30ec99f6c181589a587e0d288": {
+      "displayName": "WaitlistMonitorFunction/Code",
+      "source": {
+        "path": "asset.d167ba3fb1f445c745d9ce162745435513dee9f30ec99f6c181589a587e0d288",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "234156130688-ap-northeast-1-07dd6f1c": {
+          "bucketName": "cdk-hnb659fds-assets-234156130688-ap-northeast-1",
+          "objectKey": "d167ba3fb1f445c745d9ce162745435513dee9f30ec99f6c181589a587e0d288.zip",
+          "region": "ap-northeast-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::234156130688:role/cdk-hnb659fds-file-publishing-role-234156130688-ap-northeast-1"
+        }
+      }
+    },
+    "91ab75ade8f50ce9fce9d8ca7ea211169955627372acb8d30c966e57625bf4be": {
+      "displayName": "FeelcycleWaitlistMonitorStack Template",
+      "source": {
+        "path": "FeelcycleWaitlistMonitorStack.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "234156130688-ap-northeast-1-b9a75042": {
+          "bucketName": "cdk-hnb659fds-assets-234156130688-ap-northeast-1",
+          "objectKey": "91ab75ade8f50ce9fce9d8ca7ea211169955627372acb8d30c966e57625bf4be.json",
+          "region": "ap-northeast-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::234156130688:role/cdk-hnb659fds-file-publishing-role-234156130688-ap-northeast-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

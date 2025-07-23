@@ -1,0 +1,11 @@
+{
+  "name": "feelcycle-hub-shared-layer",
+  "version": "1.0.0",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.614.0",
+    "@aws-sdk/client-secrets-manager": "^3.614.0",
+    "@aws-sdk/lib-dynamodb": "^3.614.0",
+    "axios": "^1.7.2",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}

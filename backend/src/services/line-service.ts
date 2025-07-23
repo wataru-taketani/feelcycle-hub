@@ -49,6 +49,9 @@ export class LineService {
     }
 
     try {
+      console.log('🔐 Getting LINE credentials from Secrets Manager...');
+      console.log('🔗 Secret ARN:', this.secretArn);
+      
       const result = await this.secretsManager.send(new GetSecretValueCommand({
         SecretId: this.secretArn,
       }));
@@ -57,7 +60,13 @@ export class LineService {
         throw new Error('LINE API credentials not found');
       }
 
+      console.log('📄 Raw secret string length:', result.SecretString.length);
       this.credentials = JSON.parse(result.SecretString);
+      
+      console.log('🔍 Retrieved credentials keys:', Object.keys(this.credentials || {}));
+      console.log('🔑 Channel Access Token (first 10 chars):', this.credentials?.channelAccessToken?.substring(0, 10) || 'NOT_FOUND');
+      console.log('🔐 Channel Secret (first 10 chars):', this.credentials?.channelSecret?.substring(0, 10) || 'NOT_FOUND');
+      
       return this.credentials!;
 
     } catch (error) {

@@ -2,7 +2,7 @@
 
 ## 📋 プロジェクト概要
 
-**目的**: FEELCYCLEのレッスン予約サポート（キャンセル待ち監視）
+**目的**: FEELCYCLEのレッスン予約サポート（キャンセル待ち登録・リアルタイム空席監視・LINE通知）
 **技術スタック**: 
 - Frontend: Next.js + TypeScript + Tailwind CSS + LIFF SDK
 - Backend: AWS Lambda + DynamoDB + API Gateway
@@ -13,12 +13,70 @@
 ### Frontend (Next.js)
 - **URL**: https://feelcycle-hub.netlify.app
 - **認証**: LINE LIFF SDK (ID: 2007687052-B9Pqw7Zy)
-- **機能**: レッスン検索、キャンセル待ち管理、通知履歴
+- **機能**: レッスン検索、キャンセル待ち登録・管理、リアルタイム空席監視、LINE通知、履歴管理
 
 ### Backend (AWS Lambda)
 - **API Gateway**: https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev
 - **Lambda**: Node.js 20.x, ARM64, 15分タイムアウト, 256MB（最適化済み）
 - **DynamoDB**: 6つのテーブル（users, lessons, waitlist, reservations, history, studios）
+
+## 🔧 開発履歴と重要な修正
+
+### 2025-07-22: リアルタイム監視システム実装
+
+#### 実装概要
+- **目的**: キャンセル待ち登録されたレッスンを毎分スクレイピングして空席を検知、LINE通知を送信
+- **アーキテクチャ**: EventBridge (毎分実行) → Lambda (监视) → RealFeelcycleScraper → LINE通知
+
+#### 実装したファイル
+1. **waitlist-monitor.ts**: メイン監視Lambda関数
+   - `getActiveWaitlistsForMonitoring()` でアクティブなキャンセル待ちを取得
+   - スタジオ別にグループ化して効率化
+   - `RealFeelcycleScraper.searchRealLessons()` で空席チェック
+   - 空席発見時はLINE通知 + ステータス更新
+
+2. **line-notification-service.ts**: LINE通知専用サービス
+   - 既存LineServiceを活用
+   - ウェイトリスト専用の通知フォーマット
+   - ユーザーID → LINE User ID の変換
+
+3. **infrastructure/waitlist-monitor-stack.ts**: AWS CDK設定
+   - EventBridge Rule (毎分実行)
+   - Lambda設定 (5分タイムアウト、1024MB)
+   - DynamoDB/Secrets Manager権限設定
+
+#### 監視効率化の仕組み
+- 既存 `getActiveWaitlistsForMonitoring()` で今後1時間以内のレッスンのみ対象
+- スタジオ別にグループ化してスクレイピングリクエスト数を最小化
+- 車輪の再発明を避けて既存 `RealFeelcycleScraper` を活用
+
+#### 要件と実装状況
+**元の要件**: 「登録されたレッスンを実際にスクレイピング（毎分）して空席がないかチェックする仕組みを作って」
+
+✅ **実装完了**:
+1. **毎分実行**: EventBridge Rule (rate(1 minute))
+2. **レッスンスクレイピング**: `RealFeelcycleScraper.searchRealLessons()` 
+3. **空席チェック**: `isAvailable === 'true'` 判定
+4. **LINE通知**: 空席発見時の自動通知送信
+5. **効率化**: スタジオ別グループ化、1時間以内レッスンのみ対象
+
+✅ **動作確認済み**:
+- TypeScript コンパイル: エラーなし
+- 基本ロジックテスト: 正常動作
+- データベース接続: 正常
+
+#### デプロイメント
+```bash
+# CDKでデプロイ
+cd /Users/wataru/Projects/feelcycle-hub/backend
+npm run build
+cdk deploy FeelcycleWaitlistMonitorStack
+```
+
+#### 今後のデプロイ手順
+1. AWS環境でのLambda関数デプロイ
+2. EventBridgeルールの有効化
+3. 実データでの動作テスト
 
 ## 🔧 開発履歴と重要な修正
 
@@ -797,6 +855,88 @@ curl -X POST "https://api-endpoint" -H "Content-Type: application/json" -d '{tes
 **次のアクション**: [ユーザーが何をすべきか]
 ```
 
+---
+
+## 📝 最近の問題解決事例
+
+### 🐛 キャンセル待ち解除問題 (2025-07-22)
+
+**問題**: Netlify本番環境でキャンセル待ち解除ボタンが動作しない
+
+**調査過程**:
+1. ❌ **環境変数未設定疑い** → フォールバック設定で対応も効果なし
+2. ❌ **ユーザーID不一致疑い** → 正しいユーザーでも解除されず  
+3. ❌ **Backend URL decoding問題疑い** → 既に修正済み
+4. ✅ **真の原因**: waitlist/page.tsxで`encodeURIComponent()`が抜けていた
+
+**根本原因**: 
+```typescript
+// ❌ 問題のあったコード (waitlist/page.tsx)
+`${apiBaseUrl}/waitlist/${waitlistId}`
+
+// ✅ 正しいコード (lessons/page.tsx)  
+`${apiBaseUrl}/waitlist/${encodeURIComponent(waitlistId)}`
+```
+
+**解決方法**: waitlist画面のPUT/POST処理に`encodeURIComponent()`を追加
+
+**教訓**:
+- ❌ **推測に基づく調査は時間の無駄** → 既存の動作する実装と比較すべき
+- ✅ **動く機能との差分確認が最も効率的**
+- ✅ **Consoleが使えない場合はAPI直接呼び出しで検証**
+
+**検証結果**: curl テストで正常動作確認済み
+```bash
+curl -X PUT "https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev/waitlist/test%23waitlist" \
+  -H "Content-Type: application/json" -d '{"action":"cancel","userId":"test-user"}' 
+# → {"success":true,"message":"Waitlist canceld successfully"}
+```
+
+---
+
+## 🔄 キャンセル待ち監視システム (2025-07-22)
+
+### 📈 システム設計
+
+**目的**: 登録されたキャンセル待ちレッスンを毎分監視し、空席発生時にLINE通知
+
+**アーキテクチャ**:
+```
+EventBridge (毎分) → Lambda監視関数 → スクレイピング → 空席検知 → LINE通知 → DynamoDB更新
+                                      ↓
+                                  既存RealScraper活用
+```
+
+**処理フロー**:
+1. **毎分実行**: EventBridge Ruleで監視Lambda起動
+2. **対象抽出**: `active`ステータスのwaitlistから48時間以内のレッスンを抽出
+3. **効率的スクレイピング**: 既存`RealFeelcycleScraper.searchRealLessons()`活用
+4. **空席判定**: `isAvailable: true` または `availableSlots > 0` で判定
+5. **通知送信**: LINE API経由で即座に通知
+6. **状態更新**: waitlistを`paused`に変更、通知履歴記録
+
+**重要な設計方針**:
+- ✅ **activeステータスのみ監視**: 新規登録・再開されたキャンセル待ちが対象
+- ✅ **pausedステータスは監視対象外**: 通知済み・一時停止中はスクレイピングしない
+- ✅ **レッスンマッチング**: 日付・時間・レッスン名の完全一致で空席チェック
+- ✅ **存在しないレッスンはスキップ**: レッスン内容変更時は正常に無視
+
+**最適化**:
+- ✅ **重複処理回避**: 同一スタジオ・日付は1回のスクレイピングで複数waitlist処理
+- ✅ **既存コード活用**: `real-scraper.ts`の実装を再利用
+- ✅ **効率的クエリ**: DynamoDB GSI `StatusLessonDateTimeIndex`使用
+- ✅ **リソース管理**: スクレイピング後のbrowser cleanup実装済み
+
+### 🚨 トラブルシューティング記録
+
+#### 環境変数不足エラー (解決済み)
+**問題**: `Missing required environment variables` - UserServiceが`USER_CREDENTIALS_SECRET_ARN`を要求
+**解決**: Lambda環境変数とSecretsManager IAM権限を追加
+
+#### 監視対象ステータス設計ミス (解決済み)
+**問題**: `paused`ステータスも監視していた
+**正しい設計**: `active`のみ監視、`paused`は一時停止中なのでスクレイピング不要
+
 #### 失敗時の対応
 - **検証で問題発見** → 追加修正して再検証
 - **「できているはず」は絶対に使用しない**
@@ -817,7 +957,47 @@ curl -X POST "https://api-endpoint" -H "Content-Type: application/json" -d '{tes
 
 ---
 
-**最終更新**: 2025-07-21 19:00 JST
+## 🐛 発見済み問題（後回し対応）
+
+### UI・機能の改善課題
+1. **通知済みデータの「再開」機能失敗** - resumeWaitlist処理でエラー発生
+2. **予約サイトリンクが正しくない** - 予約サイト以外のURLに遷移
+3. **終了済みタブでApplication error** - ブラウザコンソールでエラー発生
+
+*これらは基本機能（LINE通知）完成後に対応予定*
+
+---
+
+## 🚨 **本番環境開発の重要な注意事項**
+
+### **環境の現実**
+- **本番環境での開発**: dev/stg環境分離なし、実データで開発・テスト
+- **ワンミス崩壊リスク**: 復旧不可能な変更で全サービス停止の危険性
+- **バックアップ必須**: 動作中のコードは必ず保護してから変更実施
+
+### **必須開発ルール（本番環境版）**
+1. **変更前バックアップ**: 動作中のファイルのコピー保存
+2. **段階的変更**: 最小単位での修正・テスト・確認
+3. **即座復旧準備**: 問題発生時の迅速なロールバック体制
+4. **基本機能優先**: 動作中機能の保護を最優先
+5. **テスト完了後のみ報告**: 推測・仮定での完了報告禁止
+
+### **現在発生している問題**
+- ✅ **キャンセル待ち登録機能の不具合**: 修復完了（ヘッダー処理修正）
+- ✅ **LINE API認証情報**: 正しい値に修正完了
+
+### **重要な教訓 - パラメータチェックの徹底**
+- **画像からの読み取りミス**: 認証情報の視覚的確認が不正確だった
+- **必須チェック項目**:
+  1. 提供された正確な値との照合
+  2. Secrets Manager等の設定値との比較
+  3. 文字単位での完全一致確認
+  4. 設定前後での検証実施
+- **ルール追加**: API Key、Token、Secret等の重要パラメータは必ず正確性を複数回検証する
+
+---
+
+**最終更新**: 2025-07-22 16:15 JST
 **担当者**: Claude + Wataru  
-**マイルストーン**: キャンセル待ち機能実装中（CORS修正済み、デプロイ待ち）
-**重要教訓**: 先祖返り防止・継続セッション時の状況把握徹底
+**現在のフォーカス**: 基本機能の安全確保 → 監視システム完成
+**緊急課題**: キャンセル待ち登録機能の動作確認・修復

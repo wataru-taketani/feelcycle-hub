@@ -66,6 +66,11 @@ export interface LambdaEvent {
   body?: string;
   pathParameters?: Record<string, string>;
   queryStringParameters?: Record<string, string>;
+  'detail-type'?: string;
+  detail?: {
+    taskType?: string;
+    scheduledTime?: string;
+  };
 }
 
 export interface LineWebhookEvent {
@@ -116,6 +121,7 @@ export interface Waitlist {
   completedAt?: string;
   notificationHistory: NotificationRecord[];
   autoResumeAt?: string; // ISO 8601 format
+  lastNotifiedAt?: string; // ISO 8601 format - 最後の通知送信時刻
   ttl: number; // Unix timestamp for DynamoDB TTL
 }
 
@@ -124,6 +130,7 @@ export interface NotificationRecord {
   availableSlots?: number | null;
   totalSlots?: number | null;
   notificationId: string;
+  message?: string; // 送信されたメッセージ内容
 }
 
 export interface StudioInfo {

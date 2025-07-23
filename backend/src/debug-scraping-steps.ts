@@ -1,13 +1,14 @@
 import { RealFeelcycleScraper } from './services/real-scraper';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+const chromium = require('@sparticuz/chromium').default;
 
 async function debugScrapingSteps() {
   console.log('🔍 FEELCYCLEスクレイピング ステップバイステップ確認');
   console.log('='.repeat(70));
 
   const browser = await puppeteer.launch({
-    headless: false, // ブラウザを表示して確認
     args: [
+      ...chromium.args,
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
@@ -17,6 +18,9 @@ async function debugScrapingSteps() {
       '--disable-gpu',
       '--disable-extensions'
     ],
+    defaultViewport: { width: 1920, height: 1080 },
+    executablePath: await chromium.executablePath(),
+    headless: true,
     timeout: 60000
   });
 

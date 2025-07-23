@@ -1,0 +1,7 @@
+[
+  {
+    "Id": "1",
+    "Arn": "arn:aws:lambda:ap-northeast-1:234156130688:function:feelcycle-hub-main-dev",
+    "Input": "{\"source\":\"eventbridge.scheduler\",\"detail-type\":\"Scheduled Event\",\"detail\":{\"taskType\":\"waitlist-monitoring\",\"scheduledTime\":\"rate(1 minute)\"}}"
+  }
+]

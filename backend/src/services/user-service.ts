@@ -231,6 +231,13 @@ export class UserService {
   }
 
   /**
+   * ユーザー資格情報の更新（公開メソッド）
+   */
+  async updateUserCredentials(userId: string, password: string): Promise<void> {
+    await this.saveUserCredentials(userId, password);
+  }
+
+  /**
    * ユーザー資格情報の保存（暗号化）
    */
   private async saveUserCredentials(userId: string, password: string): Promise<void> {
