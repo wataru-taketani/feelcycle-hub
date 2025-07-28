@@ -1128,6 +1128,95 @@ monthlyStats.favoritePrograms.map((program, index) => (
 
 **Next Steps**: Netlifyデプロイ準備完了・本番環境反映待ち
 
+### 🔄 2025-01-28: 新サイトマップ設計・実データ検証・日次スクレイピング確認
+
+#### **新サイトマップ設計完了**
+```
+FEELCYCLE Hub
+├── / (ホーム) - Dashboard + Menu Links
+├── /search (レッスン検索) - スタジオ・インストラクター検索、気になるリスト
+├── /waitlist (キャンセル待ち管理) + /waitlist/schedule (新規登録)
+├── /booking (自動予約管理) + /booking/schedule (新規設定・将来対応)
+├── /history (履歴・統計) - レッスン受講履歴・カレンダー期間指定
+└── /settings (設定) - アカウント・お気に入り・通知
+```
+
+#### **機能要件整理**
+- **お気に入り**: スタジオ・インストラクター（検索効率化）
+- **気になるリスト**: 具体的レッスン（一時保存・後で確認）
+- **user_lessonsテーブル**: 統一データ構造で type: "interest"|"waitlist"|"booking"
+
+#### **システム状況確認結果**
+1. **日次スクレイピング**: EventBridge設定済み（3:00 AM JST）✅
+2. **キャンセル待ち監視**: 毎分実行設定済み（rate(1 minute)）✅  
+3. **実データ状況**:
+   - Studios API: 実データ取得確認済み（銀座・渋谷・新宿等）✅
+   - Lessons API: 403エラー（認証必要の可能性）⚠️
+
+#### **404エラー原因**
+- https://feelcycle-hub.netlify.app/lessons ❌
+- https://feelcycle-hub.netlify.app/settings ❌
+- Next.js静的生成時の何らかのエラー（調査継続中）
+
+#### **次フェーズ実装方針**
+1. **実データ検証**: Lessons API 403エラー解決・実データ表示確認
+2. **user_lessonsテーブル**: バックエンド設計・API実装
+3. **新ページ実装**: /search → /waitlist/schedule → /booking/schedule順
+4. **既存機能移行**: 実データでの動作確認を最優先
+
+#### **レッスンAPI調査結果（2025-07-28）**
+- **正しいAPIパス**: `/lessons?studioCode={code}&date={date}` (単日取得)
+- **Range API**: `/lessons?studioCode={code}&range=true&startDate={start}&endDate={end}` (期間取得)
+- **実データ確認**: 銀座(gnz) 2025-07-28に4レッスン存在、1レッスン予約可能
+- **データ構造**: `{ success: true, data: { lessonsByDate: {...} } }`
+
+#### **フロントエンドAPI修正内容**
+- **修正前**: `/lessons/${studioCode}` (存在しないパス)
+- **修正後**: Range APIを使用して30日間データ取得
+- **スクロール対応**: 横・縦スクロール表示を想定した全期間データ取得
+- **並列処理削除**: 単一API呼び出しに変更
+
+#### **重要な修正ミス**
+- **日付認識エラー**: 今日を2025-01-28と誤認識→正しくは2025-07-28
+- **開発メモへの記載**: 適当な作業を避け、全て正確に記録する方針
+
+#### **⚠️ 重要な開発方針（2025-07-28）**
+**絶対NG項目**:
+- ハルシネーション（事実でない情報を作り出す）
+- 適当なテストデータでのごまかし
+- 推測や想像での回答
+- 基本情報（日付・時刻等）の間違い
+
+**必須項目**:
+- 実際のデータ・コードの確認
+- 正確な日付・時刻の把握
+- 全ての作業内容を正確に開発メモに記録
+
+## **🔧 日次スクレイピング問題調査結果（2025-07-28）**
+
+### **問題の症状**
+- DynamoDBに未来のレッスンデータ（2週間以上先）が不足
+- 当日データは存在するが、将来の予約可能日のデータがない
+- EventBridgeは正常に設定済み（毎日3:00 AM JST実行）
+
+### **根本原因**
+**Puppeteer/Chromium のLambda環境エラー**: 
+- エラー: `"Protocol error (Target.setDiscoverTargets): Target closed"`
+- 場所: `RealFeelcycleScraper.searchAllLessons()` メソッド実行時
+- 影響: 日次スクレイピングバッチが実行失敗している
+
+### **技術的詳細**
+1. **呼び出しフロー**: EventBridge → main.ts:handleDataRefresh → progressive-daily-refresh.ts → RealFeelcycleScraper.searchAllLessons()
+2. **失敗箇所**: `real-scraper.ts:104` の `searchAllLessons()` メソッド
+3. **Lambda環境の問題**: Puppeteer browser initialization が不安定
+
+### **対処方針**
+- Puppeteer設定をLambda環境用に最適化
+- ブラウザ初期化プロセスの改善
+- エラーハンドリングとリトライ機能の強化
+- 不明な点は素直に「確認します」と回答
+- 実データでの動作確認を最優先
+
 ---
 
 ## 🚨 2025-07-23: Netlifyデプロイ問題と開発ワークフロー改善

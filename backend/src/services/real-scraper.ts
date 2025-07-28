@@ -10,28 +10,58 @@ export class RealFeelcycleScraper {
    */
   static async initBrowser() {
     if (!this.browser) {
-      // 復旧: 動作していたv9パターンに戻す
-      this.browser = await puppeteer.launch({
-        args: [
-          ...chromium.args,
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-gpu',
-          '--disable-extensions',
-          '--disable-background-timer-throttling',
-          '--disable-backgrounding-occluded-windows',
-          '--disable-renderer-backgrounding'
-        ],
-        defaultViewport: { width: 1920, height: 1080 },
-        executablePath: await chromium.executablePath(),
-        headless: true,
-        timeout: 60000
-      });
+      console.log('🌐 Initializing browser for Lambda environment...');
+      
+      try {
+        // Get the Chromium executable path
+        const executablePath = await chromium.executablePath();
+        console.log('📍 Chromium executable path:', executablePath);
+        
+        // Lambda-optimized browser configuration
+        this.browser = await puppeteer.launch({
+          args: [
+            ...chromium.args,
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=VizDisplayCompositor',
+            '--disable-ipc-flooding-protection',
+            '--disable-dev-tools',
+            '--disable-default-apps',
+            '--disable-hang-monitor',
+            '--disable-popup-blocking',
+            '--disable-prompt-on-repost',
+            '--disable-sync',
+            '--disable-web-security',
+            '--enable-automation',
+            '--password-store=basic',
+            '--use-mock-keychain',
+            '--hide-crash-restore-bubble'
+          ],
+          defaultViewport: { width: 1280, height: 720 },
+          executablePath,
+          headless: true,
+          timeout: 60000,
+          // Add protocol timeout to prevent Target.setDiscoverTargets error
+          protocolTimeout: 60000,
+          // Disable pipe for Lambda environment stability
+          pipe: false
+        });
+        
+        console.log('✅ Browser initialized successfully');
+      } catch (error) {
+        console.error('❌ Browser initialization failed:', error);
+        throw new Error(`Browser initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
     return this.browser;
   }
@@ -102,12 +132,29 @@ export class RealFeelcycleScraper {
    * Get all lessons for a specific studio (all dates at once)
    */
   static async searchAllLessons(studioCode: string): Promise<LessonData[]> {
-    const browser = await this.initBrowser();
-    const page = await browser.newPage();
-
-    try {
-      console.log(`Fetching all lesson data for ${studioCode} (all dates at once)...`);
-      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+    let retryCount = 0;
+    const maxRetries = 2;
+    
+    while (retryCount <= maxRetries) {
+      let browser = null;
+      let page = null;
+      
+      try {
+        console.log(`🔄 Attempt ${retryCount + 1}/${maxRetries + 1}: Fetching all lesson data for ${studioCode} (all dates at once)...`);
+        
+        // Initialize fresh browser instance for each retry
+        if (retryCount > 0) {
+          console.log('🔄 Retry detected, reinitializing browser...');
+          await this.cleanup();
+        }
+        
+        browser = await this.initBrowser();
+        page = await browser.newPage();
+        
+        // Set page configuration
+        await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+        await page.setDefaultTimeout(30000);
+        await page.setDefaultNavigationTimeout(30000);
       
       // Step 1: Go to reservation site
       await page.goto('https://m.feelcycle.com/reserve', { 
@@ -254,13 +301,33 @@ export class RealFeelcycleScraper {
         ttl: Math.floor((new Date().getTime() + 7 * 86400000) / 1000), // 7 days
       }));
 
-      return lessonData;
+        console.log(`✅ Successfully fetched ${lessonData.length} lessons for ${studioCode}`);
+        return lessonData;
 
-    } catch (error) {
-      console.error('Error fetching all real lessons:', error);
-      throw error;
-    } finally {
-      await page.close();
+      } catch (error) {
+        console.error(`❌ Attempt ${retryCount + 1} failed for ${studioCode}:`, error);
+        
+        // Close page if it exists
+        if (page) {
+          try {
+            await page.close();
+          } catch (closeError) {
+            console.error('Error closing page:', closeError);
+          }
+        }
+        
+        retryCount++;
+        
+        if (retryCount > maxRetries) {
+          console.error(`❌ All ${maxRetries + 1} attempts failed for ${studioCode}`);
+          throw new Error(`Failed to fetch lessons for ${studioCode} after ${maxRetries + 1} attempts: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+        
+        // Wait before retry
+        const waitTime = retryCount * 2000; // 2s, 4s, etc.
+        console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
     }
   }
 
@@ -344,11 +411,30 @@ export class RealFeelcycleScraper {
   static async cleanup() {
     if (this.browser) {
       console.log('🧹 Cleaning up browser resources...');
-      await this.browser.close();
-      this.browser = null;
+      try {
+        // Close all pages first
+        const pages = await this.browser.pages();
+        await Promise.all(pages.map(page => page.close().catch(e => console.log('Page close error:', e))));
+        
+        // Close browser
+        await this.browser.close();
+        console.log('✅ Browser closed successfully');
+      } catch (error) {
+        console.error('⚠️  Error during browser cleanup:', error);
+        // Force process termination if browser is unresponsive
+        try {
+          if (this.browser && this.browser.process) {
+            this.browser.process().kill('SIGKILL');
+          }
+        } catch (killError) {
+          console.error('Error killing browser process:', killError);
+        }
+      } finally {
+        this.browser = null;
+      }
       
       // Force garbage collection if available
-      if (global.gc) {
+      if (typeof global !== 'undefined' && global.gc) {
         console.log('🗑️  Running garbage collection...');
         global.gc();
       }
