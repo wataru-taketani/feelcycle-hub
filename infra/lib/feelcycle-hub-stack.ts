@@ -130,6 +130,39 @@ export class FeelcycleHubStack extends cdk.Stack {
       sortKey: { name: 'lessonDateTime', type: dynamodb.AttributeType.STRING },
     });
 
+    // User Lessons table for unified user-lesson relationships
+    const userLessonsTable = new dynamodb.Table(this, 'UserLessonsTable', {
+      tableName: `feelcycle-hub-user-lessons-${environment}`,
+      partitionKey: { name: 'PK', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'SK', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      timeToLiveAttribute: 'ttl',
+      pointInTimeRecovery: isProduction,
+      removalPolicy: isProduction ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
+    // GSI for type-based queries (favorites, waitlists, etc.)
+    userLessonsTable.addGlobalSecondaryIndex({
+      indexName: 'TypeDateIndex',
+      partitionKey: { name: 'type', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'lessonDate', type: dynamodb.AttributeType.STRING },
+    });
+
+    // GSI for studio-based queries
+    userLessonsTable.addGlobalSecondaryIndex({
+      indexName: 'StudioDateIndex',
+      partitionKey: { name: 'studioCode', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'lessonDate', type: dynamodb.AttributeType.STRING },
+    });
+
+    // GSI for status-based monitoring and processing
+    userLessonsTable.addGlobalSecondaryIndex({
+      indexName: 'StatusDateTimeIndex',
+      partitionKey: { name: 'status', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'lessonDateTime', type: dynamodb.AttributeType.STRING },
+    });
+
     // Secrets Manager for storing user credentials
     const userCredentialsSecret = new secretsmanager.Secret(this, 'UserCredentials', {
       secretName: `feelcycle-hub/user-credentials/${environment}`,
@@ -181,6 +214,7 @@ export class FeelcycleHubStack extends cdk.Stack {
         WAITLIST_TABLE_NAME: waitlistTable.tableName,
         STUDIOS_TABLE_NAME: studiosTable.tableName,
         LESSONS_TABLE_NAME: lessonsTable.tableName,
+        USER_LESSONS_TABLE_NAME: userLessonsTable.tableName,
         USER_CREDENTIALS_SECRET_ARN: userCredentialsSecret.secretArn,
         LINE_API_SECRET_ARN: lineApiSecret.secretArn,
         ENVIRONMENT: environment,
@@ -196,6 +230,7 @@ export class FeelcycleHubStack extends cdk.Stack {
     waitlistTable.grantReadWriteData(mainLambda);
     studiosTable.grantReadWriteData(mainLambda);
     lessonsTable.grantReadWriteData(mainLambda);
+    userLessonsTable.grantReadWriteData(mainLambda);
     userCredentialsSecret.grantRead(mainLambda);
     lineApiSecret.grantRead(mainLambda);
 

@@ -1,0 +1,12 @@
+{
+  "httpMethod": "POST",
+  "path": "/waitlists",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"userId\":\"test-user-500-error\",\"studioCode\":\"shibuya\",\"lessonDate\":\"2025-07-24\",\"startTime\":\"19:30\",\"lessonName\":\"BB1\",\"instructor\":\"Test Instructor\"}",
+  "requestContext": {
+    "httpMethod": "POST",
+    "path": "/waitlists"
+  }
+}
