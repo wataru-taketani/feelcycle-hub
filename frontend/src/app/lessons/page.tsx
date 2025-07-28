@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Calendar, MapPin, ChevronDown, ChevronRight } from "lucide-react";
+import { getTodayJST, getDateAfterDaysJST, formatDateJST } from '@/utils/dateUtils';
 
 interface LessonData {
   studioCode: string;
@@ -100,7 +101,7 @@ export default function LessonsPage() {
     }
   };
 
-  // 特定のスタジオのレッスン取得
+  // 特定のスタジオのレッスン取得（全期間データ）
   const fetchLessonsForStudio = async (studioCode: string) => {
     if (!studioCode) return;
     
@@ -108,39 +109,21 @@ export default function LessonsPage() {
       setLoadingLessons(true);
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
       
-      // 今日から7日間のレッスンを取得
-      const today = new Date();
-      const dates = [];
-      for (let i = 0; i < 7; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
-        dates.push(date.toISOString().split('T')[0]); // YYYY-MM-DD format
+      // 今日から30日間のレッスンを取得（スクロール表示用） - 日本時間基準
+      const startDate = getTodayJST();
+      const endDate = getDateAfterDaysJST(30);
+      
+      console.log(`📅 Fetching lessons for ${studioCode}: ${startDate} to ${endDate}`);
+      
+      const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${startDate}&endDate=${endDate}`);
+      
+      if (response.data.success && response.data.data?.lessonsByDate) {
+        setLessonsByDate(response.data.data.lessonsByDate);
+        console.log('✅ Lessons fetched successfully:', Object.keys(response.data.data.lessonsByDate).length, 'days');
+      } else {
+        console.warn('No lesson data returned:', response.data);
+        setLessonsByDate({});
       }
-      
-      // 複数日のレッスンを並列取得
-      const responses = await Promise.all(
-        dates.map(date => 
-          axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&date=${date}`)
-            .catch(error => {
-              console.warn(`Failed to fetch lessons for ${date}:`, error);
-              return { data: { success: false, data: [] } };
-            })
-        )
-      );
-      
-      // 日付別にレッスンをまとめる
-      const lessonsByDate: { [date: string]: any[] } = {};
-      responses.forEach((response, index) => {
-        if (response.data.success && response.data.data) {
-          const date = dates[index];
-          lessonsByDate[date] = Array.isArray(response.data.data) 
-            ? response.data.data 
-            : Object.values(response.data.data).flat();
-        }
-      });
-      
-      setLessonsByDate(lessonsByDate);
-      console.log('✅ Lessons fetched successfully:', Object.keys(lessonsByDate).length, 'days');
     } catch (error) {
       console.error('Error fetching lessons:', error);
       setLessonsByDate({});
@@ -183,14 +166,8 @@ export default function LessonsPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    const weekday = weekdays[date.getDay()];
-    return `${month}/${day}(${weekday})`;
-  };
+  // 日付フォーマット関数を共通ユーティリティに移動
+  // const formatDate = formatDateJST;
 
   const getProgramClass = (program: string) => {
     const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
@@ -379,7 +356,7 @@ export default function LessonsPage() {
                     <div key={date}>
                       <h3 className="font-medium text-sm mb-3 flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
-                        {formatDate(date)}
+                        {formatDateJST(date)}
                       </h3>
                       <div className="space-y-2">
                         {filteredLessons[date].map((lesson, index) => {

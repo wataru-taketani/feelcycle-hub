@@ -12,6 +12,7 @@ import { progressiveDailyRefresh } from '../scripts/progressive-daily-refresh';
 import { debugLambdaModules } from '../debug-lambda-modules';
 import { simpleTest } from '../simple-test';
 import { LambdaClient, InvokeCommand } from '@aws-sdk/client-lambda';
+import { logJSTInfo } from '../utils/dateUtils';
 
 /**
  * メインLambda関数ハンドラー
@@ -134,7 +135,8 @@ export async function handler(
  * Progressive daily data refresh - processes one studio at a time
  */
 async function handleDataRefresh(event: LambdaEvent): Promise<void> {
-  console.log('🔄 Progressive daily lesson data refresh started at:', new Date().toISOString());
+  console.log('🔄 Progressive daily lesson data refresh started');
+  logJSTInfo('Daily Refresh Start Time');
   
   try {
     const startTime = Date.now();
@@ -144,10 +146,10 @@ async function handleDataRefresh(event: LambdaEvent): Promise<void> {
     if (result?.triggerNext) {
       console.log('🔄 Triggering next studio processing...');
       console.log('INFO: PROGRESSIVE_REFRESH_CONTINUE', {
-        timestamp: new Date().toISOString(),
         duration: `${duration.toFixed(1)} seconds`,
         progress: result.progress,
       });
+      logJSTInfo('Continue Next Studio');
       
       // Self-trigger for next studio processing
       await triggerNextExecution();
@@ -155,21 +157,21 @@ async function handleDataRefresh(event: LambdaEvent): Promise<void> {
     } else {
       console.log('✅ Progressive daily lesson data refresh completed successfully');
       console.log('INFO: PROGRESSIVE_REFRESH_SUCCESS', {
-        timestamp: new Date().toISOString(),
         duration: `${duration.toFixed(1)} seconds`,
         progress: result?.progress,
         nextScheduled: '3:00 AM JST tomorrow'
       });
+      logJSTInfo('Daily Refresh Completed');
     }
   } catch (error) {
     console.error('❌ Progressive daily lesson data refresh failed:', error);
     
     // CloudWatch Logs に ERROR レベルでログを出力（アラート設定で通知可能）
     console.error('ALERT: PROGRESSIVE_REFRESH_FAILED', {
-      timestamp: new Date().toISOString(),
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });
+    logJSTInfo('Daily Refresh Failed');
     
     throw error;
   }
@@ -184,7 +186,6 @@ async function triggerNextExecution(): Promise<void> {
     
     const payload = {
       source: 'eventbridge.dataRefresh',
-      time: new Date().toISOString(),
       trigger: 'auto-continue'
     };
     

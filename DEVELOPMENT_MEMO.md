@@ -1200,10 +1200,14 @@ FEELCYCLE Hub
 - EventBridgeは正常に設定済み（毎日3:00 AM JST実行）
 
 ### **根本原因**
-**Puppeteer/Chromium のLambda環境エラー**: 
+**FEELCYCLEシステムメンテナンスとの時間重複**: 
+- メンテナンス: 2025年7月29日（火）1:00～4:00頃
+- 日次スクレイピング: 毎日3:00 AM JST実行
+- 結果: メンテナンス時間帯でサイトアクセス不可により失敗
+
+**副次的問題**:
+- Puppeteer/Chromium Lambda環境での設定不備も存在
 - エラー: `"Protocol error (Target.setDiscoverTargets): Target closed"`
-- 場所: `RealFeelcycleScraper.searchAllLessons()` メソッド実行時
-- 影響: 日次スクレイピングバッチが実行失敗している
 
 ### **技術的詳細**
 1. **呼び出しフロー**: EventBridge → main.ts:handleDataRefresh → progressive-daily-refresh.ts → RealFeelcycleScraper.searchAllLessons()
@@ -1214,6 +1218,35 @@ FEELCYCLE Hub
 - Puppeteer設定をLambda環境用に最適化
 - ブラウザ初期化プロセスの改善
 - エラーハンドリングとリトライ機能の強化
+
+## **🕐 日時管理システム全体改善（2025-07-29）**
+
+### **改善前の問題**
+1. **フロントエンド**: ブラウザローカル時間とサーバー時間の不整合
+2. **バックエンド**: Lambda環境(UTC)での日時処理で日本時間との齟齬
+3. **スケジュール開始日**: 日付によって異なる結果が生成される可能性
+
+### **実装した改善**
+1. **共通日時ユーティリティ作成**
+   - Frontend: `/frontend/src/utils/dateUtils.ts`
+   - Backend: `/backend/src/utils/dateUtils.ts`
+   - 全て日本時間(JST)基準で統一
+
+2. **主要な修正箇所**
+   - `lessons/page.tsx`: レッスン検索の開始日・終了日をJST基準に変更
+   - `real-scraper.ts`: データのlastUpdated、TTLをJST基準に変更
+   - `main.ts`: 日次リフレッシュのログ出力をJST基準に変更
+
+3. **新機能**
+   - `getTodayJST()`: 日本時間の今日の日付
+   - `getDateAfterDaysJST(days)`: 日本時間基準でN日後の日付
+   - `logJSTInfo()`: デバッグ用時刻情報出力
+   - `getTTLFromJST()`: JST基準のTTL生成
+
+### **期待される効果**
+- レッスンスケジュールの開始日が正確に
+- 日次スクレイピングの実行タイミング把握向上
+- フロントエンド・バックエンド間の時刻整合性確保
 - 不明な点は素直に「確認します」と回答
 - 実データでの動作確認を最優先
 

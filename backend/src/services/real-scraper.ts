@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-core';
 const chromium = require('@sparticuz/chromium').default;
 import { LessonData } from '../types';
+import { getJSTISOString, getTTLFromJST, logJSTInfo } from '../utils/dateUtils';
 
 export class RealFeelcycleScraper {
   private static browser: any = null;
@@ -297,8 +298,8 @@ export class RealFeelcycleScraper {
         totalSlots: null,
         isAvailable: lesson.isAvailable ? 'true' : 'false',
         program: lesson.program,
-        lastUpdated: new Date().toISOString(),
-        ttl: Math.floor((new Date().getTime() + 7 * 86400000) / 1000), // 7 days
+        lastUpdated: getJSTISOString(),
+        ttl: getTTLFromJST(7), // 7 days from JST
       }));
 
         console.log(`✅ Successfully fetched ${lessonData.length} lessons for ${studioCode}`);
