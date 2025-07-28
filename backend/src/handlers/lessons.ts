@@ -350,28 +350,12 @@ async function searchLessons(params: Record<string, string | undefined> | null):
     let lessons = await lessonsService.getLessonsForStudioAndDate(normalizedStudioCode, date, filters);
     console.log(`Found ${lessons.length} real lessons in database`);
     
-    // If no real data exists, use mock data as fallback
+    // NO MORE MOCK DATA FALLBACK - Be honest when no real data exists
     if (lessons.length === 0) {
-      console.log('No real lesson data found, using mock data');
-      const mockLessons = await FeelcycleScraper.searchLessons(studioCode, date, filters);
-      // Convert mock data format to real data format for consistency
-      lessons = mockLessons.map(mockLesson => ({
-        studioCode: mockLesson.studio,
-        lessonDateTime: `${mockLesson.date}T${mockLesson.time}:00+09:00`,
-        lessonDate: mockLesson.date,
-        startTime: mockLesson.time,
-        endTime: calculateEndTime(mockLesson.time),
-        lessonName: mockLesson.program,
-        instructor: mockLesson.instructor,
-        availableSlots: mockLesson.availableSlots,
-        totalSlots: mockLesson.totalSlots,
-        isAvailable: mockLesson.isAvailable ? 'true' : 'false',
-        program: mockLesson.program.split(' ')[0], // Extract program type
-        lastUpdated: new Date().toISOString(),
-        ttl: Math.floor((new Date().getTime() + 86400000) / 1000),
-      }));
+      console.log('⚠️ No real lesson data found - returning empty result (no mock data fallback)');
+      console.log('This may indicate: 1) Maintenance period, 2) Scraping failure, 3) No lessons scheduled');
     } else {
-      console.log('Using real lesson data from database');
+      console.log('✅ Using real lesson data from database');
     }
     
     return {
