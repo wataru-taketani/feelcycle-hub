@@ -38,6 +38,19 @@ interface StudioGroups {
 
 export default function LessonsPage() {
   const { isAuthenticated, apiUser, loading } = useAuth();
+  
+  // Add error boundary for debugging
+  const [pageError, setPageError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    try {
+      // Basic page load test
+      console.log('LessonsPage mounted', { isAuthenticated, loading });
+    } catch (error) {
+      console.error('Page mount error:', error);
+      setPageError(error instanceof Error ? error.message : 'Unknown error');
+    }
+  }, []);
   const [lessonsByDate, setLessonsByDate] = useState<LessonsByDate>({});
   const [studioGroups, setStudioGroups] = useState<StudioGroups>({});
   const [studios, setStudios] = useState<Studio[]>([]);
@@ -94,14 +107,40 @@ export default function LessonsPage() {
     try {
       setLoadingLessons(true);
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
-      const response = await axios.get(`${apiBaseUrl}/lessons/${studioCode}`);
       
-      if (response.data.success) {
-        setLessonsByDate(response.data.data);
-      } else {
-        console.error('Failed to fetch lessons:', response.data.message);
-        setLessonsByDate({});
+      // 今日から7日間のレッスンを取得
+      const today = new Date();
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        dates.push(date.toISOString().split('T')[0]); // YYYY-MM-DD format
       }
+      
+      // 複数日のレッスンを並列取得
+      const responses = await Promise.all(
+        dates.map(date => 
+          axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&date=${date}`)
+            .catch(error => {
+              console.warn(`Failed to fetch lessons for ${date}:`, error);
+              return { data: { success: false, data: [] } };
+            })
+        )
+      );
+      
+      // 日付別にレッスンをまとめる
+      const lessonsByDate: { [date: string]: any[] } = {};
+      responses.forEach((response, index) => {
+        if (response.data.success && response.data.data) {
+          const date = dates[index];
+          lessonsByDate[date] = Array.isArray(response.data.data) 
+            ? response.data.data 
+            : Object.values(response.data.data).flat();
+        }
+      });
+      
+      setLessonsByDate(lessonsByDate);
+      console.log('✅ Lessons fetched successfully:', Object.keys(lessonsByDate).length, 'days');
     } catch (error) {
       console.error('Error fetching lessons:', error);
       setLessonsByDate({});
@@ -185,6 +224,18 @@ export default function LessonsPage() {
 
   const filteredLessons = getFilteredLessons();
   const hasResults = Object.keys(filteredLessons).length > 0;
+
+  // Show error if page failed to mount
+  if (pageError) {
+    return (
+      <div className="px-4 py-2">
+        <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+          <h2 className="font-medium text-destructive mb-2">ページエラー</h2>
+          <p className="text-sm text-muted-foreground">{pageError}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

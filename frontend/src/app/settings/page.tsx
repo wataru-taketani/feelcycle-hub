@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,19 @@ import { Settings, User, Bell, Heart, X, MapPin } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, isAuthenticated, loading } = useAuth();
+  
+  // Add error boundary for debugging
+  const [pageError, setPageError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    try {
+      // Basic page load test
+      console.log('SettingsPage mounted', { isAuthenticated, loading });
+    } catch (error) {
+      console.error('Settings page mount error:', error);
+      setPageError(error instanceof Error ? error.message : 'Unknown error');
+    }
+  }, []);
   const [displayName, setDisplayName] = useState(user?.displayName || "");
   const [favoriteInstructors, setFavoriteInstructors] = useState<string[]>(['a-airi', 'mizuki', 'k-miku', 'taiyo']);
   const [favoriteStudios, setFavoriteStudios] = useState<string[]>(['gnz', 'sby', 'sjk']);
@@ -103,6 +116,18 @@ export default function SettingsPage() {
   const handleRemoveFavoriteStudio = (studioId: string) => {
     setFavoriteStudios(prev => prev.filter(id => id !== studioId));
   };
+
+  // Show error if page failed to mount
+  if (pageError) {
+    return (
+      <div className="px-4 py-2">
+        <div className="bg-destructive/10 border border-destructive rounded-lg p-4">
+          <h2 className="font-medium text-destructive mb-2">ページエラー</h2>
+          <p className="text-sm text-muted-foreground">{pageError}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
