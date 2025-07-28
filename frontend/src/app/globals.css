@@ -2,87 +2,345 @@
 @tailwind components;
 @tailwind utilities;
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --font-size: 14px;
+  --background: 0 0% 100%;
+  --foreground: 224 71.4% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 71.4% 4.1%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 224 71.4% 4.1%;
+  --primary: 224 71.4% 4.1%;
+  --primary-foreground: 210 20% 98%;
+  --secondary: 220 14.3% 95.9%;
+  --secondary-foreground: 220.9 39.3% 11%;
+  --muted: 220 14.3% 95.9%;
+  --muted-foreground: 220 8.9% 46.1%;
+  --accent: 220 14.3% 95.9%;
+  --accent-foreground: 220.9 39.3% 11%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 20% 98%;
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  --ring: 224 71.4% 4.1%;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* FEELCYCLE プログラム色 */
+  --program-bb1-bg: rgb(255, 255, 102);
+  --program-bb1-text: rgb(0, 0, 0);
+  --program-bb2-bg: rgb(255, 153, 51);
+  --program-bb2-text: rgb(0, 0, 0);
+  --program-bb3-bg: rgb(255, 51, 0);
+  --program-bb3-text: rgb(255, 255, 255);
+  --program-bsl-bg: rgb(0, 0, 204);
+  --program-bsl-text: rgb(255, 255, 255);
+  --program-bsb-bg: rgb(0, 204, 255);
+  --program-bsb-text: rgb(0, 0, 0);
+  --program-bsw-bg: rgb(204, 102, 255);
+  --program-bsw-text: rgb(255, 255, 255);
+  --program-bswi-bg: rgb(153, 0, 153);
+  --program-bswi-text: rgb(255, 255, 102);
+  --program-bsbi-bg: rgb(51, 102, 153);
+  --program-bsbi-text: rgb(255, 255, 102);
+
+  /* レッスン状態別の色 */
+  --lesson-reserved-bg: rgba(255, 182, 193, 0.3);
+  --lesson-waiting-bg: rgba(173, 216, 230, 0.4);
+  --lesson-waiting-border: rgb(70, 130, 180);
+
+  /* キャンセル待ちステータス色 */
+  --status-waiting-bg: rgb(59, 130, 246);
+  --status-waiting-text: rgb(255, 255, 255);
+  --status-notified-bg: rgb(245, 158, 11);
+  --status-notified-text: rgb(255, 255, 255);
+  --status-ended-bg: rgb(107, 114, 128);
+  --status-ended-text: rgb(255, 255, 255);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
   }
 }
 
-body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-  margin: 0;
-  padding: 0;
+/**
+ * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
+ */
+@layer base {
+  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
+    h1 {
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h2 {
+      font-size: var(--text-xl);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h3 {
+      font-size: var(--text-lg);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    h4 {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    p {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+
+    label {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    button {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-medium);
+      line-height: 1.5;
+    }
+
+    input {
+      font-size: var(--text-base);
+      font-weight: var(--font-weight-normal);
+      line-height: 1.5;
+    }
+  }
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 16px;
+/* FEELCYCLE プログラム別スタイル */
+@layer components {
+  .program-bb1 {
+    background-color: var(--program-bb1-bg);
+    color: var(--program-bb1-text);
+  }
+  
+  .program-bb2 {
+    background-color: var(--program-bb2-bg);
+    color: var(--program-bb2-text);
+  }
+  
+  .program-bb3 {
+    background-color: var(--program-bb3-bg);
+    color: var(--program-bb3-text);
+  }
+  
+  .program-bsl {
+    background-color: var(--program-bsl-bg);
+    color: var(--program-bsl-text);
+  }
+  
+  .program-bsb {
+    background-color: var(--program-bsb-bg);
+    color: var(--program-bsb-text);
+  }
+  
+  .program-bsw {
+    background-color: var(--program-bsw-bg);
+    color: var(--program-bsw-text);
+  }
+  
+  .program-bswi {
+    background-color: var(--program-bswi-bg);
+    color: var(--program-bswi-text);
+  }
+  
+  .program-bsbi {
+    background-color: var(--program-bsbi-bg);
+    color: var(--program-bsbi-text);
+  }
+
+  /* Badge要素でのプログラム色の優先適用 */
+  .program-bb1.inline-flex {
+    background-color: var(--program-bb1-bg) !important;
+    color: var(--program-bb1-text) !important;
+  }
+  
+  .program-bb2.inline-flex {
+    background-color: var(--program-bb2-bg) !important;
+    color: var(--program-bb2-text) !important;
+  }
+  
+  .program-bb3.inline-flex {
+    background-color: var(--program-bb3-bg) !important;
+    color: var(--program-bb3-text) !important;
+  }
+  
+  .program-bsl.inline-flex {
+    background-color: var(--program-bsl-bg) !important;
+    color: var(--program-bsl-text) !important;
+  }
+  
+  .program-bsb.inline-flex {
+    background-color: var(--program-bsb-bg) !important;
+    color: var(--program-bsb-text) !important;
+  }
+  
+  .program-bsw.inline-flex {
+    background-color: var(--program-bsw-bg) !important;
+    color: var(--program-bsw-text) !important;
+  }
+  
+  .program-bswi.inline-flex {
+    background-color: var(--program-bswi-bg) !important;
+    color: var(--program-bswi-text) !important;
+  }
+  
+  .program-bsbi.inline-flex {
+    background-color: var(--program-bsbi-bg) !important;
+    color: var(--program-bsbi-text) !important;
+  }
+
+  .lesson-item {
+    @apply rounded border p-2 cursor-pointer transition-all hover:shadow-sm;
+    border-color: var(--border);
+  }
+
+  .lesson-item:hover {
+    border-color: rgba(0, 0, 0, 0.2);
+  }
+
+  .lesson-item.reserved {
+    background-color: var(--lesson-reserved-bg);
+  }
+
+  .lesson-item.waiting {
+    background-color: var(--lesson-waiting-bg);
+    border-color: var(--lesson-waiting-border);
+    border-width: 2px;
+  }
+
+  .program-name {
+    @apply inline-block px-2 py-1 rounded font-medium;
+    font-size: 12px;
+  }
+
+  .reservation-number {
+    @apply text-sm font-medium text-gray-700;
+  }
+
+  .cancel-waiting-card {
+    @apply rounded-lg border border-border bg-white;
+  }
+
+  .cancel-waiting-card-header {
+    @apply flex items-center justify-between px-3 py-2 border-b border-border;
+  }
+
+  .cancel-waiting-card-content {
+    @apply p-3 bg-white space-y-1.5;
+  }
 }
 
-.card {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 16px;
-}
-
-.btn {
-  display: inline-block;
-  padding: 12px 24px;
-  border-radius: 6px;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background-color: #06c755;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #05b04d;
-}
-
-.btn-secondary {
-  background-color: #f0f0f0;
-  color: #333;
-}
-
-.btn-secondary:hover {
-  background-color: #e0e0e0;
-}
-
-.loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 200px;
-}
-
-.error {
-  color: #dc3545;
-  background-color: #f8d7da;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
-  padding: 12px;
-  margin: 16px 0;
+html {
+  font-size: var(--font-size);
 }

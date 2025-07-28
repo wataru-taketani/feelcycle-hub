@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { Header } from '@/components/Header';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -19,7 +20,12 @@ export default function RootLayout({
     <html lang="ja">
       <body className={inter.className}>
         <AuthProvider>
-          {children}
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
+          </div>
         </AuthProvider>
       </body>
     </html>
