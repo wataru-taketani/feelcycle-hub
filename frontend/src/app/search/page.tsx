@@ -300,9 +300,9 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   };
 
   const getProgramClass = (program: string) => {
-    if (!program) return 'program-other';
+    if (!program) return 'bg-gray-100 text-gray-700';
     const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
-    return `program-${normalizedProgram} program-name`;
+    return `program-${normalizedProgram}`;
   };
 
   const getLessonItemClass = (lesson: any) => {
@@ -1079,11 +1079,11 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                                   {lesson.time}
                                 </div>
                                 <div className="mb-1">
-                                  <div className={`text-sm font-medium ${getProgramClass(lesson.program)}`}>
+                                  <div className={`text-xs font-medium rounded px-2 py-1 ${getProgramClass(lesson.program)}`}>
                                     {lesson.name || `${lesson.program} レッスン`}
                                   </div>
                                 </div>
-                                <div className="text-sm text-muted-foreground">
+                                <div className="text-sm font-medium">
                                   <span>{lesson.instructor}</span>
                                 </div>
                                 
@@ -1164,12 +1164,12 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                 </div>
                 
                 <div>
-                  <Badge className={`program-name ${getProgramClass(selectedLesson.program)} text-sm px-3 py-1`}>
-                    {selectedLesson.program} {selectedLesson.name}
-                  </Badge>
+                  <div className={`inline-block text-sm font-medium rounded px-3 py-1 ${getProgramClass(selectedLesson.program)}`}>
+                    {selectedLesson.name}
+                  </div>
                 </div>
                 
-                <div className="text-muted-foreground">
+                <div className="font-medium">
                   {selectedLesson.instructor}
                 </div>
                 
