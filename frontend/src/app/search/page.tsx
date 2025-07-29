@@ -242,14 +242,36 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
       const allLessonsData: LessonsByDate = {};
       
       for (const studioId of selectedStudios) {
-        const studio = [...eastAreaStudios, ...northAreaStudios, ...westAreaStudios, ...southAreaStudios]
-          .find(s => s.id === studioId);
+        // APIから取得したスタジオリストまたはフォールバックの静的リストから検索
+        let studioCode = studioId;
         
-        if (!studio) continue;
+        // APIから取得したスタジオグループを優先
+        if (Object.keys(studioGroups).length > 0) {
+          let found = false;
+          Object.values(studioGroups).forEach(studioList => {
+            const studio = studioList.find(s => s.code.toLowerCase() === studioId);
+            if (studio) {
+              studioCode = studio.code;
+              found = true;
+            }
+          });
+          if (!found) continue;
+        } else {
+          // フォールバック：静的スタジオリスト
+          const studio = [...eastAreaStudios, ...northAreaStudios, ...westAreaStudios, ...southAreaStudios]
+            .find(s => s.id === studioId);
+          if (!studio) continue;
+          studioCode = studio.code;
+        }
         
-        console.log(`🔍 Searching all lessons for ${studio.code}: ${studio.name}`);
+        console.log(`🔍 Searching lessons for studio: ${studioCode}`);
         
-        const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studio.code}`);
+        // 今日から30日間の範囲でレッスンを取得
+        const today = new Date();
+        const startDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+        const endDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+        
+        const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${startDate}&endDate=${endDate}`);
         
         if (response.data.success && response.data.data?.lessonsByDate) {
           // 各スタジオのデータを統合
@@ -267,6 +289,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
       
     } catch (error) {
       console.error('Error searching lessons:', error);
+      toast.error("レッスンの取得に失敗しました");
       setLessonsByDate({});
     } finally {
       setLoadingLessons(false);
