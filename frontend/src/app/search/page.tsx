@@ -307,6 +307,40 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     return className;
   };
 
+  const getProgramBackgroundColor = (program: string) => {
+    if (!program) return '#f3f4f6';
+    
+    switch (program.toUpperCase()) {
+      case 'BB1': return 'rgb(255, 255, 102)';
+      case 'BB2': return 'rgb(255, 153, 51)';
+      case 'BB3': return 'rgb(255, 51, 0)';
+      case 'BSL': return 'rgb(0, 0, 204)';
+      case 'BSB': return 'rgb(0, 204, 255)';
+      case 'BSW': return 'rgb(204, 102, 255)';
+      case 'BSWI': return 'rgb(153, 0, 153)';
+      case 'BSBI': return 'rgb(51, 102, 153)';
+      default: 
+        console.log('Unknown program:', program);
+        return '#f3f4f6';
+    }
+  };
+
+  const getProgramTextColor = (program: string) => {
+    if (!program) return '#374151';
+    
+    switch (program.toUpperCase()) {
+      case 'BB1': return 'rgb(0, 0, 0)';
+      case 'BB2': return 'rgb(0, 0, 0)';
+      case 'BB3': return 'rgb(255, 255, 255)';
+      case 'BSL': return 'rgb(255, 255, 255)';
+      case 'BSB': return 'rgb(0, 0, 0)';
+      case 'BSW': return 'rgb(255, 255, 255)';
+      case 'BSWI': return 'rgb(255, 255, 102)';
+      case 'BSBI': return 'rgb(255, 255, 102)';
+      default: return '#374151';
+    }
+  };
+
   const getLessonItemClass = (lesson: any) => {
     const baseClass = 'w-full lesson-item text-left';
     console.log('Lesson item class for lesson:', lesson.id, 'status:', lesson.status, 'class:', baseClass);
@@ -1074,7 +1108,10 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                                   {lesson.time}
                                 </div>
                                 <div className="mb-1">
-                                  <div className={`text-xs font-medium rounded px-2 py-1 ${getProgramClass(lesson.program)}`}>
+                                  <div className="text-xs font-medium rounded px-2 py-1" style={{
+                                    backgroundColor: getProgramBackgroundColor(lesson.program),
+                                    color: getProgramTextColor(lesson.program)
+                                  }}>
                                     {lesson.name || `${lesson.program} レッスン`}
                                   </div>
                                 </div>

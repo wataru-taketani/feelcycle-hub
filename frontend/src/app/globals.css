@@ -217,89 +217,48 @@
   }
 }
 
-/* FEELCYCLE プログラム別スタイル */
+/* FEELCYCLE プログラム別スタイル - 最高優先度で適用 */
+.program-bb1 {
+  background-color: rgb(255, 255, 102) !important;
+  color: rgb(0, 0, 0) !important;
+}
+
+.program-bb2 {
+  background-color: rgb(255, 153, 51) !important;
+  color: rgb(0, 0, 0) !important;
+}
+
+.program-bb3 {
+  background-color: rgb(255, 51, 0) !important;
+  color: rgb(255, 255, 255) !important;
+}
+
+.program-bsl {
+  background-color: rgb(0, 0, 204) !important;
+  color: rgb(255, 255, 255) !important;
+}
+
+.program-bsb {
+  background-color: rgb(0, 204, 255) !important;
+  color: rgb(0, 0, 0) !important;
+}
+
+.program-bsw {
+  background-color: rgb(204, 102, 255) !important;
+  color: rgb(255, 255, 255) !important;
+}
+
+.program-bswi {
+  background-color: rgb(153, 0, 153) !important;
+  color: rgb(255, 255, 102) !important;
+}
+
+.program-bsbi {
+  background-color: rgb(51, 102, 153) !important;
+  color: rgb(255, 255, 102) !important;
+}
+
 @layer components {
-  .program-bb1 {
-    background-color: var(--program-bb1-bg) !important;
-    color: var(--program-bb1-text) !important;
-  }
-  
-  .program-bb2 {
-    background-color: var(--program-bb2-bg) !important;
-    color: var(--program-bb2-text) !important;
-  }
-  
-  .program-bb3 {
-    background-color: var(--program-bb3-bg) !important;
-    color: var(--program-bb3-text) !important;
-  }
-  
-  .program-bsl {
-    background-color: var(--program-bsl-bg) !important;
-    color: var(--program-bsl-text) !important;
-  }
-  
-  .program-bsb {
-    background-color: var(--program-bsb-bg) !important;
-    color: var(--program-bsb-text) !important;
-  }
-  
-  .program-bsw {
-    background-color: var(--program-bsw-bg) !important;
-    color: var(--program-bsw-text) !important;
-  }
-  
-  .program-bswi {
-    background-color: var(--program-bswi-bg) !important;
-    color: var(--program-bswi-text) !important;
-  }
-  
-  .program-bsbi {
-    background-color: var(--program-bsbi-bg) !important;
-    color: var(--program-bsbi-text) !important;
-  }
-
-  /* Badge要素でのプログラム色の優先適用 */
-  .program-bb1.inline-flex {
-    background-color: var(--program-bb1-bg) !important;
-    color: var(--program-bb1-text) !important;
-  }
-  
-  .program-bb2.inline-flex {
-    background-color: var(--program-bb2-bg) !important;
-    color: var(--program-bb2-text) !important;
-  }
-  
-  .program-bb3.inline-flex {
-    background-color: var(--program-bb3-bg) !important;
-    color: var(--program-bb3-text) !important;
-  }
-  
-  .program-bsl.inline-flex {
-    background-color: var(--program-bsl-bg) !important;
-    color: var(--program-bsl-text) !important;
-  }
-  
-  .program-bsb.inline-flex {
-    background-color: var(--program-bsb-bg) !important;
-    color: var(--program-bsb-text) !important;
-  }
-  
-  .program-bsw.inline-flex {
-    background-color: var(--program-bsw-bg) !important;
-    color: var(--program-bsw-text) !important;
-  }
-  
-  .program-bswi.inline-flex {
-    background-color: var(--program-bswi-bg) !important;
-    color: var(--program-bswi-text) !important;
-  }
-  
-  .program-bsbi.inline-flex {
-    background-color: var(--program-bsbi-bg) !important;
-    color: var(--program-bsbi-text) !important;
-  }
-
   .lesson-item {
     @apply rounded border p-2 cursor-pointer transition-all hover:shadow-sm;
     border-color: var(--border);

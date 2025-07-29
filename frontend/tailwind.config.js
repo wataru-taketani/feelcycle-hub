@@ -5,6 +5,16 @@ module.exports = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
+  safelist: [
+    'program-bb1',
+    'program-bb2', 
+    'program-bb3',
+    'program-bsl',
+    'program-bsb',
+    'program-bsw',
+    'program-bswi',
+    'program-bsbi',
+  ],
   theme: {
     extend: {
       colors: {
