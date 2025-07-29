@@ -249,13 +249,16 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
         if (Object.keys(studioGroups).length > 0) {
           let found = false;
           Object.values(studioGroups).forEach(studioList => {
-            const studio = studioList.find(s => s.code.toLowerCase() === studioId);
+            const studio = studioList.find(s => s.code.toLowerCase() === studioId.toLowerCase());
             if (studio) {
               studioCode = studio.code;
               found = true;
             }
           });
-          if (!found) continue;
+          if (!found) {
+            console.warn(`Studio not found in API groups: ${studioId}`);
+            continue;
+          }
         } else {
           // フォールバック：静的スタジオリスト
           const studio = [...eastAreaStudios, ...northAreaStudios, ...westAreaStudios, ...southAreaStudios]
@@ -350,10 +353,19 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   };
 
   const handleStudioChange = (studioId: string, checked: boolean) => {
+    console.log('handleStudioChange called:', { studioId, checked });
     if (checked) {
-      setSelectedStudios(prev => [...prev, studioId]);
+      setSelectedStudios(prev => {
+        const newSelected = [...prev, studioId];
+        console.log('New selected studios:', newSelected);
+        return newSelected;
+      });
     } else {
-      setSelectedStudios(prev => prev.filter(id => id !== studioId));
+      setSelectedStudios(prev => {
+        const newSelected = prev.filter(id => id !== studioId);
+        console.log('New selected studios:', newSelected);
+        return newSelected;
+      });
     }
   };
 
@@ -656,7 +668,10 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                                     variant={selectedStudios.includes(studio.code.toLowerCase()) ? "default" : "outline"}
                                     size="sm"
                                     className="h-8 px-2 text-xs font-normal justify-start"
-                                    onClick={() => handleStudioChange(studio.code.toLowerCase(), !selectedStudios.includes(studio.code.toLowerCase()))}
+                                    onClick={() => {
+                                      console.log('Studio button clicked:', studio.code);
+                                      handleStudioChange(studio.code.toLowerCase(), !selectedStudios.includes(studio.code.toLowerCase()));
+                                    }}
                                   >
                                     {studio.name}
                                   </Button>
