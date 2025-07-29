@@ -11,57 +11,88 @@ export class RealFeelcycleScraper {
    */
   static async initBrowser() {
     if (!this.browser) {
-      console.log('🌐 Initializing browser for Lambda environment...');
+      // Detect environment: Lambda vs Local development
+      const isLambda = process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
       
-      try {
-        // Get the Chromium executable path
-        const executablePath = await chromium.executablePath();
-        console.log('📍 Chromium executable path:', executablePath);
+      if (isLambda) {
+        console.log('🌐 Initializing browser for Lambda environment...');
         
-        // Lambda-optimized browser configuration
-        this.browser = await puppeteer.launch({
-          args: [
-            ...chromium.args,
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu',
-            '--disable-extensions',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding',
-            '--disable-features=VizDisplayCompositor',
-            '--disable-ipc-flooding-protection',
-            '--disable-dev-tools',
-            '--disable-default-apps',
-            '--disable-hang-monitor',
-            '--disable-popup-blocking',
-            '--disable-prompt-on-repost',
-            '--disable-sync',
-            '--disable-web-security',
-            '--enable-automation',
-            '--password-store=basic',
-            '--use-mock-keychain',
-            '--hide-crash-restore-bubble'
-          ],
-          defaultViewport: { width: 1280, height: 720 },
-          executablePath,
-          headless: true,
-          timeout: 60000,
-          // Add protocol timeout to prevent Target.setDiscoverTargets error
-          protocolTimeout: 60000,
-          // Disable pipe for Lambda environment stability
-          pipe: false
-        });
+        try {
+          // Get the Chromium executable path
+          const executablePath = await chromium.executablePath();
+          console.log('📍 Chromium executable path:', executablePath);
+          
+          // Lambda-optimized browser configuration  
+          this.browser = await puppeteer.launch({
+            args: [
+              ...chromium.args,
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--single-process',
+              '--disable-gpu',
+              '--disable-extensions',
+              '--disable-background-timer-throttling',
+              '--disable-backgrounding-occluded-windows',
+              '--disable-renderer-backgrounding',
+              '--disable-features=VizDisplayCompositor',
+              '--disable-ipc-flooding-protection',
+              '--disable-dev-tools',
+              '--disable-default-apps',
+              '--disable-hang-monitor',
+              '--disable-popup-blocking',
+              '--disable-prompt-on-repost',
+              '--disable-sync',
+              '--disable-web-security',
+              '--enable-automation',
+              '--password-store=basic',
+              '--use-mock-keychain',
+              '--hide-crash-restore-bubble'
+            ],
+            defaultViewport: { width: 1280, height: 720 },
+            executablePath,
+            headless: true,
+            timeout: 60000,
+            protocolTimeout: 60000,
+            pipe: false
+          });
+          
+          console.log('✅ Browser initialized successfully for Lambda');
+          
+        } catch (error) {
+          console.error('❌ Lambda browser initialization failed:', error);
+          throw new Error(`Lambda browser initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      } else {
+        console.log('🖥️  Initializing browser for local development...');
         
-        console.log('✅ Browser initialized successfully');
-      } catch (error) {
-        console.error('❌ Browser initialization failed:', error);
-        throw new Error(`Browser initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        try {
+          // Import regular puppeteer for local development
+          const puppeteerLocal = await import('puppeteer');
+          
+          // Local development browser configuration
+          this.browser = await puppeteerLocal.default.launch({
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox', 
+              '--disable-dev-shm-usage',
+              '--disable-web-security',
+              '--disable-features=VizDisplayCompositor'
+            ],
+            defaultViewport: { width: 1280, height: 720 },
+            headless: true,
+            timeout: 30000
+          });
+          
+          console.log('✅ Browser initialized successfully for local development');
+          
+        } catch (error) {
+          console.error('❌ Local browser initialization failed:', error);
+          throw new Error(`Local browser initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
       }
     }
     return this.browser;
@@ -171,7 +202,7 @@ export class RealFeelcycleScraper {
       console.log(`Selecting studio ${studioCode}...`);
       const studioSelected = await page.evaluate((targetCode: string) => {
         const studioElements = document.querySelectorAll('li.address_item.handle');
-        for (const element of studioElements) {
+        for (const element of Array.from(studioElements)) {
           const codeElement = element.querySelector('.sub');
           if (codeElement) {
             const codeText = codeElement.textContent?.trim();
@@ -330,6 +361,9 @@ export class RealFeelcycleScraper {
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
+    
+    // This should never be reached due to the throw in the catch block
+    throw new Error(`Failed to fetch lessons for ${studioCode} after retries`);
   }
 
   /**
@@ -415,7 +449,7 @@ export class RealFeelcycleScraper {
       try {
         // Close all pages first
         const pages = await this.browser.pages();
-        await Promise.all(pages.map(page => page.close().catch(e => console.log('Page close error:', e))));
+        await Promise.all(pages.map((page: any) => page.close().catch((e: any) => console.log('Page close error:', e))));
         
         // Close browser
         await this.browser.close();

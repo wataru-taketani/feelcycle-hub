@@ -22,8 +22,13 @@ export class UserService {
     this.usersTableName = process.env.USERS_TABLE_NAME || '';
     this.secretArn = process.env.USER_CREDENTIALS_SECRET_ARN || '';
     
-    if (!this.usersTableName || !this.secretArn) {
-      throw new Error('Missing required environment variables');
+    if (!this.usersTableName) {
+      throw new Error('USERS_TABLE_NAME environment variable is required');
+    }
+    
+    // secretArnは通知機能でのみ必要なので、警告のみ
+    if (!this.secretArn) {
+      console.log('⚠️  USER_CREDENTIALS_SECRET_ARN not set - some features may not work');
     }
   }
 

@@ -132,13 +132,11 @@ export class UserLessonsService {
       ExpressionAttributeValues: {
         ':pk': `USER#${userId}`,
         ':sk_prefix': `LESSON#`,
+        ':type': type,
       },
       FilterExpression: '#type = :type',
       ExpressionAttributeNames: {
         '#type': 'type',
-      },
-      ExpressionAttributeValues: {
-        ':type': type,
       },
     }));
 

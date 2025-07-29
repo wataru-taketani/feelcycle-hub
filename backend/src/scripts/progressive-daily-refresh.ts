@@ -1,6 +1,7 @@
 import { RealFeelcycleScraper } from '../services/real-scraper';
 import { LessonsService } from '../services/lessons-service';
 import { studiosService } from '../services/studios-service';
+import { autoRecoveryService, RecoveryContext } from '../services/auto-recovery-service';
 
 /**
  * Progressive daily refresh: Process one studio at a time
@@ -34,10 +35,61 @@ async function progressiveDailyRefresh() {
         console.log('⚠️  データクリアでエラーが発生しましたが、処理を続行します:', error);
       }
       
-      console.log('📍 Step 2.2: Updating studio information...');
-      const studios = await RealFeelcycleScraper.getRealStudios();
-      const studioUpdateResult = await studiosService.refreshStudiosFromScraping(studios);
-      console.log(`✅ Studio update completed: ${studioUpdateResult.created} created, ${studioUpdateResult.updated} updated, ${studioUpdateResult.total} total`);
+      console.log('📍 Step 2.2: Safely updating studio information...');
+      try {
+        const studios = await RealFeelcycleScraper.getRealStudios();
+        console.log(`🔍 Scraped ${studios.length} studios from FEELCYCLE site`);
+        
+        // 安全な更新メソッドを使用
+        const studioUpdateResult = await studiosService.safeRefreshStudiosFromScraping(studios);
+        
+        console.log(`✅ Safe studio update completed:`);
+        console.log(`   • Created: ${studioUpdateResult.created} studios`);
+        console.log(`   • Updated: ${studioUpdateResult.updated} studios`);
+        console.log(`   • Removed: ${studioUpdateResult.removed} studios`);
+        console.log(`   • Total active: ${studioUpdateResult.total} studios`);
+        console.log(`   • Backup created: ${studioUpdateResult.backupCreated ? 'Yes' : 'No'}`);
+        
+        if (studioUpdateResult.errors.length > 0) {
+          console.warn(`⚠️  ${studioUpdateResult.errors.length} errors during studio update:`);
+          studioUpdateResult.errors.forEach((error, index) => {
+            console.warn(`   ${index + 1}. ${error}`);
+          });
+        }
+        
+        // エラーが多すぎる場合は処理を中断
+        if (studioUpdateResult.errors.length > studios.length * 0.2) { // 20%以上エラー
+          throw new Error(`Too many errors during studio update: ${studioUpdateResult.errors.length}/${studios.length}`);
+        }
+        
+      } catch (error) {
+        console.error('❌ Critical error during studio update:', error);
+        
+        // 自動復旧を試行
+        const recoveryContext: RecoveryContext = {
+          errorType: 'studio_update_failed',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+          failedOperation: 'studio_list_update',
+          retryCount: 0,
+          systemState: 'degraded',
+        };
+        
+        console.log('🚨 Attempting auto-recovery for studio update failure...');
+        const recoveryResult = await autoRecoveryService.attemptRecovery(recoveryContext);
+        
+        if (recoveryResult.success) {
+          console.log(`✅ Auto-recovery successful: ${recoveryResult.action}`);
+          console.log(`📝 Details: ${recoveryResult.details}`);
+          
+          if (recoveryResult.fallbackUsed) {
+            console.log('⚠️  System running in fallback mode');
+            // フォールバックモードでも処理を継続
+          }
+        } else {
+          console.error(`❌ Auto-recovery failed: ${recoveryResult.details}`);
+          throw new Error(`Studio update failed and recovery unsuccessful: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
     }
     
     // Step 3: Get next unprocessed studio
@@ -100,8 +152,37 @@ async function progressiveDailyRefresh() {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error(`❌ Error processing ${studioToProcess.studioName}:`, errorMessage);
       
-      // Mark as failed with error message
-      await studiosService.markStudioAsProcessed(studioToProcess.studioCode, 'failed', errorMessage);
+      // 自動復旧を試行
+      const recoveryContext: RecoveryContext = {
+        errorType: 'studio_scraping_failed',
+        errorMessage: errorMessage,
+        failedOperation: `scrape_studio_${studioToProcess.studioCode}`,
+        retryCount: (studioToProcess as any).retryCount || 0,
+        systemState: 'normal',
+      };
+      
+      console.log(`🚨 Attempting auto-recovery for studio ${studioToProcess.studioCode}...`);
+      const recoveryResult = await autoRecoveryService.attemptRecovery(recoveryContext);
+      
+      if (recoveryResult.success && !recoveryResult.fallbackUsed) {
+        console.log(`✅ Auto-recovery successful for ${studioToProcess.studioCode}: ${recoveryResult.action}`);
+        
+        // 復旧成功時は完了マーク
+        await studiosService.markStudioAsProcessed(studioToProcess.studioCode, 'completed');
+        console.log(`📝 ${studioToProcess.studioName} marked as completed after recovery`);
+        
+      } else if (recoveryResult.success && recoveryResult.fallbackUsed) {
+        console.log(`⚠️  Auto-recovery used fallback for ${studioToProcess.studioCode}: ${recoveryResult.action}`);
+        
+        // フォールバック使用時は後で再試行するため失敗マーク
+        await studiosService.markStudioAsProcessed(studioToProcess.studioCode, 'failed', `Fallback used: ${recoveryResult.details}`);
+        
+      } else {
+        console.error(`❌ Auto-recovery failed for ${studioToProcess.studioCode}: ${recoveryResult.details}`);
+        
+        // 復旧失敗時は失敗マーク
+        await studiosService.markStudioAsProcessed(studioToProcess.studioCode, 'failed', errorMessage);
+      }
       
       // Don't throw error - continue to check for more studios
       console.log('⚠️  Continuing to check for other studios to process...');

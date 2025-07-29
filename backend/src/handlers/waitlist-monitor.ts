@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, Context } from 'aws-lambda';
 import { waitlistService } from '../services/waitlist-service';
 import { RealFeelcycleScraper } from '../services/real-scraper';
-import { lineNotificationService } from '../services/line-notification-service';
+import { getLineNotificationService } from '../services/line-notification-service';
 import { LessonData, Waitlist } from '../types';
 
 /**
@@ -193,7 +193,7 @@ async function sendAvailabilityNotification(waitlist: Waitlist, lesson: LessonDa
 今すぐ予約サイトで確認してください！
 https://www.feelcycle.com/`;
 
-    await lineNotificationService.sendNotification(waitlist.userId, message);
+    await getLineNotificationService().sendNotification(waitlist.userId, message);
     
     // 通知履歴を記録
     const notificationRecord = {

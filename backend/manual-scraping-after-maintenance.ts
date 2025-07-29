@@ -3,10 +3,10 @@
  * 4:00以降にメンテナンスが終了したら実行する
  */
 
-import { RealFeelcycleScraper } from './src/services/real-scraper';
-import { LessonsService } from './src/services/lessons-service';
-import { studiosService } from './src/services/studios-service';
-import { logJSTInfo } from './src/utils/dateUtils';
+import { RealFeelcycleScraper } from './dist/services/real-scraper.js';
+import { LessonsService } from './dist/services/lessons-service.js';
+import { studiosService } from './dist/services/studios-service.js';
+import { logJSTInfo } from './dist/utils/dateUtils.js';
 
 async function executeManualScraping() {
   console.log('🚀 メンテナンス後の手動スクレイピング開始');

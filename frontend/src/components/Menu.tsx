@@ -12,6 +12,13 @@ import {
 
 const menuItems = [
   {
+    title: "レッスン検索",
+    description: "スタジオ・インストラクター検索、気になるリスト",
+    icon: Search,
+    href: "/search",
+    color: "text-purple-600"
+  },
+  {
     title: "キャンセル待ち",
     description: "人気レッスンのキャンセル待ち登録・管理",
     icon: Clock,
@@ -22,26 +29,19 @@ const menuItems = [
     title: "自動予約",
     description: "条件に基づいた自動レッスン予約設定",
     icon: Zap,
-    href: "/auto-booking",
+    href: "/booking/schedule",
     color: "text-green-600"
   },
   {
-    title: "レッスン検索",
-    description: "詳細条件でレッスンを検索・比較",
-    icon: Search,
-    href: "/lessons",
-    color: "text-purple-600"
-  },
-  {
-    title: "受講実績",
-    description: "過去の受講履歴・統計データ確認",
+    title: "履歴・統計",
+    description: "レッスン受講履歴・カレンダー期間指定",
     icon: BarChart3,
     href: "/history",
     color: "text-orange-600"
   },
   {
-    title: "ユーザー設定",
-    description: "アカウント設定・通知設定・データ管理",
+    title: "設定",
+    description: "アカウント・お気に入り・通知設定",
     icon: Settings,
     href: "/settings",
     color: "text-gray-600"

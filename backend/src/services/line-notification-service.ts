@@ -6,11 +6,14 @@ import { UserService } from './user-service';
  * waitlist-monitor.tsから使用される
  */
 export class LineNotificationService {
-  private lineService: LineService;
+  private lineService: LineService | null = null;
   private userService: UserService;
 
   constructor() {
-    this.lineService = new LineService();
+    // LINE関連の環境変数が設定されている場合のみ初期化
+    if (process.env.LINE_API_SECRET_ARN && process.env.LINE_CHANNEL_ACCESS_TOKEN_ARN) {
+      this.lineService = new LineService();
+    }
     this.userService = new UserService();
   }
 
@@ -22,6 +25,12 @@ export class LineNotificationService {
   async sendNotification(userId: string, message: string): Promise<void> {
     try {
       console.log(`📱 Sending LINE notification to user: ${userId}`);
+      
+      // LINE サービスが利用できない場合はスキップ
+      if (!this.lineService) {
+        console.log('⚠️ LINE service not available (missing environment variables), skipping notification');
+        return;
+      }
       
       // ユーザー情報を取得してLINE User IDを取得
       const user = await this.userService.findById(userId);
@@ -90,4 +99,12 @@ https://www.feelcycle.com/`;
   }
 }
 
-export const lineNotificationService = new LineNotificationService();
+// Lazy initialization to avoid constructor errors during import
+export let lineNotificationService: LineNotificationService | null = null;
+
+export function getLineNotificationService(): LineNotificationService {
+  if (!lineNotificationService) {
+    lineNotificationService = new LineNotificationService();
+  }
+  return lineNotificationService;
+}
