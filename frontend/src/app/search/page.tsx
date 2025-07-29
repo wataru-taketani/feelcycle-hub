@@ -302,20 +302,14 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const getProgramClass = (program: string) => {
     if (!program) return 'bg-gray-100 text-gray-700';
     const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
-    return `program-${normalizedProgram}`;
+    const className = `program-${normalizedProgram}`;
+    console.log('Program:', program, '-> Class:', className);
+    return className;
   };
 
   const getLessonItemClass = (lesson: any) => {
     const baseClass = 'w-full lesson-item text-left';
-    
-    switch (lesson.status) {
-      case 'reserved':
-        return `${baseClass} reserved cursor-not-allowed opacity-60`;
-      case 'full':
-        return `${baseClass} opacity-60`;
-      default:
-        return baseClass;
-    }
+    return baseClass;
   };
 
   const handleLessonClick = (lesson: any) => {
