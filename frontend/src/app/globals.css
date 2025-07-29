@@ -220,43 +220,43 @@
 /* FEELCYCLE プログラム別スタイル */
 @layer components {
   .program-bb1 {
-    background-color: var(--program-bb1-bg);
-    color: var(--program-bb1-text);
+    background-color: var(--program-bb1-bg) !important;
+    color: var(--program-bb1-text) !important;
   }
   
   .program-bb2 {
-    background-color: var(--program-bb2-bg);
-    color: var(--program-bb2-text);
+    background-color: var(--program-bb2-bg) !important;
+    color: var(--program-bb2-text) !important;
   }
   
   .program-bb3 {
-    background-color: var(--program-bb3-bg);
-    color: var(--program-bb3-text);
+    background-color: var(--program-bb3-bg) !important;
+    color: var(--program-bb3-text) !important;
   }
   
   .program-bsl {
-    background-color: var(--program-bsl-bg);
-    color: var(--program-bsl-text);
+    background-color: var(--program-bsl-bg) !important;
+    color: var(--program-bsl-text) !important;
   }
   
   .program-bsb {
-    background-color: var(--program-bsb-bg);
-    color: var(--program-bsb-text);
+    background-color: var(--program-bsb-bg) !important;
+    color: var(--program-bsb-text) !important;
   }
   
   .program-bsw {
-    background-color: var(--program-bsw-bg);
-    color: var(--program-bsw-text);
+    background-color: var(--program-bsw-bg) !important;
+    color: var(--program-bsw-text) !important;
   }
   
   .program-bswi {
-    background-color: var(--program-bswi-bg);
-    color: var(--program-bswi-text);
+    background-color: var(--program-bswi-bg) !important;
+    color: var(--program-bswi-text) !important;
   }
   
   .program-bsbi {
-    background-color: var(--program-bsbi-bg);
-    color: var(--program-bsbi-text);
+    background-color: var(--program-bsbi-bg) !important;
+    color: var(--program-bsbi-text) !important;
   }
 
   /* Badge要素でのプログラム色の優先適用 */

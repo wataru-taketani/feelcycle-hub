@@ -309,6 +309,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
 
   const getLessonItemClass = (lesson: any) => {
     const baseClass = 'w-full lesson-item text-left';
+    console.log('Lesson item class for lesson:', lesson.id, 'status:', lesson.status, 'class:', baseClass);
     return baseClass;
   };
 
