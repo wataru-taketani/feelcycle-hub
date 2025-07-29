@@ -456,7 +456,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
               instructor: lesson.instructor,
               studio: studioDisplayName,
               studioCode: lesson.studioCode.toUpperCase(),
-              status: lesson.isAvailable === 'true' ? 'available' : 'full',
+              status: lesson.isAvailable === 'true' || lesson.isAvailable === true ? 'available' : 'full',
               reservationNumber: ''
             });
           }
@@ -503,7 +503,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
             instructor: lesson.instructor,
             studio: studioDisplayName,
             studioCode: lesson.studioCode.toUpperCase(),
-            status: lesson.isAvailable === 'true' ? 'available' : 'full',
+            status: lesson.isAvailable === 'true' || lesson.isAvailable === true ? 'available' : 'full',
             reservationNumber: ''
           });
         }
