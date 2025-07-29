@@ -300,8 +300,9 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   };
 
   const getProgramClass = (program: string) => {
+    if (!program) return 'program-other';
     const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
-    return `program-${normalizedProgram}`;
+    return `program-${normalizedProgram} program-name`;
   };
 
   const getLessonItemClass = (lesson: any) => {
@@ -433,14 +434,28 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
         lessonsByDate[date].forEach(lesson => {
           const lessonKey = `${lesson.studioCode}-${lesson.lessonDate}-${lesson.startTime}`;
           if (interestedLessons.includes(lessonKey)) {
+            // スタジオ名を正しく取得
+            let studioDisplayName = lesson.studioCode;
+            if (Object.keys(studioGroups).length > 0) {
+              Object.values(studioGroups).forEach(studioList => {
+                const studioInfo = studioList.find(s => s.code.toLowerCase() === lesson.studioCode.toLowerCase());
+                if (studioInfo) {
+                  studioDisplayName = studioInfo.name;
+                }
+              });
+            }
+            
             allLessons.push({
               ...lesson,
               id: lessonKey,
               date: formatDateForDisplay(lesson.lessonDate),
               day: getDayOfWeek(lesson.lessonDate),
-              time: `${lesson.startTime} - ${getEndTime(lesson.startTime)}`,
-              studio: lesson.studioName || lesson.studioCode,
-              studioCode: lesson.studioCode,
+              time: `${lesson.startTime} - ${lesson.endTime || getEndTime(lesson.startTime)}`,
+              program: lesson.program,
+              name: lesson.lessonName,
+              instructor: lesson.instructor,
+              studio: studioDisplayName,
+              studioCode: lesson.studioCode.toUpperCase(),
               status: lesson.isAvailable === 'true' ? 'available' : 'full',
               reservationNumber: ''
             });
@@ -466,14 +481,28 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
         // スタジオは既に選択したものだけを取得済みなのでスタジオフィルタは不要
         // インストラクター条件のみチェック
         if (instructorMatch) {
+          // スタジオ名を正しく取得
+          let studioDisplayName = lesson.studioCode;
+          if (Object.keys(studioGroups).length > 0) {
+            Object.values(studioGroups).forEach(studioList => {
+              const studioInfo = studioList.find(s => s.code.toLowerCase() === lesson.studioCode.toLowerCase());
+              if (studioInfo) {
+                studioDisplayName = studioInfo.name;
+              }
+            });
+          }
+          
           allLessons.push({
             ...lesson,
             id: `${lesson.studioCode}-${lesson.lessonDate}-${lesson.startTime}`,
             date: formatDateForDisplay(lesson.lessonDate),
             day: getDayOfWeek(lesson.lessonDate),
-            time: `${lesson.startTime} - ${getEndTime(lesson.startTime)}`,
-            studio: lesson.studioName || lesson.studioCode,
-            studioCode: lesson.studioCode,
+            time: `${lesson.startTime} - ${lesson.endTime || getEndTime(lesson.startTime)}`,
+            program: lesson.program,
+            name: lesson.lessonName,
+            instructor: lesson.instructor,
+            studio: studioDisplayName,
+            studioCode: lesson.studioCode.toUpperCase(),
             status: lesson.isAvailable === 'true' ? 'available' : 'full',
             reservationNumber: ''
           });
@@ -1050,9 +1079,9 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                                   {lesson.time}
                                 </div>
                                 <div className="mb-1">
-                                  <span className={`program-name ${getProgramClass(lesson.program)}`}>
-                                    {lesson.program} {lesson.name}
-                                  </span>
+                                  <div className={`text-sm font-medium ${getProgramClass(lesson.program)}`}>
+                                    {lesson.name || `${lesson.program} レッスン`}
+                                  </div>
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                   <span>{lesson.instructor}</span>
