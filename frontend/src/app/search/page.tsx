@@ -19,6 +19,31 @@ interface LessonSearchProps {
   onNavigate?: (page: string) => void;
 }
 
+interface LessonData {
+  studioCode: string;
+  studioName?: string;
+  lessonDate: string;
+  startTime: string;
+  lessonName: string;
+  instructor: string;
+  isAvailable: string;
+  program: string;
+  lastUpdated: string;
+}
+
+interface LessonsByDate {
+  [date: string]: LessonData[];
+}
+
+interface Studio {
+  code: string;
+  name: string;
+}
+
+interface StudioGroups {
+  [groupName: string]: Studio[];
+}
+
 export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const { isAuthenticated, apiUser, loading } = useAuth();
   
@@ -32,6 +57,10 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [interestedLessons, setInterestedLessons] = useState<string[]>([]);
   const [showInterestedList, setShowInterestedList] = useState(false);
+  const [loadingLessons, setLoadingLessons] = useState(false);
+  const [lessonsByDate, setLessonsByDate] = useState<LessonsByDate>({});
+  const [studioGroups, setStudioGroups] = useState<StudioGroups>({});
+  const [studios, setStudios] = useState<Studio[]>([]);
   
   // サンプルお気に入りリスト（本来はUserSettingsから取得）
   const favoriteInstructors = ['a-airi', 'mizuki', 'k-miku', 'taiyo'];
@@ -170,260 +199,79 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     { id: 'yuyuri', name: 'Yuyuri' }
   ];
 
-  // サンプル検索結果データ（更新された実際のスタジオとインストラクターを使用）
-  const searchResults = [
-    // 7/25 (金)
-    {
-      id: 1,
-      date: "7/25",
-      day: "金",
-      time: "07:30 - 08:15",
-      program: "BB1",
-      name: "MORNING",
-      instructor: "A.Airi",
-      studio: "銀座",
-      studioCode: "GNZ",
-      difficulty: "初心者",
-      capacity: "20人",
-      available: true,
-      status: "available",
-      reservationNumber: ""
-    },
-    {
-      id: 2,
-      date: "7/25",
-      day: "金",
-      time: "12:30 - 13:15",
-      program: "BB2",
-      name: "House 2",
-      instructor: "Mizuki",
-      studio: "銀座",
-      studioCode: "GNZ",
-      difficulty: "中級者",
-      capacity: "20人",
-      available: false,
-      status: "reserved",
-      reservationNumber: "#24"
-    },
-    {
-      id: 3,
-      date: "7/25",
-      day: "金",
-      time: "19:30 - 20:15",
-      program: "BSL",
-      name: "NIGHT",
-      instructor: "Akane",
-      studio: "表参道",
-      studioCode: "OTD",
-      difficulty: "上級者",
-      capacity: "18人",
-      available: false,
-      status: "full",
-      reservationNumber: ""
-    },
-    
-    // 7/26 (土)
-    {
-      id: 4,
-      date: "7/26",
-      day: "土",
-      time: "10:00 - 10:45",
-      program: "BB1",
-      name: "10s 2",
-      instructor: "Rui",
-      studio: "銀座",
-      studioCode: "GNZ",
-      difficulty: "初心者",
-      capacity: "20人",
-      available: true,
-      status: "available",
-      reservationNumber: ""
-    },
-    {
-      id: 5,
-      date: "7/26",
-      day: "土",
-      time: "12:30 - 13:15",
-      program: "BB2",
-      name: "House 4",
-      instructor: "Mizuki",
-      studio: "川崎",
-      studioCode: "KWS",
-      difficulty: "中級者",
-      capacity: "22人",
-      available: true,
-      status: "available",
-      reservationNumber: ""
-    },
-    {
-      id: 6,
-      date: "7/26",
-      day: "土",
-      time: "15:30 - 16:15",
-      program: "BSB",
-      name: "10s 1",
-      instructor: "K.Miku",
-      studio: "渋谷",
-      studioCode: "SBY",
-      difficulty: "初心者",
-      capacity: "18人",
-      available: false,
-      status: "reserved",
-      reservationNumber: "#35"
-    },
-    
-    // 7/27 (日)
-    {
-      id: 7,
-      date: "7/27",
-      day: "日",
-      time: "10:30 - 11:15",
-      program: "BB1",
-      name: "House 3",
-      instructor: "Yosui",
-      studio: "渋谷",
-      studioCode: "SBY",
-      difficulty: "中級者",
-      capacity: "18人",
-      available: false,
-      status: "full",
-      reservationNumber: ""
-    },
-    {
-      id: 8,
-      date: "7/27",
-      day: "日",
-      time: "13:45 - 14:30",
-      program: "BB2",
-      name: "10s 3",
-      instructor: "Taiyo",
-      studio: "銀座",
-      studioCode: "GNZ",
-      difficulty: "上級者",
-      capacity: "20人",
-      available: true,
-      status: "available",
-      reservationNumber: ""
-    },
-    {
-      id: 9,
-      date: "7/27",
-      day: "日",
-      time: "16:30 - 17:15",
-      program: "BSBI",
-      name: "House 1",
-      instructor: "K.Miku",
-      studio: "心斎橋",
-      studioCode: "SSB",
-      difficulty: "上級者",
-      capacity: "16人",
-      available: false,
-      status: "reserved",
-      reservationNumber: "#18"
-    },
-    
-    // 7/28 (月)
-    {
-      id: 10,
-      date: "7/28",
-      day: "月",
-      time: "10:30 - 11:15",
-      program: "BB2",
-      name: "NOW 2",
-      instructor: "Masaki",
-      studio: "銀座",
-      studioCode: "GNZ",
-      difficulty: "中級者",
-      capacity: "20人",
-      available: true,
-      status: "available",
-      reservationNumber: ""
-    },
-    {
-      id: 11,
-      date: "7/28",
-      day: "月",
-      time: "18:30 - 19:15",
-      program: "BB2",
-      name: "R&B 1",
-      instructor: "Yuriko",
-      studio: "銀座",
-      studioCode: "GNZ",
-      difficulty: "中級者",
-      capacity: "20人",
-      available: true,
-      status: "available",
-      reservationNumber: ""
-    },
-    
-    // 7/29 (火)
-    {
-      id: 12,
-      date: "7/29",
-      day: "火",
-      time: "12:30 - 13:15",
-      program: "BB2",
-      name: "House 4",
-      instructor: "Mizuki",
-      studio: "名古屋",
-      studioCode: "NGY",
-      difficulty: "中級者",
-      capacity: "20人",
-      available: false,
-      status: "reserved",
-      reservationNumber: "#42"
-    },
-    {
-      id: 13,
-      date: "7/29",
-      day: "火",
-      time: "17:30 - 18:15",
-      program: "BB2",
-      name: "Comp 1",
-      instructor: "Y.Yuri",
-      studio: "福岡天神",
-      studioCode: "FTJ",
-      difficulty: "上級者",
-      capacity: "20人",
-      available: false,
-      status: "full",
-      reservationNumber: ""
-    },
-    
-    // 7/30 (水)
-    {
-      id: 14,
-      date: "7/30",
-      day: "水",
-      time: "07:30 - 08:15",
-      program: "BSL",
-      name: "Rock 1",
-      instructor: "Akane",
-      studio: "札幌",
-      studioCode: "SPR",
-      difficulty: "上級者",
-      capacity: "18人",
-      available: true,
-      status: "available",
-      reservationNumber: ""
-    },
-    {
-      id: 15,
-      date: "7/30",
-      day: "水",
-      time: "19:30 - 20:15",
-      program: "BSL",
-      name: "Deep 1",
-      instructor: "T.Mai",
-      studio: "新宿",
-      studioCode: "SJK",
-      difficulty: "上級者",
-      capacity: "18人",
-      available: true,
-      status: "available",
-      reservationNumber: ""
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchStudios();
     }
-  ];
+  }, [isAuthenticated]);
+
+  // スタジオ一覧取得
+  const fetchStudios = async () => {
+    try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      const response = await axios.get(`${apiBaseUrl}/studios`);
+      if (response.data.success) {
+        const { studioGroups: groups, studios: studiosData } = response.data.data;
+        
+        if (groups && Object.keys(groups).length > 0) {
+          setStudioGroups(groups);
+        } else {
+          setStudioGroups({});
+        }
+        setStudios(studiosData || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch studios:', error);
+      setStudioGroups({});
+      setStudios([]);
+    }
+  };
+
+  // レッスン検索（複数スタジオ対応、全日程取得）
+  const searchLessons = async () => {
+    if (selectedStudios.length === 0) {
+      toast.success("スタジオを選択してください");
+      return;
+    }
+    
+    try {
+      setLoadingLessons(true);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      
+      // 複数スタジオの全日程レッスンを取得
+      const allLessonsData: LessonsByDate = {};
+      
+      for (const studioId of selectedStudios) {
+        const studio = [...eastAreaStudios, ...northAreaStudios, ...westAreaStudios, ...southAreaStudios]
+          .find(s => s.id === studioId);
+        
+        if (!studio) continue;
+        
+        console.log(`🔍 Searching all lessons for ${studio.code}: ${studio.name}`);
+        
+        const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studio.code}`);
+        
+        if (response.data.success && response.data.data?.lessonsByDate) {
+          // 各スタジオのデータを統合
+          Object.keys(response.data.data.lessonsByDate).forEach(date => {
+            if (!allLessonsData[date]) {
+              allLessonsData[date] = [];
+            }
+            allLessonsData[date].push(...response.data.data.lessonsByDate[date]);
+          });
+        }
+      }
+      
+      setLessonsByDate(allLessonsData);
+      console.log('✅ Search results loaded:', Object.keys(allLessonsData).length, 'days');
+      
+    } catch (error) {
+      console.error('Error searching lessons:', error);
+      setLessonsByDate({});
+    } finally {
+      setLoadingLessons(false);
+    }
+  };
 
   const getProgramClass = (program: string) => {
     const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
@@ -475,6 +323,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
       instructors: selectedInstructors
     });
     setHasSearched(true);
+    searchLessons();
   };
 
   const handleStudioChange = (studioId: string, checked: boolean) => {
@@ -543,40 +392,61 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const getFilteredLessons = () => {
     // 気になるリスト表示モード
     if (showInterestedList) {
-      return searchResults.filter(lesson => interestedLessons.includes(lesson.id.toString()));
+      // 実際のAPIデータから気になるリストを生成
+      const allLessons: any[] = [];
+      Object.keys(lessonsByDate).forEach(date => {
+        lessonsByDate[date].forEach(lesson => {
+          const lessonKey = `${lesson.studioCode}-${lesson.lessonDate}-${lesson.startTime}`;
+          if (interestedLessons.includes(lessonKey)) {
+            allLessons.push({
+              ...lesson,
+              id: lessonKey,
+              date: formatDateForDisplay(lesson.lessonDate),
+              day: getDayOfWeek(lesson.lessonDate),
+              time: `${lesson.startTime} - ${getEndTime(lesson.startTime)}`,
+              studio: lesson.studioName || lesson.studioCode,
+              studioCode: lesson.studioCode,
+              status: lesson.isAvailable === 'true' ? 'available' : 'full',
+              reservationNumber: ''
+            });
+          }
+        });
+      });
+      return allLessons;
     }
     
     // 通常の検索モード
     if (!hasSearched) return [];
     
-    return searchResults.filter(lesson => {
-      // スタジオ条件チェック
-      const studioMatch = selectedStudios.length === 0 || 
-        selectedStudios.some(studioId => {
-          const studio = [...eastAreaStudios, ...northAreaStudios, ...westAreaStudios, ...southAreaStudios]
-            .find(s => s.id === studioId);
-          return studio?.code === lesson.studioCode;
-        });
-      
-      // インストラクター条件チェック
-      const instructorMatch = selectedInstructors.length === 0 || 
-        selectedInstructors.some(instructorId => {
-          const instructor = instructors.find(i => i.id === instructorId);
-          return instructor?.name === lesson.instructor;
-        });
-      
-      // AND条件：両方の条件を満たす必要がある
-      // ただし、条件が設定されていない場合は無視
-      if (selectedStudios.length > 0 && selectedInstructors.length > 0) {
-        return studioMatch && instructorMatch;
-      } else if (selectedStudios.length > 0) {
-        return studioMatch;
-      } else if (selectedInstructors.length > 0) {
-        return instructorMatch;
-      } else {
-        return true; // 何も条件が設定されていない場合は全て表示
-      }
+    const allLessons: any[] = [];
+    Object.keys(lessonsByDate).forEach(date => {
+      lessonsByDate[date].forEach(lesson => {
+        // インストラクター条件チェック
+        const instructorMatch = selectedInstructors.length === 0 || 
+          selectedInstructors.some(instructorId => {
+            const instructor = instructors.find(i => i.id === instructorId);
+            return instructor?.name === lesson.instructor;
+          });
+        
+        // スタジオは既に選択したものだけを取得済みなのでスタジオフィルタは不要
+        // インストラクター条件のみチェック
+        if (instructorMatch) {
+          allLessons.push({
+            ...lesson,
+            id: `${lesson.studioCode}-${lesson.lessonDate}-${lesson.startTime}`,
+            date: formatDateForDisplay(lesson.lessonDate),
+            day: getDayOfWeek(lesson.lessonDate),
+            time: `${lesson.startTime} - ${getEndTime(lesson.startTime)}`,
+            studio: lesson.studioName || lesson.studioCode,
+            studioCode: lesson.studioCode,
+            status: lesson.isAvailable === 'true' ? 'available' : 'full',
+            reservationNumber: ''
+          });
+        }
+      });
     });
+    
+    return allLessons;
   };
 
   const getLessonsForDate = (date: string) => {
@@ -589,31 +459,38 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     instructor.name.toLowerCase().includes(instructorSearch.toLowerCase())
   );
 
-  // 固定の日付範囲を生成（7日間）
-  const generateDateRange = () => {
-    const today = new Date();
-    const dates = [];
-    
-    // 現在の日付から7日間分の日付を生成
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
-      
-      dates.push({
-        date: `${month}/${day}`,
-        day: dayOfWeek,
-        fullDate: date
-      });
-    }
-    
-    return dates;
+  // 日付フォーマット用ヘルパー関数
+  const formatDateForDisplay = (dateString: string) => {
+    // "2025-07-29" -> "7/29"
+    const date = new Date(dateString);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
   };
 
-  // 常に7日間の日付列を表示
+  const getDayOfWeek = (dateString: string) => {
+    const date = new Date(dateString);
+    const days = ['日', '月', '火', '水', '木', '金', '土'];
+    return days[date.getDay()];
+  };
+
+  const getEndTime = (startTime: string) => {
+    // "07:30" -> "08:15" (45分後)
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const endDate = new Date();
+    endDate.setHours(hours, minutes + 45);
+    return endDate.toTimeString().slice(0, 5);
+  };
+
+  // 動的な日付範囲を生成（実際のデータがある日付のみ）
+  const generateDateRange = () => {
+    const allDates = Object.keys(lessonsByDate).sort();
+    return allDates.map(dateString => ({
+      date: formatDateForDisplay(dateString),
+      day: getDayOfWeek(dateString),
+      fullDate: new Date(dateString)
+    }));
+  };
+
+  // データがある日付のみ表示
   const dates = generateDateRange();
   const filteredLessons = getFilteredLessons();
 
@@ -742,117 +619,144 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                     
                     <ScrollArea className="h-[300px]">
                       <div className="space-y-4">
-                        {/* 関東エリア */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">EAST AREA │ 関東</h4>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-6 px-2 text-xs" 
-                              onClick={() => handleSelectAreaStudios(eastAreaStudios)}
-                            >
-                              エリア選択
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            {eastAreaStudios.map((studio) => (
-                              <Button
-                                key={studio.id}
-                                variant={selectedStudios.includes(studio.id) ? "default" : "outline"}
-                                size="sm"
-                                className="h-8 px-2 text-xs font-normal justify-center"
-                                onClick={() => handleStudioChange(studio.id, !selectedStudios.includes(studio.id))}
-                              >
-                                {studio.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
+                        {/* APIからのスタジオグループがある場合 */}
+                        {Object.keys(studioGroups).length > 0 ? (
+                          Object.keys(studioGroups).map((groupName) => (
+                            <div key={groupName}>
+                              <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                                {groupName}
+                              </h4>
+                              <div className="grid grid-cols-2 gap-1">
+                                {studioGroups[groupName].map((studio) => (
+                                  <Button
+                                    key={studio.code}
+                                    variant={selectedStudios.includes(studio.code.toLowerCase()) ? "default" : "outline"}
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-normal justify-start"
+                                    onClick={() => handleStudioChange(studio.code.toLowerCase(), !selectedStudios.includes(studio.code.toLowerCase()))}
+                                  >
+                                    {studio.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <>
+                            {/* フォールバック：静的エリア */}
+                            {/* 関東エリア */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium text-muted-foreground">EAST AREA │ 関東</h4>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs" 
+                                  onClick={() => handleSelectAreaStudios(eastAreaStudios)}
+                                >
+                                  エリア選択
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1">
+                                {eastAreaStudios.map((studio) => (
+                                  <Button
+                                    key={studio.id}
+                                    variant={selectedStudios.includes(studio.id) ? "default" : "outline"}
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-normal justify-center"
+                                    onClick={() => handleStudioChange(studio.id, !selectedStudios.includes(studio.id))}
+                                  >
+                                    {studio.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
 
-                        {/* 北海道エリア */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">NORTH AREA │ 北海道</h4>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-6 px-2 text-xs" 
-                              onClick={() => handleSelectAreaStudios(northAreaStudios)}
-                            >
-                              エリア選択
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            {northAreaStudios.map((studio) => (
-                              <Button
-                                key={studio.id}
-                                variant={selectedStudios.includes(studio.id) ? "default" : "outline"}
-                                size="sm"
-                                className="h-8 px-2 text-xs font-normal justify-center"
-                                onClick={() => handleStudioChange(studio.id, !selectedStudios.includes(studio.id))}
-                              >
-                                {studio.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
+                            {/* 北海道エリア */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium text-muted-foreground">NORTH AREA │ 北海道</h4>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs" 
+                                  onClick={() => handleSelectAreaStudios(northAreaStudios)}
+                                >
+                                  エリア選択
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1">
+                                {northAreaStudios.map((studio) => (
+                                  <Button
+                                    key={studio.id}
+                                    variant={selectedStudios.includes(studio.id) ? "default" : "outline"}
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-normal justify-center"
+                                    onClick={() => handleStudioChange(studio.id, !selectedStudios.includes(studio.id))}
+                                  >
+                                    {studio.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
 
-                        {/* 東海・関西エリア */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">WEST AREA │ 東海・関西</h4>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-6 px-2 text-xs" 
-                              onClick={() => handleSelectAreaStudios(westAreaStudios)}
-                            >
-                              エリア選択
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            {westAreaStudios.map((studio) => (
-                              <Button
-                                key={studio.id}
-                                variant={selectedStudios.includes(studio.id) ? "default" : "outline"}
-                                size="sm"
-                                className="h-8 px-2 text-xs font-normal justify-center"
-                                onClick={() => handleStudioChange(studio.id, !selectedStudios.includes(studio.id))}
-                              >
-                                {studio.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
+                            {/* 東海・関西エリア */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium text-muted-foreground">WEST AREA │ 東海・関西</h4>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs" 
+                                  onClick={() => handleSelectAreaStudios(westAreaStudios)}
+                                >
+                                  エリア選択
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1">
+                                {westAreaStudios.map((studio) => (
+                                  <Button
+                                    key={studio.id}
+                                    variant={selectedStudios.includes(studio.id) ? "default" : "outline"}
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-normal justify-center"
+                                    onClick={() => handleStudioChange(studio.id, !selectedStudios.includes(studio.id))}
+                                  >
+                                    {studio.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
 
-                        {/* 中国・四国・九州エリア */}
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="text-sm font-medium text-muted-foreground">SOUTH AREA │ 中国・四国・九州</h4>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-6 px-2 text-xs" 
-                              onClick={() => handleSelectAreaStudios(southAreaStudios)}
-                            >
-                              エリア選択
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-3 gap-1">
-                            {southAreaStudios.map((studio) => (
-                              <Button
-                                key={studio.id}
-                                variant={selectedStudios.includes(studio.id) ? "default" : "outline"}
-                                size="sm"
-                                className="h-8 px-2 text-xs font-normal justify-center"
-                                onClick={() => handleStudioChange(studio.id, !selectedStudios.includes(studio.id))}
-                              >
-                                {studio.name}
-                              </Button>
-                            ))}
-                          </div>
-                        </div>
+                            {/* 中国・四国・九州エリア */}
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-sm font-medium text-muted-foreground">SOUTH AREA │ 中国・四国・九州</h4>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="h-6 px-2 text-xs" 
+                                  onClick={() => handleSelectAreaStudios(southAreaStudios)}
+                                >
+                                  エリア選択
+                                </Button>
+                              </div>
+                              <div className="grid grid-cols-3 gap-1">
+                                {southAreaStudios.map((studio) => (
+                                  <Button
+                                    key={studio.id}
+                                    variant={selectedStudios.includes(studio.id) ? "default" : "outline"}
+                                    size="sm"
+                                    className="h-8 px-2 text-xs font-normal justify-center"
+                                    onClick={() => handleStudioChange(studio.id, !selectedStudios.includes(studio.id))}
+                                  >
+                                    {studio.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </ScrollArea>
                   </div>
@@ -1024,8 +928,12 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
           )}
           
           <div className="flex gap-2 mt-6">
-            <Button className="flex-1 h-12" onClick={handleSearch}>
-              検索
+            <Button 
+              className="flex-1 h-12" 
+              onClick={handleSearch}
+              disabled={selectedStudios.length === 0 || loadingLessons}
+            >
+              {loadingLessons ? '検索中...' : '検索'}
             </Button>
             <Button 
               variant={showInterestedList ? "default" : "outline"}
@@ -1043,6 +951,11 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
             </Button>
           </div>
           
+          {selectedStudios.length === 0 && (
+            <div className="text-center text-sm text-muted-foreground mt-2">
+              スタジオを選択してから検索してください
+            </div>
+          )}
           {interestedLessons.length === 0 && (
             <div className="text-center text-sm text-muted-foreground mt-2">
               気になるリストが空の場合、ボタンは無効になります
