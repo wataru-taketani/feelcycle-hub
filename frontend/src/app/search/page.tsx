@@ -409,11 +409,22 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
       const neededRequests = new Set<string>();
       interestedLessons.forEach(lessonKey => {
         const parts = lessonKey.split('-');
+        console.log(`🔗 lessonKey解析:`, { lessonKey, parts, partsLength: parts.length });
+        
         if (parts.length >= 2) {
           const studioCode = parts[0];
           const lessonDate = parts[1];
-          neededRequests.add(`${studioCode}:${lessonDate}`);
+          const requestKey = `${studioCode}:${lessonDate}`;
+          neededRequests.add(requestKey);
+          console.log(`➕ リクエスト追加:`, { studioCode, lessonDate, requestKey });
+        } else {
+          console.warn(`⚠️ 無効なlessonKey形式:`, { lessonKey, parts });
         }
+      });
+      
+      console.log(`📋 必要なAPIリクエスト:`, {
+        neededRequestsArray: Array.from(neededRequests),
+        count: neededRequests.size
       });
 
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
@@ -422,19 +433,37 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
       // 必要なスタジオ・日付のデータを並行取得
       const promises = Array.from(neededRequests).map(async (request) => {
         const [studioCode, lessonDate] = request.split(':');
+        console.log(`🔗 API呼び出し:`, { studioCode, lessonDate, url: `${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${lessonDate}&endDate=${lessonDate}` });
+        
         try {
           const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${lessonDate}&endDate=${lessonDate}`);
+          
+          console.log(`📥 API レスポンス (${studioCode}):`, {
+            success: response.data.success,
+            hasData: !!response.data.data,
+            hasLessonsByDate: !!response.data.data?.lessonsByDate,
+            lessonsByDateKeys: response.data.data?.lessonsByDate ? Object.keys(response.data.data.lessonsByDate) : 'none',
+            status: response.status
+          });
 
           if (response.data.success && response.data.data?.lessonsByDate) {
             Object.keys(response.data.data.lessonsByDate).forEach(date => {
               if (!allLessonsData[date]) {
                 allLessonsData[date] = [];
               }
-              allLessonsData[date].push(...response.data.data.lessonsByDate[date]);
+              const lessonsToAdd = response.data.data.lessonsByDate[date];
+              console.log(`📅 日付 ${date} に ${lessonsToAdd.length} レッスンを追加`);
+              allLessonsData[date].push(...lessonsToAdd);
             });
+          } else {
+            console.warn(`⚠️ 無効なレスポンス (${studioCode}):`, response.data);
           }
         } catch (error) {
-          console.error(`Error loading lessons for ${studioCode} on ${lessonDate}:`, error);
+          console.error(`❌ API呼び出しエラー ${studioCode} on ${lessonDate}:`, error);
+          if (error.response) {
+            console.error('Error response:', error.response.data);
+            console.error('Error status:', error.response.status);
+          }
         }
       });
 
