@@ -377,8 +377,8 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     
     if (newShowState) {
       toast.success("気になるリストを表示します");
-      // 気になるリスト表示時にレッスンデータが不足している場合は取得
-      if (Object.keys(lessonsByDate).length === 0 && interestedLessons.length > 0) {
+      // 気になるリスト表示時は常にデータを取得（未検索状態でも実行）
+      if (interestedLessons.length > 0) {
         await loadInterestedLessonsData();
       }
     } else {
@@ -392,11 +392,15 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     try {
       setLoadingLessons(true);
       
-      // 気になるリストからスタジオと日付を抽出
+      // 気になるリストからスタジオと日付を抽出（lessonId形式: studioCode-lessonDate-startTime）
       const neededRequests = new Set<string>();
       interestedLessons.forEach(lessonKey => {
-        const [studioCode, lessonDate] = lessonKey.split('-');
-        neededRequests.add(`${studioCode}:${lessonDate}`);
+        const parts = lessonKey.split('-');
+        if (parts.length >= 2) {
+          const studioCode = parts[0];
+          const lessonDate = parts[1];
+          neededRequests.add(`${studioCode}:${lessonDate}`);
+        }
       });
 
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
@@ -1119,7 +1123,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
         </CardContent>
       </Card>
 
-      {/* 検索結果または初期状態 */}
+      {/* 検索結果、気になるリスト、または初期状態 */}
       {(hasSearched || showInterestedList) ? (
         <Card>
           <CardHeader className="pb-3">
@@ -1206,11 +1210,23 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
             </div>
             
             {/* 検索結果が0件の場合のメッセージ */}
-            {filteredLessons.length === 0 && (hasSearched || showInterestedList) && (
+            {filteredLessons.length === 0 && (hasSearched || showInterestedList) && !loadingLessons && (
               <div className="p-4 text-center bg-muted/20 rounded-lg mt-4">
                 <p className="text-muted-foreground text-sm">
                   {showInterestedList ? "気になるリストに登録されたレッスンがありません" : "検索条件に一致するレッスンが見つかりませんでした"}
                 </p>
+              </div>
+            )}
+            
+            {/* ローディング状態 */}
+            {loadingLessons && (hasSearched || showInterestedList) && (
+              <div className="p-8 text-center">
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-2"></div>
+                  <p className="text-[12px] text-muted-foreground">
+                    {showInterestedList ? "気になるリストを読み込み中..." : "レッスン検索中..."}
+                  </p>
+                </div>
               </div>
             )}
           </CardContent>
