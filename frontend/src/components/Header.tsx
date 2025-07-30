@@ -3,6 +3,7 @@
 import { Button } from "./ui/button";
 import { LogOut, User } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onNavigate?: (page: string) => void;
@@ -11,13 +12,14 @@ interface HeaderProps {
 
 export function Header({ onNavigate, currentPage }: HeaderProps) {
   const { isAuthenticated, user, login, logout } = useAuth();
+  const router = useRouter();
 
   const handleNavigateHome = () => {
     if (onNavigate) {
       onNavigate('dashboard');
     } else {
       // Next.js App Router navigation
-      window.location.href = '/';
+      router.push('/');
     }
   };
 

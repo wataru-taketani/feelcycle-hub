@@ -30,7 +30,7 @@ const menuItems = [
     title: "自動予約",
     description: "条件に基づいた自動レッスン予約設定",
     icon: Zap,
-    href: "/booking/schedule",
+    href: "/booking",
     color: "text-green-600"
   },
   {
