@@ -326,15 +326,15 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     return className;
   };
 
-  const getProgramBackgroundColor = (program: string) => {
+  const getProgramBackgroundColor = (program: string, programName?: string) => {
     if (!program) return '#f3f4f6';
-    const colors = getProgramColors(program);
+    const colors = getProgramColors(program, programName);
     return colors.backgroundColor;
   };
 
-  const getProgramTextColor = (program: string) => {
+  const getProgramTextColor = (program: string, programName?: string) => {
     if (!program) return '#374151';
-    const colors = getProgramColors(program);
+    const colors = getProgramColors(program, programName);
     return colors.textColor;
   };
 
@@ -1265,8 +1265,8 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                                 </div>
                                 <div className="mb-1">
                                   <div className="text-xs font-medium rounded px-2 py-1" style={{
-                                    backgroundColor: getProgramBackgroundColor(lesson.program),
-                                    color: getProgramTextColor(lesson.program)
+                                    backgroundColor: getProgramBackgroundColor(lesson.program, lesson.name),
+                                    color: getProgramTextColor(lesson.program, lesson.name)
                                   }}>
                                     {lesson.name || `${lesson.program} レッスン`}
                                   </div>

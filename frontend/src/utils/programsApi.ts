@@ -51,12 +51,38 @@ export async function fetchProgramsData(): Promise<Map<string, ProgramData>> {
   }
 }
 
-export function getProgramColors(programCode: string): { backgroundColor: string; textColor: string } {
+export function getProgramColors(programCode: string, programName?: string): { backgroundColor: string; textColor: string } {
   if (!programsCache) {
     // キャッシュがない場合はデフォルト色を返す
-    return getDefaultProgramColors(programCode);
+    return getDefaultProgramColors(programCode, programName);
   }
 
+  // BB1,BB2,BB3,BSW,BSWi,BSL,BSB,BSBi は programCode のみで判定
+  const basicPrograms = ['BB1', 'BB2', 'BB3', 'BSW', 'BSWI', 'BSL', 'BSB', 'BSBI'];
+  if (basicPrograms.includes(programCode.toUpperCase())) {
+    const program = programsCache.get(programCode.toUpperCase());
+    if (program) {
+      return {
+        backgroundColor: program.backgroundColor,
+        textColor: program.textColor
+      };
+    }
+  }
+
+  // その他のプログラムは programName で詳細検索
+  if (programName) {
+    // programsCache から programName で一致するものを検索
+    for (const [, program] of programsCache.entries()) {
+      if (program.programName === programName) {
+        return {
+          backgroundColor: program.backgroundColor,
+          textColor: program.textColor
+        };
+      }
+    }
+  }
+
+  // 見つからない場合は programCode で検索
   const program = programsCache.get(programCode.toUpperCase());
   if (program) {
     return {
@@ -66,11 +92,45 @@ export function getProgramColors(programCode: string): { backgroundColor: string
   }
 
   // データベースにない場合はデフォルト色を返す
-  return getDefaultProgramColors(programCode);
+  return getDefaultProgramColors(programCode, programName);
 }
 
 // フォールバック用のデフォルト色定義
-function getDefaultProgramColors(programCode: string): { backgroundColor: string; textColor: string } {
+function getDefaultProgramColors(programCode: string, programName?: string): { backgroundColor: string; textColor: string } {
+  // programName による詳細色分け（EVENT, FEEL NOW など）
+  if (programName) {
+    // L 25 シリーズ
+    if (programName.includes('L 25 FREE') || programName.includes('L 24 FREE')) {
+      return { backgroundColor: 'rgb(0, 18, 28)', textColor: 'rgb(255, 51, 51)' };
+    }
+    if (programName.includes('L 25 FEEL') || programName.includes('L 24 FEEL')) {
+      return { backgroundColor: 'rgb(0, 18, 28)', textColor: 'rgb(51, 153, 255)' };
+    }
+    if (programName.includes('L 25 BTM')) {
+      return { backgroundColor: 'rgb(0, 18, 28)', textColor: 'rgb(189, 71, 220)' };
+    }
+    
+    // FEEL NOW シリーズ
+    if (programName.includes('FEEL NOW B')) {
+      return { backgroundColor: 'rgb(0, 18, 28)', textColor: 'rgb(255, 255, 255)' };
+    }
+    if (programName.includes('FEEL NOW G')) {
+      return { backgroundColor: 'rgb(213, 204, 127)', textColor: 'rgb(255, 255, 255)' };
+    }
+    if (programName.includes('FEEL NOW S')) {
+      return { backgroundColor: 'rgb(192, 192, 192)', textColor: 'rgb(255, 255, 255)' };
+    }
+    
+    // その他のEVENTレッスン
+    if (programName.includes('FEEL HIGH') || programName.includes('FEEL DEEP')) {
+      return { backgroundColor: 'rgb(0, 0, 0)', textColor: 'rgb(255, 255, 255)' };
+    }
+    if (programName.includes('BEERCYCLE')) {
+      return { backgroundColor: 'rgb(122, 50, 2)', textColor: 'rgb(255, 255, 255)' };
+    }
+  }
+
+  // programCode による基本色分け
   switch (programCode.toUpperCase()) {
     case 'BB1': return { backgroundColor: 'rgb(255, 255, 102)', textColor: 'rgb(0, 0, 0)' };
     case 'BB2': return { backgroundColor: 'rgb(255, 153, 51)', textColor: 'rgb(0, 0, 0)' };
@@ -80,6 +140,10 @@ function getDefaultProgramColors(programCode: string): { backgroundColor: string
     case 'BSW': return { backgroundColor: 'rgb(204, 102, 255)', textColor: 'rgb(255, 255, 255)' };
     case 'BSWI': return { backgroundColor: 'rgb(153, 0, 153)', textColor: 'rgb(255, 255, 102)' };
     case 'BSBI': return { backgroundColor: 'rgb(51, 102, 153)', textColor: 'rgb(255, 255, 102)' };
+    case 'EVENT': return { backgroundColor: 'rgb(0, 0, 0)', textColor: 'rgb(255, 255, 255)' };
+    case 'FEEL NOW': return { backgroundColor: 'rgb(192, 192, 192)', textColor: 'rgb(255, 255, 255)' };
+    case 'SKRILLEX': return { backgroundColor: 'rgb(255, 255, 255)', textColor: 'rgb(0, 0, 0)' };
+    case 'OTHER': return { backgroundColor: 'rgb(102, 153, 204)', textColor: 'rgb(255, 255, 255)' };
     default: return { backgroundColor: '#f3f4f6', textColor: '#374151' };
   }
 }
