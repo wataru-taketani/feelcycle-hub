@@ -94,8 +94,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       updateAuthState({ loading: true, error: null });
 
-      // 既存のLIFFアプリのパターンを使用
-      const userId = await initLiff();
+      // 開発時用の緊急バイパス
+      if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+        console.log('🚨 Development bypass activated');
+        updateAuthState({
+          isAuthenticated: false,
+          user: null,
+          loading: false
+        });
+        return;
+      }
+
+      // 既存のLIFFアプリのパターンを使用（タイムアウト付き）
+      const userId = await Promise.race([
+        initLiff(),
+        new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error('LIFF initialization timeout')), 10000)
+        )
+      ]);
       
       if (userId) {
         // ユーザー情報を取得
