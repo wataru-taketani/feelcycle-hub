@@ -27,13 +27,16 @@ async function progressiveDailyRefresh() {
       console.log('\n📍 Step 2: New daily run detected - resetting batch statuses...');
       await studiosService.resetAllBatchStatuses();
       
-      console.log('📍 Step 2.1: Clearing existing lessons...');
-      try {
-        const clearResult = await lessonService.clearAllLessons();
-        console.log(`✅ 既存データクリア完了: ${clearResult.deletedCount}件削除`);
-      } catch (error) {
-        console.log('⚠️  データクリアでエラーが発生しましたが、処理を続行します:', error);
-      }
+      console.log('📍 Step 2.1: Skipping data clearing (SAFE MODE)...');
+      // DISABLED: 危険な全削除処理を無効化 (2025-07-30)
+      // 理由: スクレイピング失敗時のデータ全消失を防止
+      // try {
+      //   const clearResult = await lessonService.clearAllLessons();
+      //   console.log(`✅ 既存データクリア完了: ${clearResult.deletedCount}件削除`);
+      // } catch (error) {
+      //   console.log('⚠️  データクリアでエラーが発生しましたが、処理を続行します:', error);
+      // }
+      console.log('✅ データ保護モード: 既存データを保持します');
       
       console.log('📍 Step 2.2: Safely updating studio information...');
       try {
