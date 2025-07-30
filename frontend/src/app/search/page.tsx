@@ -371,12 +371,64 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     });
   };
 
-  const toggleInterestedList = () => {
-    setShowInterestedList(!showInterestedList);
-    if (!showInterestedList) {
+  const toggleInterestedList = async () => {
+    const newShowState = !showInterestedList;
+    setShowInterestedList(newShowState);
+    
+    if (newShowState) {
       toast.success("気になるリストを表示します");
+      // 気になるリスト表示時にレッスンデータが不足している場合は取得
+      if (Object.keys(lessonsByDate).length === 0 && interestedLessons.length > 0) {
+        await loadInterestedLessonsData();
+      }
     } else {
       toast.success("検索画面に戻ります");
+    }
+  };
+
+  const loadInterestedLessonsData = async () => {
+    if (!apiUser || interestedLessons.length === 0) return;
+
+    try {
+      setLoadingLessons(true);
+      
+      // 気になるリストからスタジオと日付を抽出
+      const neededRequests = new Set<string>();
+      interestedLessons.forEach(lessonKey => {
+        const [studioCode, lessonDate] = lessonKey.split('-');
+        neededRequests.add(`${studioCode}:${lessonDate}`);
+      });
+
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      const allLessonsData: LessonsByDate = {};
+
+      // 必要なスタジオ・日付のデータを並行取得
+      const promises = Array.from(neededRequests).map(async (request) => {
+        const [studioCode, lessonDate] = request.split(':');
+        try {
+          const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${lessonDate}&endDate=${lessonDate}`);
+
+          if (response.data.success && response.data.data?.lessonsByDate) {
+            Object.keys(response.data.data.lessonsByDate).forEach(date => {
+              if (!allLessonsData[date]) {
+                allLessonsData[date] = [];
+              }
+              allLessonsData[date].push(...response.data.data.lessonsByDate[date]);
+            });
+          }
+        } catch (error) {
+          console.error(`Error loading lessons for ${studioCode} on ${lessonDate}:`, error);
+        }
+      });
+
+      await Promise.all(promises);
+      setLessonsByDate(allLessonsData);
+      
+    } catch (error) {
+      console.error('Error loading interested lessons data:', error);
+      toast.error("気になるリストの読み込みに失敗しました");
+    } finally {
+      setLoadingLessons(false);
     }
   };
 
@@ -464,6 +516,11 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const getFilteredLessons = () => {
     // 気になるリスト表示モード
     if (showInterestedList) {
+      // レッスンデータがない場合は空配列を返す（ローディング表示用）
+      if (Object.keys(lessonsByDate).length === 0) {
+        return [];
+      }
+      
       // 実際のAPIデータから気になるリストを生成
       const allLessons: any[] = [];
       Object.keys(lessonsByDate).forEach(date => {
