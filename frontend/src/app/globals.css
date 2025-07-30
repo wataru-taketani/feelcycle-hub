@@ -48,7 +48,7 @@
   --program-bb2-bg: rgb(255, 153, 51);
   --program-bb2-text: rgb(0, 0, 0);
   --program-bb3-bg: rgb(255, 51, 0);
-  --program-bb3-text: rgb(255, 255, 255);
+  --program-bb3-text: rgb(0, 0, 0);
   --program-bsl-bg: rgb(0, 0, 204);
   --program-bsl-text: rgb(255, 255, 255);
   --program-bsb-bg: rgb(0, 204, 255);
@@ -230,7 +230,7 @@
 
 .program-bb3 {
   background-color: rgb(255, 51, 0) !important;
-  color: rgb(255, 255, 255) !important;
+  color: rgb(0, 0, 0) !important;
 }
 
 .program-bsl {

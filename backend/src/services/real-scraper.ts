@@ -280,6 +280,11 @@ export class RealFeelcycleScraper {
               const instructorText = instructorElement.textContent?.trim();
               const statusText = statusElement?.textContent?.trim();
               
+              // Extract color information from lesson_name style attribute
+              const nameStyle = (nameElement as HTMLElement).style;
+              const backgroundColor = nameStyle.backgroundColor || '';
+              const textColor = nameStyle.color || '';
+              
               // Extract start and end time
               const timeMatch = timeText?.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
               if (timeMatch && nameText && instructorText && actualDate) {
@@ -301,6 +306,8 @@ export class RealFeelcycleScraper {
                   instructor: instructorText,
                   isAvailable,
                   program,
+                  backgroundColor: backgroundColor || null,
+                  textColor: textColor || null,
                   statusText: statusText || null,
                   dateText: dateText,
                   columnIndex
@@ -329,6 +336,8 @@ export class RealFeelcycleScraper {
         totalSlots: null,
         isAvailable: lesson.isAvailable ? 'true' : 'false',
         program: lesson.program,
+        backgroundColor: lesson.backgroundColor || null,
+        textColor: lesson.textColor || null,
         lastUpdated: getJSTISOString(),
         ttl: getTTLFromJST(7), // 7 days from JST
       }));

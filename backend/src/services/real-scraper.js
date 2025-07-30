@@ -57,20 +57,22 @@ var RealFeelcycleScraper = /** @class */ (function () {
      */
     RealFeelcycleScraper.initBrowser = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var executablePath, _a, error_1;
-            return __generator(this, function (_b) {
-                switch (_b.label) {
+            var isLambda, executablePath, _a, error_1, puppeteerLocal, _b, error_2;
+            return __generator(this, function (_c) {
+                switch (_c.label) {
                     case 0:
-                        if (!!this.browser) return [3 /*break*/, 5];
+                        if (!!this.browser) return [3 /*break*/, 11];
+                        isLambda = process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
+                        if (!isLambda) return [3 /*break*/, 6];
                         console.log('🌐 Initializing browser for Lambda environment...');
-                        _b.label = 1;
+                        _c.label = 1;
                     case 1:
-                        _b.trys.push([1, 4, , 5]);
+                        _c.trys.push([1, 4, , 5]);
                         return [4 /*yield*/, chromium.executablePath()];
                     case 2:
-                        executablePath = _b.sent();
+                        executablePath = _c.sent();
                         console.log('📍 Chromium executable path:', executablePath);
-                        // Lambda-optimized browser configuration
+                        // Lambda-optimized browser configuration  
                         _a = this;
                         return [4 /*yield*/, puppeteer_core_1.default.launch({
                                 args: __spreadArray(__spreadArray([], chromium.args, true), [
@@ -104,21 +106,51 @@ var RealFeelcycleScraper = /** @class */ (function () {
                                 executablePath: executablePath,
                                 headless: true,
                                 timeout: 60000,
-                                // Add protocol timeout to prevent Target.setDiscoverTargets error
                                 protocolTimeout: 60000,
-                                // Disable pipe for Lambda environment stability
                                 pipe: false
                             })];
                     case 3:
-                        // Lambda-optimized browser configuration
-                        _a.browser = _b.sent();
-                        console.log('✅ Browser initialized successfully');
+                        // Lambda-optimized browser configuration  
+                        _a.browser = _c.sent();
+                        console.log('✅ Browser initialized successfully for Lambda');
                         return [3 /*break*/, 5];
                     case 4:
-                        error_1 = _b.sent();
-                        console.error('❌ Browser initialization failed:', error_1);
-                        throw new Error("Browser initialization failed: ".concat(error_1 instanceof Error ? error_1.message : 'Unknown error'));
-                    case 5: return [2 /*return*/, this.browser];
+                        error_1 = _c.sent();
+                        console.error('❌ Lambda browser initialization failed:', error_1);
+                        throw new Error("Lambda browser initialization failed: ".concat(error_1 instanceof Error ? error_1.message : 'Unknown error'));
+                    case 5: return [3 /*break*/, 11];
+                    case 6:
+                        console.log('🖥️  Initializing browser for local development...');
+                        _c.label = 7;
+                    case 7:
+                        _c.trys.push([7, 10, , 11]);
+                        return [4 /*yield*/, Promise.resolve().then(function () { return require('puppeteer'); })];
+                    case 8:
+                        puppeteerLocal = _c.sent();
+                        // Local development browser configuration
+                        _b = this;
+                        return [4 /*yield*/, puppeteerLocal.default.launch({
+                                args: [
+                                    '--no-sandbox',
+                                    '--disable-setuid-sandbox',
+                                    '--disable-dev-shm-usage',
+                                    '--disable-web-security',
+                                    '--disable-features=VizDisplayCompositor'
+                                ],
+                                defaultViewport: { width: 1280, height: 720 },
+                                headless: true,
+                                timeout: 30000
+                            })];
+                    case 9:
+                        // Local development browser configuration
+                        _b.browser = _c.sent();
+                        console.log('✅ Browser initialized successfully for local development');
+                        return [3 /*break*/, 11];
+                    case 10:
+                        error_2 = _c.sent();
+                        console.error('❌ Local browser initialization failed:', error_2);
+                        throw new Error("Local browser initialization failed: ".concat(error_2 instanceof Error ? error_2.message : 'Unknown error'));
+                    case 11: return [2 /*return*/, this.browser];
                 }
             });
         });
@@ -128,7 +160,7 @@ var RealFeelcycleScraper = /** @class */ (function () {
      */
     RealFeelcycleScraper.getRealStudios = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var browser, page, studios, error_2;
+            var browser, page, studios, error_3;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0: return [4 /*yield*/, this.initBrowser()];
@@ -189,9 +221,9 @@ var RealFeelcycleScraper = /** @class */ (function () {
                         console.log("Found ".concat(studios.length, " studios from reservation site"));
                         return [2 /*return*/, studios];
                     case 9:
-                        error_2 = _a.sent();
-                        console.error('Error fetching studios from reservation site:', error_2);
-                        throw error_2;
+                        error_3 = _a.sent();
+                        console.error('Error fetching studios from reservation site:', error_3);
+                        throw error_3;
                     case 10: return [4 /*yield*/, page.close()];
                     case 11:
                         _a.sent();
@@ -214,7 +246,7 @@ var RealFeelcycleScraper = /** @class */ (function () {
                         retryCount = 0;
                         maxRetries = 2;
                         _loop_1 = function () {
-                            var browser, page, studioSelected, allLessonsData, dateMapping, allLessons, lessonData, error_3, closeError_1, waitTime_1;
+                            var browser, page, studioSelected, allLessonsData, dateMapping, allLessons, lessonData, error_4, closeError_1, waitTime_1;
                             return __generator(this, function (_b) {
                                 switch (_b.label) {
                                     case 0:
@@ -268,8 +300,8 @@ var RealFeelcycleScraper = /** @class */ (function () {
                                         return [4 /*yield*/, page.evaluate(function (targetCode) {
                                                 var _a;
                                                 var studioElements = document.querySelectorAll('li.address_item.handle');
-                                                for (var _i = 0, studioElements_1 = studioElements; _i < studioElements_1.length; _i++) {
-                                                    var element = studioElements_1[_i];
+                                                for (var _i = 0, _b = Array.from(studioElements); _i < _b.length; _i++) {
+                                                    var element = _b[_i];
                                                     var codeElement = element.querySelector('.sub');
                                                     if (codeElement) {
                                                         var codeText = (_a = codeElement.textContent) === null || _a === void 0 ? void 0 : _a.trim();
@@ -345,6 +377,10 @@ var RealFeelcycleScraper = /** @class */ (function () {
                                                             var nameText = (_b = nameElement.textContent) === null || _b === void 0 ? void 0 : _b.trim();
                                                             var instructorText = (_c = instructorElement.textContent) === null || _c === void 0 ? void 0 : _c.trim();
                                                             var statusText = (_d = statusElement === null || statusElement === void 0 ? void 0 : statusElement.textContent) === null || _d === void 0 ? void 0 : _d.trim();
+                                                            // Extract color information from lesson_name style attribute
+                                                            var nameStyle = nameElement.style;
+                                                            var backgroundColor = nameStyle.backgroundColor || '';
+                                                            var textColor = nameStyle.color || '';
                                                             // Extract start and end time
                                                             var timeMatch = timeText === null || timeText === void 0 ? void 0 : timeText.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
                                                             if (timeMatch && nameText && instructorText && actualDate) {
@@ -363,6 +399,8 @@ var RealFeelcycleScraper = /** @class */ (function () {
                                                                     instructor: instructorText,
                                                                     isAvailable: isAvailable,
                                                                     program: program,
+                                                                    backgroundColor: backgroundColor || null,
+                                                                    textColor: textColor || null,
                                                                     statusText: statusText || null,
                                                                     dateText: dateText,
                                                                     columnIndex: columnIndex
@@ -389,14 +427,16 @@ var RealFeelcycleScraper = /** @class */ (function () {
                                             totalSlots: null,
                                             isAvailable: lesson.isAvailable ? 'true' : 'false',
                                             program: lesson.program,
+                                            backgroundColor: lesson.backgroundColor || null,
+                                            textColor: lesson.textColor || null,
                                             lastUpdated: (0, dateUtils_1.getJSTISOString)(),
                                             ttl: (0, dateUtils_1.getTTLFromJST)(7), // 7 days from JST
                                         }); });
                                         console.log("\u2705 Successfully fetched ".concat(lessonData.length, " lessons for ").concat(studioCode));
                                         return [2 /*return*/, { value: lessonData }];
                                     case 16:
-                                        error_3 = _b.sent();
-                                        console.error("\u274C Attempt ".concat(retryCount + 1, " failed for ").concat(studioCode, ":"), error_3);
+                                        error_4 = _b.sent();
+                                        console.error("\u274C Attempt ".concat(retryCount + 1, " failed for ").concat(studioCode, ":"), error_4);
                                         if (!page) return [3 /*break*/, 20];
                                         _b.label = 17;
                                     case 17:
@@ -413,7 +453,7 @@ var RealFeelcycleScraper = /** @class */ (function () {
                                         retryCount++;
                                         if (retryCount > maxRetries) {
                                             console.error("\u274C All ".concat(maxRetries + 1, " attempts failed for ").concat(studioCode));
-                                            throw new Error("Failed to fetch lessons for ".concat(studioCode, " after ").concat(maxRetries + 1, " attempts: ").concat(error_3 instanceof Error ? error_3.message : 'Unknown error'));
+                                            throw new Error("Failed to fetch lessons for ".concat(studioCode, " after ").concat(maxRetries + 1, " attempts: ").concat(error_4 instanceof Error ? error_4.message : 'Unknown error'));
                                         }
                                         waitTime_1 = retryCount * 2000;
                                         console.log("\u23F3 Waiting ".concat(waitTime_1, "ms before retry..."));
@@ -468,7 +508,7 @@ var RealFeelcycleScraper = /** @class */ (function () {
      */
     RealFeelcycleScraper.searchAllStudiosRealLessons = function (date) {
         return __awaiter(this, void 0, void 0, function () {
-            var studios, allLessons_1, batchSize, i, batch, batchPromises, batchResults, error_4;
+            var studios, allLessons_1, batchSize, i, batch, batchPromises, batchResults, error_5;
             var _this = this;
             return __generator(this, function (_a) {
                 switch (_a.label) {
@@ -490,7 +530,7 @@ var RealFeelcycleScraper = /** @class */ (function () {
                         batch = studios.slice(i, i + batchSize);
                         console.log("Processing studio batch ".concat(Math.floor(i / batchSize) + 1, "/").concat(Math.ceil(studios.length / batchSize), "..."));
                         batchPromises = batch.map(function (studio) { return __awaiter(_this, void 0, void 0, function () {
-                            var lessons, error_5;
+                            var lessons, error_6;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
@@ -501,8 +541,8 @@ var RealFeelcycleScraper = /** @class */ (function () {
                                         console.log("".concat(studio.name, "(").concat(studio.code, "): ").concat(lessons.length, " lessons"));
                                         return [2 /*return*/, lessons];
                                     case 2:
-                                        error_5 = _a.sent();
-                                        console.error("Error scraping ".concat(studio.name, "(").concat(studio.code, "):"), error_5);
+                                        error_6 = _a.sent();
+                                        console.error("Error scraping ".concat(studio.name, "(").concat(studio.code, "):"), error_6);
                                         return [2 /*return*/, []];
                                     case 3: return [2 /*return*/];
                                 }
@@ -524,9 +564,9 @@ var RealFeelcycleScraper = /** @class */ (function () {
                         console.log("\u2705 Total lessons found across all studios: ".concat(allLessons_1.length));
                         return [2 /*return*/, allLessons_1];
                     case 8:
-                        error_4 = _a.sent();
-                        console.error('Error in searchAllStudiosRealLessons:', error_4);
-                        throw error_4;
+                        error_5 = _a.sent();
+                        console.error('Error in searchAllStudiosRealLessons:', error_5);
+                        throw error_5;
                     case 9: return [2 /*return*/];
                 }
             });
@@ -544,7 +584,7 @@ var RealFeelcycleScraper = /** @class */ (function () {
      */
     RealFeelcycleScraper.cleanup = function () {
         return __awaiter(this, void 0, void 0, function () {
-            var pages, error_6;
+            var pages, error_7;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
@@ -567,8 +607,8 @@ var RealFeelcycleScraper = /** @class */ (function () {
                         console.log('✅ Browser closed successfully');
                         return [3 /*break*/, 7];
                     case 5:
-                        error_6 = _a.sent();
-                        console.error('⚠️  Error during browser cleanup:', error_6);
+                        error_7 = _a.sent();
+                        console.error('⚠️  Error during browser cleanup:', error_7);
                         // Force process termination if browser is unresponsive
                         try {
                             if (this.browser && this.browser.process) {

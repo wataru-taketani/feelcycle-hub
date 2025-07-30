@@ -9,6 +9,7 @@ import {
   Settings,
   ChevronRight
 } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
 const menuItems = [
   {
@@ -49,8 +50,10 @@ const menuItems = [
 ];
 
 export function Menu() {
+  const router = useRouter();
+  
   const handleNavigate = (href: string) => {
-    window.location.href = href;
+    router.push(href);
   };
 
   return (

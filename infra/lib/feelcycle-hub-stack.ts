@@ -130,6 +130,23 @@ export class FeelcycleHubStack extends cdk.Stack {
       sortKey: { name: 'lessonDateTime', type: dynamodb.AttributeType.STRING },
     });
 
+    // Programs table for storing FEELCYCLE program information and colors
+    const programsTable = new dynamodb.Table(this, 'ProgramsTable', {
+      tableName: `feelcycle-hub-programs-${environment}`,
+      partitionKey: { name: 'programCode', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      pointInTimeRecovery: isProduction,
+      removalPolicy: isProduction ? cdk.RemovalPolicy.RETAIN : cdk.RemovalPolicy.DESTROY,
+    });
+
+    // GSI for genre-based queries
+    programsTable.addGlobalSecondaryIndex({
+      indexName: 'GenreIndex',
+      partitionKey: { name: 'genre', type: dynamodb.AttributeType.STRING },
+      sortKey: { name: 'programName', type: dynamodb.AttributeType.STRING },
+    });
+
     // User Lessons table for unified user-lesson relationships
     const userLessonsTable = new dynamodb.Table(this, 'UserLessonsTable', {
       tableName: `feelcycle-hub-user-lessons-${environment}`,
@@ -214,6 +231,7 @@ export class FeelcycleHubStack extends cdk.Stack {
         WAITLIST_TABLE_NAME: waitlistTable.tableName,
         STUDIOS_TABLE_NAME: studiosTable.tableName,
         LESSONS_TABLE_NAME: lessonsTable.tableName,
+        PROGRAMS_TABLE_NAME: programsTable.tableName,
         USER_LESSONS_TABLE_NAME: userLessonsTable.tableName,
         USER_CREDENTIALS_SECRET_ARN: userCredentialsSecret.secretArn,
         LINE_API_SECRET_ARN: lineApiSecret.secretArn,
@@ -230,6 +248,7 @@ export class FeelcycleHubStack extends cdk.Stack {
     waitlistTable.grantReadWriteData(mainLambda);
     studiosTable.grantReadWriteData(mainLambda);
     lessonsTable.grantReadWriteData(mainLambda);
+    programsTable.grantReadData(mainLambda); // Programs table - read only
     userLessonsTable.grantReadWriteData(mainLambda);
     userCredentialsSecret.grantRead(mainLambda);
     lineApiSecret.grantRead(mainLambda);
@@ -244,6 +263,7 @@ export class FeelcycleHubStack extends cdk.Stack {
         `${waitlistTable.tableArn}/index/*`,
         `${studiosTable.tableArn}/index/*`,
         `${lessonsTable.tableArn}/index/*`,
+        `${programsTable.tableArn}/index/*`,
       ],
     }));
 
@@ -322,6 +342,17 @@ export class FeelcycleHubStack extends cdk.Stack {
 
     const history = api.root.addResource('history');
     history.addResource('summary').addMethod('GET', lambdaIntegration);
+
+    // Programs API routes
+    const programs = api.root.addResource('programs');
+    programs.addMethod('GET', lambdaIntegration); // Get all programs
+    
+    const programItem = programs.addResource('{programCode}');
+    programItem.addMethod('GET', lambdaIntegration); // Get specific program
+    
+    const programGenre = programs.addResource('genre');
+    const programGenreItem = programGenre.addResource('{genre}');
+    programGenreItem.addMethod('GET', lambdaIntegration); // Get programs by genre
 
     // EventBridge rule for periodic monitoring
     const monitoringRule = new events.Rule(this, 'MonitoringRule', {

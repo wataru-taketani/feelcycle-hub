@@ -152,6 +152,8 @@ export interface LessonData {
   totalSlots?: number | null; // Only if available from site
   isAvailable: string; // "true" or "false" (string for GSI)
   program: string; // "BSL", "BB1", "BSB", etc.
+  backgroundColor?: string; // Program background color from site (e.g., "rgb(255, 51, 51)")
+  textColor?: string; // Program text color from site (e.g., "rgb(0, 18, 28)")
   lastUpdated: string; // ISO timestamp
   ttl: number; // Unix timestamp for TTL
 }

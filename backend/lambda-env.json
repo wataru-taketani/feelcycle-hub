@@ -1,0 +1,15 @@
+{
+  "Variables": {
+    "LINE_API_SECRET_ARN": "arn:aws:secretsmanager:ap-northeast-1:234156130688:secret:feelcycle-hub/line-api/dev-OKkt0x",
+    "USER_CREDENTIALS_SECRET_ARN": "arn:aws:secretsmanager:ap-northeast-1:234156130688:secret:feelcycle-hub/user-credentials/dev-0U0tmB",
+    "USERS_TABLE_NAME": "feelcycle-hub-users-dev",
+    "ENVIRONMENT": "dev",
+    "LESSON_HISTORY_TABLE_NAME": "feelcycle-hub-lesson-history-dev",
+    "LESSONS_TABLE_NAME": "feelcycle-hub-lessons-dev",
+    "WAITLIST_TABLE_NAME": "feelcycle-hub-waitlist-dev",
+    "STUDIOS_TABLE_NAME": "feelcycle-hub-studios-dev",
+    "RESERVATIONS_TABLE_NAME": "feelcycle-hub-reservations-dev",
+    "PROGRAMS_TABLE_NAME": "feelcycle-hub-programs-dev",
+    "USER_LESSONS_TABLE_NAME": "feelcycle-hub-user-lessons-dev"
+  }
+}

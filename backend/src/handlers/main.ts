@@ -9,6 +9,7 @@ import { handler as waitlistHandler } from './waitlist';
 import { handler as lessonsHandler } from './lessons';
 import { handler as waitlistMonitorHandler } from './waitlist-monitor';
 import { handler as userLessonsHandler } from './user-lessons';
+import { programsHandler } from './programs';
 import { progressiveDailyRefresh } from '../scripts/progressive-daily-refresh';
 import { debugLambdaModules } from '../debug-lambda-modules';
 import { simpleTest } from '../simple-test';
@@ -86,6 +87,8 @@ export async function handler(
       return await userLessonsHandler(apiEvent);
     } else if (path.startsWith('/studios') || path.startsWith('/lessons')) {
       return await lessonsHandler(apiEvent);
+    } else if (path.startsWith('/programs')) {
+      result = await programsHandler(apiEvent as any);
     } else if (path.startsWith('/line/')) {
       result = await lineHandler(apiEvent);
     } else if (path.startsWith('/history/')) {

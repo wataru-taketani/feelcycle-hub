@@ -14,6 +14,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, Calendar, MapPin, User, ChevronDown, ChevronRight, Heart, X, BookmarkPlus, List } from "lucide-react";
 import { toast } from "sonner";
 import { getTodayJST, getDateAfterDaysJST, formatDateJST } from '@/utils/dateUtils';
+import { fetchProgramsData, getProgramColors } from '@/utils/programsApi';
+import { 
+  getInterestedLessons, 
+  addInterestedLesson, 
+  removeInterestedLesson 
+} from '@/utils/interestedLessons';
+import { getUserSettings } from '@/utils/userSettings';
 
 interface LessonSearchProps {
   onNavigate?: (page: string) => void;
@@ -62,9 +69,10 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const [studioGroups, setStudioGroups] = useState<StudioGroups>({});
   const [studios, setStudios] = useState<Studio[]>([]);
   
-  // サンプルお気に入りリスト（本来はUserSettingsから取得）
-  const favoriteInstructors = ['a-airi', 'mizuki', 'k-miku', 'taiyo'];
-  const favoriteStudios = ['gnz', 'sby', 'sjk'];
+  // お気に入りリスト（UserSettingsから取得）
+  const userSettings = getUserSettings();
+  const favoriteInstructors = userSettings.favoriteInstructors;
+  const favoriteStudios = userSettings.favoriteStudios;
   
   // 実際のスタジオデータ
   const eastAreaStudios = [
@@ -202,6 +210,14 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   useEffect(() => {
     if (isAuthenticated) {
       fetchStudios();
+      // プログラム色データを事前に取得
+      fetchProgramsData().catch(error => {
+        console.error('Failed to fetch programs data:', error);
+      });
+      
+      // 気になるリストをlocalStorageから復元
+      const savedInterestedLessons = getInterestedLessons();
+      setInterestedLessons(savedInterestedLessons);
     }
   }, [isAuthenticated]);
 
@@ -269,10 +285,9 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
         
         console.log(`🔍 Searching lessons for studio: ${studioCode}`);
         
-        // 今日から30日間の範囲でレッスンを取得
-        const today = new Date();
-        const startDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
-        const endDate = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0];
+        // 今日から30日間の範囲でレッスンを取得（日本時間）
+        const startDate = getTodayJST(); // YYYY-MM-DD
+        const endDate = getDateAfterDaysJST(30);
         
         const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${startDate}&endDate=${endDate}`);
         
@@ -309,36 +324,14 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
 
   const getProgramBackgroundColor = (program: string) => {
     if (!program) return '#f3f4f6';
-    
-    switch (program.toUpperCase()) {
-      case 'BB1': return 'rgb(255, 255, 102)';
-      case 'BB2': return 'rgb(255, 153, 51)';
-      case 'BB3': return 'rgb(255, 51, 0)';
-      case 'BSL': return 'rgb(0, 0, 204)';
-      case 'BSB': return 'rgb(0, 204, 255)';
-      case 'BSW': return 'rgb(204, 102, 255)';
-      case 'BSWI': return 'rgb(153, 0, 153)';
-      case 'BSBI': return 'rgb(51, 102, 153)';
-      default: 
-        console.log('Unknown program:', program);
-        return '#f3f4f6';
-    }
+    const colors = getProgramColors(program);
+    return colors.backgroundColor;
   };
 
   const getProgramTextColor = (program: string) => {
     if (!program) return '#374151';
-    
-    switch (program.toUpperCase()) {
-      case 'BB1': return 'rgb(0, 0, 0)';
-      case 'BB2': return 'rgb(0, 0, 0)';
-      case 'BB3': return 'rgb(255, 255, 255)';
-      case 'BSL': return 'rgb(255, 255, 255)';
-      case 'BSB': return 'rgb(0, 0, 0)';
-      case 'BSW': return 'rgb(255, 255, 255)';
-      case 'BSWI': return 'rgb(255, 255, 102)';
-      case 'BSBI': return 'rgb(255, 255, 102)';
-      default: return '#374151';
-    }
+    const colors = getProgramColors(program);
+    return colors.textColor;
   };
 
   const getLessonItemClass = (lesson: any) => {
@@ -355,9 +348,23 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const handleAddToInterested = (lessonId: string) => {
     setInterestedLessons(prev => {
       if (prev.includes(lessonId)) {
+        // 削除
+        removeInterestedLesson(lessonId);
         toast.success("気になるリストから削除しました");
         return prev.filter(id => id !== lessonId);
       } else {
+        // 追加 - selectedLessonから詳細情報を取得
+        if (selectedLesson) {
+          addInterestedLesson({
+            lessonId: lessonId,
+            lessonDate: selectedLesson.lessonDate || selectedLesson.date,
+            lessonTime: selectedLesson.startTime || selectedLesson.time,
+            program: selectedLesson.program,
+            instructor: selectedLesson.instructor,
+            studioCode: selectedLesson.studioCode,
+            studioName: selectedLesson.studio
+          });
+        }
         toast.success("気になるリストに追加しました");
         return [...prev, lessonId];
       }
@@ -552,15 +559,15 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     instructor.name.toLowerCase().includes(instructorSearch.toLowerCase())
   );
 
-  // 日付フォーマット用ヘルパー関数
+  // 日付フォーマット用ヘルパー関数（日本時間対応）
   const formatDateForDisplay = (dateString: string) => {
     // "2025-07-29" -> "7/29"
-    const date = new Date(dateString);
+    const date = new Date(dateString + 'T00:00:00+09:00'); // JST指定
     return `${date.getMonth() + 1}/${date.getDate()}`;
   };
 
   const getDayOfWeek = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = new Date(dateString + 'T00:00:00+09:00'); // JST指定
     const days = ['日', '月', '火', '水', '木', '金', '土'];
     return days[date.getDay()];
   };

@@ -11,6 +11,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, User, Bell, Heart, X, MapPin } from "lucide-react";
+import { 
+  getUserSettings, 
+  saveUserSettings, 
+  addFavoriteInstructor, 
+  removeFavoriteInstructor,
+  addFavoriteStudio,
+  removeFavoriteStudio,
+  updateNotificationSettings,
+  updateProfileSettings
+} from '@/utils/userSettings';
 
 export default function SettingsPage() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -27,30 +37,36 @@ export default function SettingsPage() {
       setPageError(error instanceof Error ? error.message : 'Unknown error');
     }
   }, []);
-  const [displayName, setDisplayName] = useState(user?.displayName || "");
-  const [favoriteInstructors, setFavoriteInstructors] = useState<string[]>(['a-airi', 'mizuki', 'k-miku', 'taiyo']);
-  const [favoriteStudios, setFavoriteStudios] = useState<string[]>(['gnz', 'sby', 'sjk']);
+  // ユーザー設定の状態管理（localStorageから復元）
+  const [userSettings, setUserSettings] = useState(() => getUserSettings());
+  const [displayName, setDisplayName] = useState(userSettings.profile.displayName || user?.displayName || "");
+  const [favoriteInstructors, setFavoriteInstructors] = useState<string[]>(userSettings.favoriteInstructors);
+  const [favoriteStudios, setFavoriteStudios] = useState<string[]>(userSettings.favoriteStudios);
   const [instructorSearch, setInstructorSearch] = useState("");
   const [studioSearch, setStudioSearch] = useState("");
   const [favoriteTab, setFavoriteTab] = useState("studios");
   
   // 通知設定の状態管理
-  const [notifications, setNotifications] = useState({
-    cancelWaiting: true,
-    autoBooking: true,
-    lessonReminder: false,
-  });
+  const [notifications, setNotifications] = useState(userSettings.notifications);
 
   const handleSaveProfile = () => {
-    // プロフィール保存の処理をここに実装
+    // プロフィール保存
+    updateProfileSettings({
+      displayName,
+      email: user?.email || '',
+      homeStudio: userSettings.profile.homeStudio,
+      membershipType: userSettings.profile.membershipType
+    });
     console.log('Profile saved');
   };
 
   const handleNotificationChange = (key: keyof typeof notifications, value: boolean) => {
-    setNotifications(prev => ({
-      ...prev,
+    const updatedNotifications = {
+      ...notifications,
       [key]: value
-    }));
+    };
+    setNotifications(updatedNotifications);
+    updateNotificationSettings(updatedNotifications);
   };
 
   // 実際のインストラクターデータ（簡略版）
@@ -72,10 +88,12 @@ export default function SettingsPage() {
 
   const handleAddFavorite = (instructorId: string) => {
     setFavoriteInstructors(prev => [...prev, instructorId]);
+    addFavoriteInstructor(instructorId);
   };
 
   const handleRemoveFavorite = (instructorId: string) => {
     setFavoriteInstructors(prev => prev.filter(id => id !== instructorId));
+    removeFavoriteInstructor(instructorId);
   };
 
   // 実際のスタジオデータ（簡略版）
@@ -111,10 +129,12 @@ export default function SettingsPage() {
 
   const handleAddFavoriteStudio = (studioId: string) => {
     setFavoriteStudios(prev => [...prev, studioId]);
+    addFavoriteStudio(studioId);
   };
 
   const handleRemoveFavoriteStudio = (studioId: string) => {
     setFavoriteStudios(prev => prev.filter(id => id !== studioId));
+    removeFavoriteStudio(studioId);
   };
 
   // Show error if page failed to mount

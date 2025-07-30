@@ -1,0 +1,42 @@
+{
+  "TableName": "feelcycle-hub-programs-dev",
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "programCode",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "genre",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "programName",
+      "AttributeType": "S"
+    }
+  ],
+  "KeySchema": [
+    {
+      "AttributeName": "programCode",
+      "KeyType": "HASH"
+    }
+  ],
+  "GlobalSecondaryIndexes": [
+    {
+      "IndexName": "GenreIndex",
+      "KeySchema": [
+        {
+          "AttributeName": "genre",
+          "KeyType": "HASH"
+        },
+        {
+          "AttributeName": "programName",
+          "KeyType": "RANGE"
+        }
+      ],
+      "Projection": {
+        "ProjectionType": "ALL"
+      }
+    }
+  ],
+  "BillingMode": "PAY_PER_REQUEST"
+}
