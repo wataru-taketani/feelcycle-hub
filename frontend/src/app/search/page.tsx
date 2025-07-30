@@ -217,6 +217,10 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
       
       // 気になるリストをlocalStorageから復元
       const savedInterestedLessons = getInterestedLessons();
+      console.log('📱 気になるリスト初期化:', {
+        savedInterestedLessonsCount: savedInterestedLessons.length,
+        savedInterestedLessons: savedInterestedLessons
+      });
       setInterestedLessons(savedInterestedLessons);
     }
   }, [isAuthenticated]);
@@ -387,7 +391,16 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   };
 
   const loadInterestedLessonsData = async () => {
-    if (!apiUser || interestedLessons.length === 0) return;
+    console.log('🔄 loadInterestedLessonsData 開始:', {
+      apiUser: !!apiUser,
+      interestedLessonsLength: interestedLessons.length,
+      interestedLessons: interestedLessons
+    });
+    
+    if (!apiUser || interestedLessons.length === 0) {
+      console.log('⚠️ loadInterestedLessonsData 早期終了:', { apiUser: !!apiUser, interestedLessonsLength: interestedLessons.length });
+      return;
+    }
 
     try {
       setLoadingLessons(true);
@@ -426,6 +439,16 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
       });
 
       await Promise.all(promises);
+      
+      console.log('✅ loadInterestedLessonsData 完了:', {
+        allLessonsDataKeys: Object.keys(allLessonsData),
+        totalLessons: Object.values(allLessonsData).flat().length,
+        dataByDate: Object.keys(allLessonsData).map(date => ({
+          date,
+          count: allLessonsData[date].length
+        }))
+      });
+      
       setLessonsByDate(allLessonsData);
       
     } catch (error) {
@@ -520,17 +543,47 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const getFilteredLessons = () => {
     // 気になるリスト表示モード
     if (showInterestedList) {
-      // レッスンデータがない場合は空配列を返す（ローディング表示用）
+      console.log('🔍 気になるリスト表示モード:', {
+        interestedLessonsCount: interestedLessons.length,
+        interestedLessons: interestedLessons,
+        lessonsByDateKeys: Object.keys(lessonsByDate),
+        lessonsByDateCount: Object.keys(lessonsByDate).length,
+        loadingLessons: loadingLessons
+      });
+      
+      // ローディング中は空配列を返す
+      if (loadingLessons) {
+        console.log('⏳ ローディング中のため空配列を返す');
+        return [];
+      }
+      
+      // レッスンデータがない場合は空配列を返す
       if (Object.keys(lessonsByDate).length === 0) {
+        console.log('⚠️ lessonsByDateが空のため空配列を返す');
         return [];
       }
       
       // 実際のAPIデータから気になるリストを生成
       const allLessons: any[] = [];
+      let totalLessonsChecked = 0;
+      let matchedLessons = 0;
+      
       Object.keys(lessonsByDate).forEach(date => {
         lessonsByDate[date].forEach(lesson => {
+          totalLessonsChecked++;
           const lessonKey = `${lesson.studioCode}-${lesson.lessonDate}-${lesson.startTime}`;
-          if (interestedLessons.includes(lessonKey)) {
+          const isMatched = interestedLessons.includes(lessonKey);
+          
+          if (totalLessonsChecked <= 5) { // 最初の5件のみログ出力
+            console.log(`🔍 レッスン照合:`, {
+              lessonKey,
+              isMatched,
+              lesson: { studioCode: lesson.studioCode, lessonDate: lesson.lessonDate, startTime: lesson.startTime, lessonName: lesson.lessonName }
+            });
+          }
+          
+          if (isMatched) {
+            matchedLessons++;
             // スタジオ名を正しく取得
             let studioDisplayName = lesson.studioCode;
             if (Object.keys(studioGroups).length > 0) {
@@ -559,6 +612,14 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
           }
         });
       });
+      
+      console.log('📊 気になるリスト結果:', {
+        totalLessonsChecked,
+        matchedLessons,
+        allLessonsLength: allLessons.length,
+        interestedLessonsArray: interestedLessons
+      });
+      
       return allLessons;
     }
     
