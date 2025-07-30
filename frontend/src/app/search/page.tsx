@@ -704,17 +704,16 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                       >
                         すべて解除
                       </Button>
-                      {favoriteStudios.length > 0 && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 px-3 text-sm flex items-center gap-1" 
-                          onClick={handleSelectFavoriteStudios}
-                        >
-                          <Heart className="h-3 w-3" />
-                          お気に入り
-                        </Button>
-                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 px-3 text-sm flex items-center gap-1" 
+                        onClick={favoriteStudios.length > 0 ? handleSelectFavoriteStudios : () => onNavigate?.('user-settings')}
+                        disabled={favoriteStudios.length === 0}
+                      >
+                        <Heart className="h-3 w-3" />
+                        {favoriteStudios.length > 0 ? 'お気に入り' : 'お気に入り未設定'}
+                      </Button>
                     </div>
                     
                     <ScrollArea className="h-[300px]">
@@ -940,17 +939,16 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                       >
                         すべて解除
                       </Button>
-                      {favoriteInstructors.length > 0 && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 px-3 text-sm flex items-center gap-1" 
-                          onClick={handleSelectFavoriteInstructors}
-                        >
-                          <Heart className="h-3 w-3" />
-                          お気に入り
-                        </Button>
-                      )}
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-8 px-3 text-sm flex items-center gap-1" 
+                        onClick={favoriteInstructors.length > 0 ? handleSelectFavoriteInstructors : () => onNavigate?.('user-settings')}
+                        disabled={favoriteInstructors.length === 0}
+                      >
+                        <Heart className="h-3 w-3" />
+                        {favoriteInstructors.length > 0 ? 'お気に入り' : 'お気に入り未設定'}
+                      </Button>
                     </div>
                     
                     {/* 検索ボックス */}
@@ -990,45 +988,42 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
           </div>
           
           {/* お気に入り一括選択 */}
-          {(favoriteStudios.length > 0 || favoriteInstructors.length > 0) && (
-            <div className="border-t pt-4">
-              <div className="border border-border rounded-lg bg-card">
-                <div className="p-3">
-                  <h4 className="text-sm font-medium mb-3">お気に入りから一括選択</h4>
-                  <div className="space-y-2">
-                    {(favoriteStudios.length > 0 || favoriteInstructors.length > 0) && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full h-9 px-4 flex items-center gap-2 justify-center" 
-                        onClick={handleSelectAllFavorites}
-                      >
-                        <Heart className="h-3 w-3" />
-                        すべてのお気に入りを選択
-                      </Button>
-                    )}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="w-full h-9 px-4 flex items-center gap-2 justify-center bg-accent text-accent-foreground hover:bg-accent/80" 
-                      onClick={() => onNavigate?.('user-settings')}
-                    >
-                      お気に入りを編集
-                    </Button>
-                  </div>
-                  {(favoriteStudios.length > 0 || favoriteInstructors.length > 0) ? (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      お気に入りに登録したスタジオやインストラクターを検索条件に追加できます
-                    </p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      お気に入りを登録すると、検索条件に一括追加できます
-                    </p>
-                  )}
+          <div className="border-t pt-4">
+            <div className="border border-border rounded-lg bg-card">
+              <div className="p-3">
+                <h4 className="text-sm font-medium mb-3">お気に入りから一括選択</h4>
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full h-9 px-4 flex items-center gap-2 justify-center" 
+                    onClick={handleSelectAllFavorites}
+                    disabled={favoriteStudios.length === 0 && favoriteInstructors.length === 0}
+                  >
+                    <Heart className="h-3 w-3" />
+                    {(favoriteStudios.length > 0 || favoriteInstructors.length > 0) ? 'すべてのお気に入りを選択' : 'お気に入りが未設定です'}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full h-9 px-4 flex items-center gap-2 justify-center bg-accent text-accent-foreground hover:bg-accent/80" 
+                    onClick={() => onNavigate?.('user-settings')}
+                  >
+                    お気に入りを編集
+                  </Button>
                 </div>
+                {(favoriteStudios.length > 0 || favoriteInstructors.length > 0) ? (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    お気に入りに登録したスタジオやインストラクターを検索条件に追加できます
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-2">
+                    お気に入りを登録すると、検索条件に一括追加できます
+                  </p>
+                )}
               </div>
             </div>
-          )}
+          </div>
           
           <div className="flex gap-2 mt-6">
             <Button 
