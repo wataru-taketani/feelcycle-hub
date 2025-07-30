@@ -405,20 +405,23 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     try {
       setLoadingLessons(true);
       
-      // 気になるリストからスタジオと日付を抽出（lessonId形式: studioCode-lessonDate-startTime）
+      // 気になるリストからスタジオと日付を抽出（lessonId形式: studioCode-YYYY-MM-DD-HH:MM）
       const neededRequests = new Set<string>();
       interestedLessons.forEach(lessonKey => {
         const parts = lessonKey.split('-');
         console.log(`🔗 lessonKey解析:`, { lessonKey, parts, partsLength: parts.length });
         
-        if (parts.length >= 2) {
+        if (parts.length >= 4) {  // studioCode-YYYY-MM-DD-HH:MM の形式
           const studioCode = parts[0];
-          const lessonDate = parts[1];
+          const year = parts[1];
+          const month = parts[2];
+          const day = parts[3];
+          const lessonDate = `${year}-${month}-${day}`;  // YYYY-MM-DD形式に再構築
           const requestKey = `${studioCode}:${lessonDate}`;
           neededRequests.add(requestKey);
           console.log(`➕ リクエスト追加:`, { studioCode, lessonDate, requestKey });
         } else {
-          console.warn(`⚠️ 無効なlessonKey形式:`, { lessonKey, parts });
+          console.warn(`⚠️ 無効なlessonKey形式:`, { lessonKey, parts, expected: 'studioCode-YYYY-MM-DD-HH:MM' });
         }
       });
       
