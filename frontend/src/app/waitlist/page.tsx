@@ -417,9 +417,19 @@ export default function WaitlistPage() {
                     <div className="font-medium">
                       {selectedStudio ? 
                         (() => {
-                          const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio);
-                          console.log('Studio lookup:', { selectedStudio, studio, studioGroups });
-                          return studio?.name || selectedStudio.toUpperCase();
+                          // studioGroupsから検索
+                          let studioName = null;
+                          if (studioGroups && Object.keys(studioGroups).length > 0) {
+                            const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio);
+                            studioName = studio?.name;
+                          }
+                          // studiosからも検索
+                          if (!studioName && studios.length > 0) {
+                            const studio = studios.find((s: any) => s.code.toLowerCase() === selectedStudio);
+                            studioName = studio?.name;
+                          }
+                          console.log('Studio lookup:', { selectedStudio, studioName, studioGroups, studios });
+                          return studioName || selectedStudio.toUpperCase();
                         })()
                         : 'スタジオを選択'
                       }
@@ -475,8 +485,18 @@ export default function WaitlistPage() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
                   <span>{(() => {
-                    const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio);
-                    return studio?.name || selectedStudio.toUpperCase();
+                    // studioGroupsから検索
+                    let studioName = null;
+                    if (studioGroups && Object.keys(studioGroups).length > 0) {
+                      const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio);
+                      studioName = studio?.name;
+                    }
+                    // studiosからも検索
+                    if (!studioName && studios.length > 0) {
+                      const studio = studios.find((s: any) => s.code.toLowerCase() === selectedStudio);
+                      studioName = studio?.name;
+                    }
+                    return studioName || selectedStudio.toUpperCase();
                   })()} のスケジュール</span>
                 </CardTitle>
               </CardHeader>
