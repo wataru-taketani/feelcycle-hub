@@ -81,20 +81,37 @@ export default function WaitlistPage() {
       if (response.data.success) {
         console.log('🔍 キャンセル待ちデータ:', response.data.data);
         
-        // 各項目の詳細をログ出力
-        response.data.data.forEach((waitlist: Waitlist, index: number) => {
+        // 現在のactive/pausedのみをログ出力（過去データ除外）
+        const activeWaitlistsForLog = response.data.data.filter((w: Waitlist) => 
+          w.status === 'active' || w.status === 'paused'
+        );
+        
+        console.log(`📋 現在のキャンセル待ち件数: ${activeWaitlistsForLog.length}`);
+        
+        activeWaitlistsForLog.forEach((waitlist: Waitlist, index: number) => {
           console.log(`📋 キャンセル待ち[${index}]:`, {
             waitlistId: waitlist.waitlistId,
             status: waitlist.status,
             lessonName: waitlist.lessonName,
             lessonDate: waitlist.lessonDate,
             startTime: waitlist.startTime,
-            notificationHistory: waitlist.notificationHistory,
             notificationCount: waitlist.notificationHistory?.length || 0,
             pausedAt: waitlist.pausedAt,
             createdAt: waitlist.createdAt,
             updatedAt: waitlist.updatedAt
           });
+          
+          // 通知履歴の詳細（最新5件のみ）
+          if (waitlist.notificationHistory && waitlist.notificationHistory.length > 0) {
+            console.log(`📬 通知履歴 (最新5件):`, 
+              waitlist.notificationHistory.slice(-5).map((notification: any) => ({
+                sentAt: notification.sentAt,
+                availableSlots: notification.availableSlots,
+                totalSlots: notification.totalSlots,
+                notificationId: notification.notificationId
+              }))
+            );
+          }
         });
         
         setWaitlists(response.data.data);
