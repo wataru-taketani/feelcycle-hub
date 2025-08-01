@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Clock, Plus, X, Play, MapPin, ChevronRight, CircleAlert } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,11 @@ export default function WaitlistPage() {
   const [lessonsByDate, setLessonsByDate] = useState<any>({});
   const [loadingLessons, setLoadingLessons] = useState(false);
   const [isStudioCollapsibleOpen, setIsStudioCollapsibleOpen] = useState(false);
+  
+  // キャンセル待ち登録用
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [registering, setRegistering] = useState(false);
 
   useEffect(() => {
     if (apiUser) {
@@ -205,6 +211,40 @@ export default function WaitlistPage() {
     
     // スタジオ選択後に自動的にレッスン取得（大文字で送信）
     await fetchLessonsForStudio(studioCode.toUpperCase());
+  };
+
+  const handleLessonClick = (lesson: any) => {
+    setSelectedLesson(lesson);
+    setShowRegisterModal(true);
+  };
+
+  const registerWaitlist = async () => {
+    if (!apiUser || !selectedLesson) return;
+    
+    try {
+      setRegistering(true);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      
+      const response = await axios.post(`${apiBaseUrl}/waitlist`, {
+        userId: apiUser.userId,
+        studioCode: selectedLesson.studioCode,
+        lessonDate: selectedLesson.lessonDate,
+        startTime: selectedLesson.startTime,
+        endTime: selectedLesson.endTime,
+        lessonName: selectedLesson.lessonName,
+        instructor: selectedLesson.instructor
+      });
+      
+      if (response.data.success) {
+        setShowRegisterModal(false);
+        setSelectedLesson(null);
+        await fetchWaitlists(); // リストを再取得
+      }
+    } catch (error) {
+      console.error('Error registering waitlist:', error);
+    } finally {
+      setRegistering(false);
+    }
   };
 
   const fetchLessonsForStudio = async (studioCode: string) => {
@@ -537,7 +577,11 @@ export default function WaitlistPage() {
                             </div>
                             <div className="p-1.5 space-y-1.5 min-h-[400px]">
                               {lessonsByDate[date].map((lesson: any, index: number) => (
-                                <button key={index} className="w-full lesson-item text-left">
+                                <button 
+                                  key={index} 
+                                  className="w-full lesson-item text-left hover:bg-muted/50 transition-colors" 
+                                  onClick={() => handleLessonClick(lesson)}
+                                >
                                   <div className="relative">
                                     <div className="text-sm mb-1 text-muted-foreground">
                                       {lesson.startTime} - {lesson.endTime}
@@ -591,6 +635,72 @@ export default function WaitlistPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* キャンセル待ち登録モーダル */}
+      <Dialog open={showRegisterModal} onOpenChange={setShowRegisterModal}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">キャンセル待ち登録確認</DialogTitle>
+          </DialogHeader>
+          
+          {selectedLesson && (
+            <div className="bg-gray-100 rounded-lg p-4 space-y-2">
+              {/* 日時 */}
+              <div className="text-center text-muted-foreground text-sm">
+                {formatDate(selectedLesson.lessonDate)} {selectedLesson.startTime} - {selectedLesson.endTime}
+              </div>
+              
+              {/* プログラム名バッジ */}
+              <div className="flex justify-center">
+                <div className="text-sm font-medium rounded px-2 py-1" style={{
+                  backgroundColor: getProgramBackgroundColor(selectedLesson.lessonName),
+                  color: getProgramTextColor(selectedLesson.lessonName)
+                }}>
+                  {selectedLesson.lessonName}
+                </div>
+              </div>
+              
+              {/* インストラクター */}
+              <div className="text-center text-muted-foreground text-sm">
+                {selectedLesson.instructor}
+              </div>
+
+              {/* スタジオ */}
+              <div className="text-center text-muted-foreground text-sm">
+                {(() => {
+                  let studioName = selectedLesson.studioName;
+                  if (!studioName && studioGroups && Object.keys(studioGroups).length > 0) {
+                    const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedLesson.studioCode.toLowerCase());
+                    studioName = studio?.name;
+                  }
+                  return studioName ? `${studioName}（${selectedLesson.studioCode.toUpperCase()}）` : selectedLesson.studioCode.toUpperCase();
+                })()}
+              </div>
+            </div>
+          )}
+          
+          <DialogDescription className="text-center">
+            このレッスンのキャンセル待ちを登録しますか？
+          </DialogDescription>
+          
+          <div className="flex flex-col space-y-2">
+            <Button 
+              onClick={registerWaitlist}
+              disabled={registering}
+              className="w-full bg-black text-white hover:bg-gray-800"
+            >
+              {registering ? '登録中...' : 'キャンセル待ち登録'}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowRegisterModal(false)}
+              className="w-full"
+            >
+              キャンセル
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
