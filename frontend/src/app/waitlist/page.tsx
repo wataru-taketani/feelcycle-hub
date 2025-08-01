@@ -46,6 +46,9 @@ export default function WaitlistPage() {
   const [studioGroups, setStudioGroups] = useState<any>({});
   const [studios, setStudios] = useState<any[]>([]);
   const [selectedStudio, setSelectedStudio] = useState<string>(''); // 単一選択に変更
+  const [lessonsByDate, setLessonsByDate] = useState<any>({});
+  const [loadingLessons, setLoadingLessons] = useState(false);
+  const [isStudioCollapsibleOpen, setIsStudioCollapsibleOpen] = useState(false);
 
   useEffect(() => {
     if (apiUser) {
@@ -196,9 +199,38 @@ export default function WaitlistPage() {
     return colors.textColor;
   };
 
-  const handleStudioSelect = (studioCode: string, studioName: string) => {
+  const handleStudioSelect = async (studioCode: string, studioName: string) => {
     console.log('Studio selected:', { studioCode, studioName });
     setSelectedStudio(studioCode);
+    setIsStudioCollapsibleOpen(false); // 選択後にCollapsibleを閉じる
+    
+    // スタジオ選択後に自動的にレッスン取得
+    await fetchLessonsForStudio(studioCode);
+  };
+
+  const fetchLessonsForStudio = async (studioCode: string) => {
+    if (!studioCode) return;
+    
+    try {
+      setLoadingLessons(true);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      
+      // 保持している全レッスンを取得（日付制限なし）
+      const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}`);
+      
+      if (response.data.success && response.data.data?.lessonsByDate) {
+        setLessonsByDate(response.data.data.lessonsByDate);
+        console.log('✅ Lessons loaded for studio:', studioCode, Object.keys(response.data.data.lessonsByDate).length, 'days');
+      } else {
+        setLessonsByDate({});
+        console.warn('No lesson data received for studio:', studioCode);
+      }
+    } catch (error) {
+      console.error('Error fetching lessons for studio:', studioCode, error);
+      setLessonsByDate({});
+    } finally {
+      setLoadingLessons(false);
+    }
   };
   
 
@@ -367,7 +399,7 @@ export default function WaitlistPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="border border-border rounded-lg bg-card">
-            <Collapsible>
+            <Collapsible open={isStudioCollapsibleOpen} onOpenChange={setIsStudioCollapsibleOpen}>
               <CollapsibleTrigger asChild>
                 <Button 
                   variant="ghost" 
@@ -426,14 +458,77 @@ export default function WaitlistPage() {
             </Collapsible>
           </div>
           
-          <div>
-            <Input
-              placeholder="レッスン名・インストラクター名で検索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10"
-            />
-          </div>
+          {/* レッスン表示エリア */}
+          {selectedStudio && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center justify-between">
+                  <span>{Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio)?.name} のスケジュール</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loadingLessons ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">レッスンを読み込み中...</p>
+                  </div>
+                ) : Object.keys(lessonsByDate).length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <div className="flex min-w-max">
+                      {Object.keys(lessonsByDate).map(date => {
+                        const dateObj = new Date(date);
+                        const month = dateObj.getMonth() + 1;
+                        const day = dateObj.getDate();
+                        const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+                        const weekday = weekdays[dateObj.getDay()];
+                        
+                        return (
+                          <div key={date} className="flex-shrink-0 w-[150px] border-r border-border last:border-r-0">
+                            <div className="p-2 border-b border-border text-center bg-muted/50">
+                              <div className="flex items-center justify-center gap-1 text-sm">
+                                <span>{month}/{day}</span>
+                                <span>({weekday})</span>
+                              </div>
+                            </div>
+                            <div className="p-1.5 space-y-1.5 min-h-[400px]">
+                              {lessonsByDate[date].map((lesson: any, index: number) => (
+                                <button key={index} className="w-full lesson-item text-left">
+                                  <div className="relative">
+                                    <div className="text-sm mb-1 text-muted-foreground">
+                                      {lesson.startTime} - {lesson.endTime}
+                                    </div>
+                                    <div className="mb-1">
+                                      <div className="text-xs font-medium rounded px-2 py-1" style={{
+                                        backgroundColor: getProgramBackgroundColor(lesson.lessonName),
+                                        color: getProgramTextColor(lesson.lessonName)
+                                      }}>
+                                        {lesson.lessonName}
+                                      </div>
+                                    </div>
+                                    <div className="text-sm font-medium">
+                                      <span>{lesson.instructor}</span>
+                                    </div>
+                                    <div className="reservation-number mt-1 min-h-[20px] text-sm font-normal"></div>
+                                    <div className="absolute bottom-0 right-0 text-xs text-muted-foreground flex items-center gap-1">
+                                      <span>{lesson.studioName}({lesson.studioCode})</span>
+                                    </div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    レッスンデータがありません
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
     </div>
