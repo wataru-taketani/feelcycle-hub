@@ -200,12 +200,12 @@ export default function WaitlistPage() {
   };
 
   const handleStudioSelect = async (studioCode: string, studioName: string) => {
-    console.log('Studio selected:', { studioCode, studioName });
-    setSelectedStudio(studioCode);
+    console.log('Studio selected:', { studioCode: studioCode.toLowerCase(), studioName });
+    setSelectedStudio(studioCode.toLowerCase());
     setIsStudioCollapsibleOpen(false); // 選択後にCollapsibleを閉じる
     
-    // スタジオ選択後に自動的にレッスン取得
-    await fetchLessonsForStudio(studioCode);
+    // スタジオ選択後に自動的にレッスン取得（大文字で送信）
+    await fetchLessonsForStudio(studioCode.toUpperCase());
   };
 
   const fetchLessonsForStudio = async (studioCode: string) => {
@@ -215,15 +215,22 @@ export default function WaitlistPage() {
       setLoadingLessons(true);
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
       
-      // 保持している全レッスンを取得（日付制限なし）
-      const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}`);
+      // 今日から60日間のレッスンを取得（検索ページと同じ形式）
+      const today = new Date().toISOString().split('T')[0];
+      const endDate = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      console.log(`🔗 API呼び出し:`, { studioCode, url: `${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${today}&endDate=${endDate}` });
+      
+      const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${today}&endDate=${endDate}`);
+      
+      console.log('📊 API Response:', response.data);
       
       if (response.data.success && response.data.data?.lessonsByDate) {
         setLessonsByDate(response.data.data.lessonsByDate);
         console.log('✅ Lessons loaded for studio:', studioCode, Object.keys(response.data.data.lessonsByDate).length, 'days');
       } else {
         setLessonsByDate({});
-        console.warn('No lesson data received for studio:', studioCode);
+        console.warn('No lesson data received for studio:', studioCode, response.data);
       }
     } catch (error) {
       console.error('Error fetching lessons for studio:', studioCode, error);
