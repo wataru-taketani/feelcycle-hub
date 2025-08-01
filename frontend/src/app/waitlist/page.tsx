@@ -423,12 +423,22 @@ export default function WaitlistPage() {
                             const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio);
                             studioName = studio?.name;
                           }
-                          // studiosからも検索
+                          // studiosからも検索（複数の検索方法を試行）
                           if (!studioName && studios.length > 0) {
-                            const studio = studios.find((s: any) => s.code.toLowerCase() === selectedStudio);
-                            studioName = studio?.name;
+                            console.log('Searching in studios:', studios.slice(0, 3)); // 最初の3件を表示
+                            // code で検索
+                            let studio = studios.find((s: any) => s.code?.toLowerCase() === selectedStudio);
+                            if (!studio) {
+                              // Code で検索（大文字）
+                              studio = studios.find((s: any) => s.Code?.toLowerCase() === selectedStudio);
+                            }
+                            if (!studio) {
+                              // id で検索
+                              studio = studios.find((s: any) => s.id === selectedStudio);
+                            }
+                            studioName = studio?.name || studio?.Name;
                           }
-                          console.log('Studio lookup:', { selectedStudio, studioName, studioGroups, studios });
+                          console.log('Studio lookup:', { selectedStudio, studioName, studioGroups, studios: studios.length });
                           return studioName || selectedStudio.toUpperCase();
                         })()
                         : 'スタジオを選択'
@@ -491,10 +501,19 @@ export default function WaitlistPage() {
                       const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio);
                       studioName = studio?.name;
                     }
-                    // studiosからも検索
+                    // studiosからも検索（複数の検索方法を試行）
                     if (!studioName && studios.length > 0) {
-                      const studio = studios.find((s: any) => s.code.toLowerCase() === selectedStudio);
-                      studioName = studio?.name;
+                      // code で検索
+                      let studio = studios.find((s: any) => s.code?.toLowerCase() === selectedStudio);
+                      if (!studio) {
+                        // Code で検索（大文字）
+                        studio = studios.find((s: any) => s.Code?.toLowerCase() === selectedStudio);
+                      }
+                      if (!studio) {
+                        // id で検索
+                        studio = studios.find((s: any) => s.id === selectedStudio);
+                      }
+                      studioName = studio?.name || studio?.Name;
                     }
                     return studioName || selectedStudio.toUpperCase();
                   })()} のスケジュール</span>
