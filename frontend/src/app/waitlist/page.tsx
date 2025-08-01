@@ -386,11 +386,8 @@ export default function WaitlistPage() {
                         </div>
                       </div>
                       
-                      {/* 再開ボタン（右下） - 通知済みの場合のみ表示 */}
-                      {(() => {
-                        const hasNotifications = waitlist.notificationHistory && waitlist.notificationHistory.length > 0;
-                        return hasNotifications && (waitlist.status === 'paused' || waitlist.status === 'active');
-                      })() && (
+                      {/* 再開ボタン（右下） - pausedステータスの場合のみ表示 */}
+                      {waitlist.status === 'paused' && (
                         <div className="ml-3 self-end">
                           <Button 
                             variant="default" 
