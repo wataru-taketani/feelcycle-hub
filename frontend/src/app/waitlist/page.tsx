@@ -168,6 +168,14 @@ export default function WaitlistPage() {
     }
   };
 
+  const getProgramClass = (program: string) => {
+    if (!program) return 'bg-gray-100 text-gray-700';
+    const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
+    const className = `program-${normalizedProgram}`;
+    console.log('Program:', program, '-> Class:', className);
+    return className;
+  };
+
   const getProgramBackgroundColor = (program: string) => {
     if (!program) return '#f3f4f6';
     const colors = getProgramColors(program);
