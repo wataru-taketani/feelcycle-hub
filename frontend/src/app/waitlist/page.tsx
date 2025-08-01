@@ -554,7 +554,22 @@ export default function WaitlistPage() {
                                     </div>
                                     <div className="reservation-number mt-1 min-h-[20px] text-sm font-normal"></div>
                                     <div className="absolute bottom-0 right-0 text-xs text-muted-foreground flex items-center gap-1">
-                                      <span>{lesson.studioName}({lesson.studioCode})</span>
+                                      <span>{(() => {
+                                        // レッスンデータからスタジオ名を取得
+                                        let studioName = lesson.studioName;
+                                        if (!studioName && studioGroups && Object.keys(studioGroups).length > 0) {
+                                          const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === lesson.studioCode.toLowerCase());
+                                          studioName = studio?.name;
+                                        }
+                                        if (!studioName && studios.length > 0) {
+                                          let studio = studios.find((s: any) => s.code?.toLowerCase() === lesson.studioCode.toLowerCase());
+                                          if (!studio) {
+                                            studio = studios.find((s: any) => s.Code?.toLowerCase() === lesson.studioCode.toLowerCase());
+                                          }
+                                          studioName = studio?.name || studio?.Name;
+                                        }
+                                        return studioName ? `${studioName}(${lesson.studioCode})` : `(${lesson.studioCode})`;
+                                      })()}</span>
                                     </div>
                                   </div>
                                 </button>
