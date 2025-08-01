@@ -45,6 +45,11 @@ export default function WaitlistPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [studioGroups, setStudioGroups] = useState<any>({});
   const [studios, setStudios] = useState<any[]>([]);
+  const [selectedStudios, setSelectedStudios] = useState<string[]>([]);
+  const [selectedInstructors, setSelectedInstructors] = useState<string[]>([]);
+  const [isStudioOpen, setIsStudioOpen] = useState(false);
+  const [isInstructorOpen, setIsInstructorOpen] = useState(false);
+  const [instructorSearch, setInstructorSearch] = useState("");
 
   useEffect(() => {
     if (apiUser) {
@@ -176,16 +181,50 @@ export default function WaitlistPage() {
     return className;
   };
 
-  const getProgramBackgroundColor = (program: string) => {
-    if (!program) return '#f3f4f6';
-    const colors = getProgramColors(program);
+  const extractProgramCode = (lessonName: string): string => {
+    if (!lessonName) return '';
+    // プログラム名からプログラムコードを抽出（例: "BB3 10s 1" → "BB3"）
+    const programMatch = lessonName.match(/^(BB1|BB2|BB3|BSL|BSB|BSW|BSWI|BSBI|OTHER)/);
+    return programMatch ? programMatch[1] : 'OTHER';
+  };
+
+  const getProgramBackgroundColor = (lessonName: string) => {
+    if (!lessonName) return '#f3f4f6';
+    const programCode = extractProgramCode(lessonName);
+    const colors = getProgramColors(programCode);
     return colors.backgroundColor;
   };
 
-  const getProgramTextColor = (program: string) => {
-    if (!program) return '#374151';
-    const colors = getProgramColors(program);
+  const getProgramTextColor = (lessonName: string) => {
+    if (!lessonName) return '#374151';
+    const programCode = extractProgramCode(lessonName);
+    const colors = getProgramColors(programCode);
     return colors.textColor;
+  };
+
+  const handleStudioChange = (studioId: string, checked: boolean) => {
+    console.log('handleStudioChange called:', { studioId, checked });
+    if (checked) {
+      setSelectedStudios(prev => {
+        const newSelected = [...prev, studioId];
+        console.log('New selected studios:', newSelected);
+        return newSelected;
+      });
+    } else {
+      setSelectedStudios(prev => {
+        const newSelected = prev.filter(id => id !== studioId);
+        console.log('New selected studios:', newSelected);
+        return newSelected;
+      });
+    }
+  };
+
+  const handleInstructorChange = (instructorId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedInstructors(prev => [...prev, instructorId]);
+    } else {
+      setSelectedInstructors(prev => prev.filter(id => id !== instructorId));
+    }
   };
 
   const getStatusTextClass = (status: WaitlistStatus) => {
@@ -382,9 +421,13 @@ export default function WaitlistPage() {
                             {studioGroups[groupName].map((studio: any) => (
                               <Button
                                 key={studio.code}
-                                variant="outline"
+                                variant={selectedStudios.includes(studio.code.toLowerCase()) ? "default" : "outline"}
                                 size="sm"
                                 className="h-8 px-2 text-xs font-normal justify-start"
+                                onClick={() => {
+                                  console.log('Studio button clicked:', studio.code);
+                                  handleStudioChange(studio.code.toLowerCase(), !selectedStudios.includes(studio.code.toLowerCase()));
+                                }}
                               >
                                 {studio.name}
                               </Button>
