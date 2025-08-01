@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Clock, Plus, X, Play, MapPin, ChevronRight, CircleAlert } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import { fetchProgramsData, getProgramColors } from '@/utils/programsApi';
 
 type WaitlistStatus = 'active' | 'paused' | 'expired' | 'cancelled' | 'completed';
 
@@ -42,10 +43,17 @@ export default function WaitlistPage() {
   const [waitlists, setWaitlists] = useState<Waitlist[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [studioGroups, setStudioGroups] = useState<any>({});
+  const [studios, setStudios] = useState<any[]>([]);
 
   useEffect(() => {
     if (apiUser) {
       fetchWaitlists();
+      fetchStudios();
+      // プログラム色データを事前に取得
+      fetchProgramsData().catch(error => {
+        console.error('Failed to fetch programs data:', error);
+      });
       // Set up real-time updates
       const interval = setInterval(fetchWaitlists, 30000); // Update every 30 seconds
       return () => clearInterval(interval);
@@ -138,51 +146,38 @@ export default function WaitlistPage() {
     }
   };
 
+  // スタジオ一覧取得
+  const fetchStudios = async () => {
+    try {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      const response = await axios.get(`${apiBaseUrl}/studios`);
+      if (response.data.success) {
+        const { studioGroups: groups, studios: studiosData } = response.data.data;
+        
+        if (groups && Object.keys(groups).length > 0) {
+          setStudioGroups(groups);
+        } else {
+          setStudioGroups({});
+        }
+        setStudios(studiosData || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch studios:', error);
+      setStudioGroups({});
+      setStudios([]);
+    }
+  };
+
   const getProgramBackgroundColor = (program: string) => {
     if (!program) return '#f3f4f6';
-    const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
-    
-    switch (normalizedProgram) {
-      case 'bb1':
-        return 'rgb(255, 255, 102)';
-      case 'bb2':
-        return 'rgb(255, 153, 51)';
-      case 'bb3':
-        return 'rgb(255, 51, 0)';
-      case 'bsl':
-        return 'rgb(0, 0, 204)';
-      case 'bsb':
-        return 'rgb(0, 204, 255)';
-      case 'bsw':
-        return 'rgb(204, 102, 255)';
-      case 'bswi':
-        return 'rgb(153, 0, 153)';
-      case 'bsbi':
-        return 'rgb(51, 102, 153)';
-      default:
-        return '#f3f4f6';
-    }
+    const colors = getProgramColors(program);
+    return colors.backgroundColor;
   };
 
   const getProgramTextColor = (program: string) => {
     if (!program) return '#374151';
-    const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
-    
-    switch (normalizedProgram) {
-      case 'bb1':
-      case 'bb2':
-      case 'bb3':
-      case 'bsb':
-        return 'rgb(0, 0, 0)';
-      case 'bsl':
-      case 'bsw':
-        return 'rgb(255, 255, 255)';
-      case 'bswi':
-      case 'bsbi':
-        return 'rgb(255, 255, 102)';
-      default:
-        return '#374151';
-    }
+    const colors = getProgramColors(program);
+    return colors.textColor;
   };
 
   const getStatusTextClass = (status: WaitlistStatus) => {
@@ -366,7 +361,36 @@ export default function WaitlistPage() {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                {/* スタジオ選択コンテンツは将来実装 */}
+                <div className="p-3">
+                  <div className="space-y-4">
+                    {/* APIからのスタジオグループがある場合 */}
+                    {Object.keys(studioGroups).length > 0 ? (
+                      Object.keys(studioGroups).map((groupName) => (
+                        <div key={groupName}>
+                          <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                            {groupName}
+                          </h4>
+                          <div className="grid grid-cols-2 gap-1">
+                            {studioGroups[groupName].map((studio: any) => (
+                              <Button
+                                key={studio.code}
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-2 text-xs font-normal justify-start"
+                              >
+                                {studio.name}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-sm text-muted-foreground">
+                        スタジオデータを読み込み中...
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CollapsibleContent>
             </Collapsible>
           </div>
