@@ -138,37 +138,51 @@ export default function WaitlistPage() {
     }
   };
 
-  const getProgramStyle = (program: string) => {
+  const getProgramBackgroundColor = (program: string) => {
+    if (!program) return '#f3f4f6';
     const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
     
-    // FEELCYCLE プログラム色定義（HTMLサンプル通り）
-    if (normalizedProgram.includes('bb1')) {
-      return { backgroundColor: 'rgb(255, 255, 102)', color: 'rgb(0, 0, 0)' };
+    switch (normalizedProgram) {
+      case 'bb1':
+        return 'rgb(255, 255, 102)';
+      case 'bb2':
+        return 'rgb(255, 153, 51)';
+      case 'bb3':
+        return 'rgb(255, 51, 0)';
+      case 'bsl':
+        return 'rgb(0, 0, 204)';
+      case 'bsb':
+        return 'rgb(0, 204, 255)';
+      case 'bsw':
+        return 'rgb(204, 102, 255)';
+      case 'bswi':
+        return 'rgb(153, 0, 153)';
+      case 'bsbi':
+        return 'rgb(51, 102, 153)';
+      default:
+        return '#f3f4f6';
     }
-    if (normalizedProgram.includes('bb2')) {
-      return { backgroundColor: 'rgb(255, 153, 51)', color: 'rgb(0, 0, 0)' };
-    }
-    if (normalizedProgram.includes('bb3')) {
-      return { backgroundColor: 'rgb(255, 51, 0)', color: 'rgb(0, 0, 0)' };
-    }
-    if (normalizedProgram.includes('bsl')) {
-      return { backgroundColor: 'rgb(0, 0, 204)', color: 'rgb(255, 255, 255)' };
-    }
-    if (normalizedProgram.includes('bsb')) {
-      return { backgroundColor: 'rgb(0, 204, 255)', color: 'rgb(0, 0, 0)' };
-    }
-    if (normalizedProgram.includes('bsw')) {
-      return { backgroundColor: 'rgb(204, 102, 255)', color: 'rgb(255, 255, 255)' };
-    }
-    if (normalizedProgram.includes('bswi')) {
-      return { backgroundColor: 'rgb(153, 0, 153)', color: 'rgb(255, 255, 102)' };
-    }
-    if (normalizedProgram.includes('bsbi')) {
-      return { backgroundColor: 'rgb(51, 102, 153)', color: 'rgb(255, 255, 102)' };
-    }
+  };
+
+  const getProgramTextColor = (program: string) => {
+    if (!program) return '#374151';
+    const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
     
-    // デフォルト
-    return { backgroundColor: 'rgb(128, 128, 128)', color: 'rgb(255, 255, 255)' };
+    switch (normalizedProgram) {
+      case 'bb1':
+      case 'bb2':
+      case 'bb3':
+      case 'bsb':
+        return 'rgb(0, 0, 0)';
+      case 'bsl':
+      case 'bsw':
+        return 'rgb(255, 255, 255)';
+      case 'bswi':
+      case 'bsbi':
+        return 'rgb(255, 255, 102)';
+      default:
+        return '#374151';
+    }
   };
 
   const getStatusTextClass = (status: WaitlistStatus) => {
@@ -238,10 +252,10 @@ export default function WaitlistPage() {
                           
                           {/* プログラム名バッジ */}
                           <div className="flex justify-center">
-                            <div 
-                              className="text-sm font-medium rounded px-2 py-1"
-                              style={getProgramStyle(waitlist.lessonName)}
-                            >
+                            <div className="text-sm font-medium rounded px-2 py-1" style={{
+                              backgroundColor: getProgramBackgroundColor(waitlist.lessonName),
+                              color: getProgramTextColor(waitlist.lessonName)
+                            }}>
                               {waitlist.lessonName}
                             </div>
                           </div>
@@ -288,10 +302,10 @@ export default function WaitlistPage() {
                         
                         {/* プログラム名とインストラクター */}
                         <div className="flex items-center gap-3">
-                          <div 
-                            className="text-xs font-medium rounded px-2 py-1"
-                            style={getProgramStyle(waitlist.lessonName)}
-                          >
+                          <div className="text-xs font-medium rounded px-2 py-1" style={{
+                            backgroundColor: getProgramBackgroundColor(waitlist.lessonName),
+                            color: getProgramTextColor(waitlist.lessonName)
+                          }}>
                             {waitlist.lessonName}
                           </div>
                           <span className="text-muted-foreground text-sm">
