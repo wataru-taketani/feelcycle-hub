@@ -45,11 +45,10 @@ export default function WaitlistPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [studioGroups, setStudioGroups] = useState<any>({});
   const [studios, setStudios] = useState<any[]>([]);
-  const [selectedStudios, setSelectedStudios] = useState<string[]>([]);
-  const [selectedInstructors, setSelectedInstructors] = useState<string[]>([]);
+  const [selectedStudio, setSelectedStudio] = useState<string>(''); // 単一選択に変更
   const [isStudioOpen, setIsStudioOpen] = useState(false);
-  const [isInstructorOpen, setIsInstructorOpen] = useState(false);
-  const [instructorSearch, setInstructorSearch] = useState("");
+  const [lessonsByDate, setLessonsByDate] = useState<any>({});
+  const [loadingLessons, setLoadingLessons] = useState(false);
 
   useEffect(() => {
     if (apiUser) {
@@ -59,9 +58,7 @@ export default function WaitlistPage() {
       fetchProgramsData().catch(error => {
         console.error('Failed to fetch programs data:', error);
       });
-      // Set up real-time updates
-      const interval = setInterval(fetchWaitlists, 30000); // Update every 30 seconds
-      return () => clearInterval(interval);
+      // 自動リロードは削除（ユーザー要求通り）
     }
   }, [apiUser]);
 
@@ -202,28 +199,40 @@ export default function WaitlistPage() {
     return colors.textColor;
   };
 
-  const handleStudioChange = (studioId: string, checked: boolean) => {
-    console.log('handleStudioChange called:', { studioId, checked });
-    if (checked) {
-      setSelectedStudios(prev => {
-        const newSelected = [...prev, studioId];
-        console.log('New selected studios:', newSelected);
-        return newSelected;
-      });
-    } else {
-      setSelectedStudios(prev => {
-        const newSelected = prev.filter(id => id !== studioId);
-        console.log('New selected studios:', newSelected);
-        return newSelected;
-      });
-    }
+  const handleStudioSelect = async (studioCode: string, studioName: string) => {
+    console.log('Studio selected:', { studioCode, studioName });
+    setSelectedStudio(studioCode);
+    setIsStudioOpen(false);
+    
+    // スタジオ選択後に自動的にレッスン取得
+    await fetchLessonsForStudio(studioCode);
   };
-
-  const handleInstructorChange = (instructorId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedInstructors(prev => [...prev, instructorId]);
-    } else {
-      setSelectedInstructors(prev => prev.filter(id => id !== instructorId));
+  
+  const fetchLessonsForStudio = async (studioCode: string) => {
+    if (!studioCode) return;
+    
+    try {
+      setLoadingLessons(true);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
+      
+      // 今日から30日間のレッスンを取得
+      const today = new Date().toISOString().split('T')[0];
+      const endDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      
+      const response = await axios.get(`${apiBaseUrl}/lessons?studioCode=${studioCode}&range=true&startDate=${today}&endDate=${endDate}`);
+      
+      if (response.data.success && response.data.data?.lessonsByDate) {
+        setLessonsByDate(response.data.data.lessonsByDate);
+        console.log('✅ Lessons loaded for studio:', studioCode, Object.keys(response.data.data.lessonsByDate).length, 'days');
+      } else {
+        setLessonsByDate({});
+        console.warn('No lesson data received for studio:', studioCode);
+      }
+    } catch (error) {
+      console.error('Error fetching lessons for studio:', studioCode, error);
+      setLessonsByDate({});
+    } finally {
+      setLoadingLessons(false);
     }
   };
 
@@ -400,7 +409,12 @@ export default function WaitlistPage() {
                 >
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4" />
-                    <div className="font-medium">スタジオを選択</div>
+                    <div className="font-medium">
+                      {selectedStudio ? 
+                        Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio)?.name || selectedStudio.toUpperCase()
+                        : 'スタジオを選択'
+                      }
+                    </div>
                   </div>
                   <div className="flex items-center justify-center w-5 h-5">
                     <ChevronRight className="h-4 w-4" />
@@ -421,12 +435,12 @@ export default function WaitlistPage() {
                             {studioGroups[groupName].map((studio: any) => (
                               <Button
                                 key={studio.code}
-                                variant={selectedStudios.includes(studio.code.toLowerCase()) ? "default" : "outline"}
+                                variant={selectedStudio === studio.code.toLowerCase() ? "default" : "outline"}
                                 size="sm"
                                 className="h-8 px-2 text-xs font-normal justify-start"
                                 onClick={() => {
                                   console.log('Studio button clicked:', studio.code);
-                                  handleStudioChange(studio.code.toLowerCase(), !selectedStudios.includes(studio.code.toLowerCase()));
+                                  handleStudioSelect(studio.code.toLowerCase(), studio.name);
                                 }}
                               >
                                 {studio.name}
@@ -445,6 +459,57 @@ export default function WaitlistPage() {
               </CollapsibleContent>
             </Collapsible>
           </div>
+          {/* スケジュール表示エリア */}
+          {selectedStudio && (
+            <div className="border border-border rounded-lg bg-card">
+              <div className="p-3">
+                <h4 className="text-sm font-medium mb-3">
+                  {Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio)?.name} のスケジュール
+                </h4>
+                {loadingLessons ? (
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">レッスンを読み込み中...</p>
+                  </div>
+                ) : Object.keys(lessonsByDate).length > 0 ? (
+                  <div className="space-y-3">
+                    {Object.keys(lessonsByDate).slice(0, 3).map(date => (
+                      <div key={date} className="text-sm">
+                        <div className="font-medium text-muted-foreground mb-1">{date}</div>
+                        <div className="space-y-1">
+                          {lessonsByDate[date].slice(0, 3).map((lesson: any, index: number) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs">
+                              <div className="flex items-center gap-2">
+                                <div className="rounded px-2 py-1" style={{
+                                  backgroundColor: getProgramBackgroundColor(lesson.lessonName),
+                                  color: getProgramTextColor(lesson.lessonName)
+                                }}>
+                                  {lesson.lessonName}
+                                </div>
+                                <span>{lesson.startTime}</span>
+                                <span>{lesson.instructor}</span>
+                              </div>
+                              <div className="text-muted-foreground">
+                                {lesson.isAvailable === 'true' ? '空きあり' : '満席'}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                    <p className="text-xs text-muted-foreground text-center">
+                      満席のレッスンをクリックしてキャンセル待ち登録
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    レッスンデータがありません
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          
           <div>
             <Input
               placeholder="レッスン名・インストラクター名で検索..."
