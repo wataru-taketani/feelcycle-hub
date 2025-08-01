@@ -137,10 +137,15 @@ export default function WaitlistPage() {
     return `${month}/${day}(${weekday})`;
   };
 
-  const getStatusText = (status: WaitlistStatus) => {
-    switch (status) {
-      case 'active': return '待機中';
-      case 'paused': return '通知済み';
+  const getStatusText = (waitlist: Waitlist) => {
+    // 通知履歴があるかどうかで実際の通知状態を判断
+    const hasNotifications = waitlist.notificationHistory && waitlist.notificationHistory.length > 0;
+    
+    switch (waitlist.status) {
+      case 'active': 
+        return hasNotifications ? '通知済み' : '待機中';
+      case 'paused': 
+        return hasNotifications ? '通知済み' : '待機中';
       case 'expired': return '期限切れ';
       case 'cancelled': return '解除済み';
       case 'completed': return '予約済み';
@@ -241,14 +246,25 @@ export default function WaitlistPage() {
   };
   
 
-  const getStatusTextClass = (status: WaitlistStatus) => {
-    switch (status) {
-      case 'paused':
-        return 'text-foreground font-medium'; // 黒
-      case 'active':
-        return 'text-foreground font-medium'; // 黒
-      default:
-        return 'text-foreground font-medium';
+  const getStatusTextClass = (waitlist: Waitlist) => {
+    const hasNotifications = waitlist.notificationHistory && waitlist.notificationHistory.length > 0;
+    
+    // 通知済みの場合は異なるスタイル
+    if (hasNotifications) {
+      return 'text-foreground font-medium'; // 通知済み
+    } else {
+      return 'text-foreground font-medium'; // 待機中
+    }
+  };
+
+  const getStatusBackgroundClass = (waitlist: Waitlist) => {
+    const hasNotifications = waitlist.notificationHistory && waitlist.notificationHistory.length > 0;
+    
+    // 通知済みの場合は灰色背景
+    if (hasNotifications) {
+      return 'bg-gray-300';
+    } else {
+      return 'bg-muted/30';
     }
   };
 
@@ -280,10 +296,10 @@ export default function WaitlistPage() {
               {activeWaitlists.map((waitlist) => (
                 <div key={waitlist.waitlistId} className="cancel-waiting-card">
                   {/* ヘッダー（ステータス + 削除ボタン） */}
-                  <div className={`cancel-waiting-card-header ${waitlist.status === 'paused' ? 'bg-gray-300' : 'bg-muted/30'}`}>
+                  <div className={`cancel-waiting-card-header ${getStatusBackgroundClass(waitlist)}`}>
                     <div className="flex items-center gap-2">
-                      <span className={`${getStatusTextClass(waitlist.status)} text-sm`}>
-                        {getStatusText(waitlist.status)}
+                      <span className={`${getStatusTextClass(waitlist)} text-sm`}>
+                        {getStatusText(waitlist)}
                       </span>
                     </div>
                     
@@ -370,8 +386,11 @@ export default function WaitlistPage() {
                         </div>
                       </div>
                       
-                      {/* 再開ボタン（右下） */}
-                      {waitlist.status === 'paused' && (
+                      {/* 再開ボタン（右下） - 通知済みの場合のみ表示 */}
+                      {(() => {
+                        const hasNotifications = waitlist.notificationHistory && waitlist.notificationHistory.length > 0;
+                        return hasNotifications && (waitlist.status === 'paused' || waitlist.status === 'active');
+                      })() && (
                         <div className="ml-3 self-end">
                           <Button 
                             variant="default" 
