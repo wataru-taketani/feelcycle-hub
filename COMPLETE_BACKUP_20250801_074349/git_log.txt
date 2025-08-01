@@ -1,0 +1,20 @@
+18d606e URGENT: Restore waitlist page to fully working version (15c1dcc)
+8b67a44 🚨 CRITICAL FIX: Restore waitlist page functionality after UI migration regression
+804f648 Fix date display logic to show only today and future dates
+f9711b5 fix: 危険な全削除処理を無効化 - データ保護モード導入
+f26aebc fix: LIFF初期化の無限ローディング問題を修正
+fcc86df fix: revert program color changes to restore schedule display
+2a29f9f feat: programName対応プログラム色システムの実装
+e417f05 fix: 気になるリスト表示問題を解決
+c5f669c debug: API呼び出しプロセスの詳細ログ追加
+2fecf0f debug: 気になるリスト表示問題のデバッグログ追加
+40d9b9a feat: 気になるリスト機能の改善
+19cbaab Fix interested list display issue
+69b1a44 Fix favorite functionality visibility in lesson search
+97aad5f fix: URL階層構造を理想的な形にリファクタリング
+1bc6ce2 feat: 動的プログラム色管理システムとユーザー設定永続化を実装
+dff27c9 Deep fix for program colors: multiple approaches to ensure display
+c2c2b1d Force apply program colors with !important and add debugging for lesson item classes
+b47e831 Fix search screen lesson display: remove opacity effects and add program color debugging
+eb2bbba Fix lesson availability status mapping to properly handle both string and boolean isAvailable values
+81e8802 Fix program color coding and text visibility issues
