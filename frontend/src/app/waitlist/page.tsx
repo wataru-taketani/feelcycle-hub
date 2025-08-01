@@ -434,7 +434,7 @@ export default function WaitlistPage() {
                             }
                             studioName = studio?.name || studio?.Name;
                           }
-                          return studioName ? `${studioName}（${selectedStudio}）` : selectedStudio.toUpperCase();
+                          return studioName ? `${studioName}（${selectedStudio.toUpperCase()}）` : selectedStudio.toUpperCase();
                         })()
                         : 'スタジオを選択'
                       }
@@ -506,7 +506,7 @@ export default function WaitlistPage() {
                       }
                       studioName = studio?.name || studio?.Name;
                     }
-                    return studioName ? `${studioName}（${selectedStudio}）` : selectedStudio.toUpperCase();
+                    return studioName ? `${studioName}（${selectedStudio.toUpperCase()}）` : selectedStudio.toUpperCase();
                   })()} のスケジュール</span>
                 </CardTitle>
               </CardHeader>
@@ -568,7 +568,7 @@ export default function WaitlistPage() {
                                           }
                                           studioName = studio?.name || studio?.Name;
                                         }
-                                        return studioName ? `${studioName}(${lesson.studioCode})` : `(${lesson.studioCode})`;
+                                        return studioName ? `${studioName}(${lesson.studioCode.toUpperCase()})` : `(${lesson.studioCode.toUpperCase()})`;
                                       })()}</span>
                                     </div>
                                   </div>
