@@ -80,6 +80,23 @@ export default function WaitlistPage() {
       
       if (response.data.success) {
         console.log('🔍 キャンセル待ちデータ:', response.data.data);
+        
+        // 各項目の詳細をログ出力
+        response.data.data.forEach((waitlist: Waitlist, index: number) => {
+          console.log(`📋 キャンセル待ち[${index}]:`, {
+            waitlistId: waitlist.waitlistId,
+            status: waitlist.status,
+            lessonName: waitlist.lessonName,
+            lessonDate: waitlist.lessonDate,
+            startTime: waitlist.startTime,
+            notificationHistory: waitlist.notificationHistory,
+            notificationCount: waitlist.notificationHistory?.length || 0,
+            pausedAt: waitlist.pausedAt,
+            createdAt: waitlist.createdAt,
+            updatedAt: waitlist.updatedAt
+          });
+        });
+        
         setWaitlists(response.data.data);
       } else {
         throw new Error(response.data.message || 'キャンセル待ちリストの取得に失敗しました');
@@ -144,7 +161,18 @@ export default function WaitlistPage() {
     return `${month}/${day}(${weekday})`;
   };
 
-  const getStatusText = (status: WaitlistStatus) => {
+  const getStatusText = (status: WaitlistStatus, waitlist?: Waitlist) => {
+    if (waitlist) {
+      console.log(`🎯 ステータス判定:`, {
+        waitlistId: waitlist.waitlistId,
+        status: status,
+        displayText: status === 'paused' ? '通知済み' : (status === 'active' ? '待機中' : status),
+        notificationHistory: waitlist.notificationHistory,
+        notificationCount: waitlist.notificationHistory?.length || 0,
+        pausedAt: waitlist.pausedAt
+      });
+    }
+    
     switch (status) {
       case 'active': return '待機中';
       case 'paused': return '通知済み';
@@ -325,7 +353,7 @@ export default function WaitlistPage() {
                   <div className={`cancel-waiting-card-header ${getStatusBackgroundClass(waitlist.status)}`}>
                     <div className="flex items-center gap-2">
                       <span className={`${getStatusTextClass(waitlist.status)} text-sm`}>
-                        {getStatusText(waitlist.status)}
+                        {getStatusText(waitlist.status, waitlist)}
                       </span>
                     </div>
                     
