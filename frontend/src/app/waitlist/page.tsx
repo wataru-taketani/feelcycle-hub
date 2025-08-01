@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Clock, Plus, X, Play } from "lucide-react";
+import { Clock, Plus, X, Play, MapPin, ChevronRight, CircleAlert } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
 
 type WaitlistStatus = 'active' | 'paused' | 'expired' | 'cancelled' | 'completed';
 
@@ -39,6 +41,7 @@ export default function WaitlistPage() {
   const { apiUser } = useAuth();
   const [waitlists, setWaitlists] = useState<Waitlist[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     if (apiUser) {
@@ -157,19 +160,49 @@ export default function WaitlistPage() {
     <div className="px-4 py-2">
       <div className="mb-2">
         <h1 className="font-medium mb-1 text-[14px]">キャンセル待ち</h1>
-        <p className="text-muted-foreground text-[12px]">人気レッスンのキャンセル待ち登録・管理</p>
+        <p className="text-muted-foreground text-[12px]">人気レッスンのキャンセル待ち登録・管理 - 空席通知はLINE公式アカウントから送信されます</p>
       </div>
 
-      {/* 新規登録ボタン */}
-      <div className="mb-4">
-        <Button 
-          className="w-full h-11"
-          onClick={() => window.location.href = '/lessons'}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          スケジュールから選択
-        </Button>
-      </div>
+      {/* 新規キャンセル待ち登録 */}
+      <Card className="mb-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CircleAlert className="w-4 h-4" />
+            新規キャンセル待ち登録
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="border border-border rounded-lg bg-card">
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="flex w-full justify-between items-center px-3 h-12 hover:bg-accent rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    <div className="font-medium">スタジオを選択</div>
+                  </div>
+                  <div className="flex items-center justify-center w-5 h-5">
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                {/* スタジオ選択コンテンツは将来実装 */}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+          <div>
+            <Input
+              placeholder="レッスン名・インストラクター名で検索..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 登録済みリスト */}
       <Card>
