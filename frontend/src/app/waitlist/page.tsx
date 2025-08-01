@@ -416,7 +416,11 @@ export default function WaitlistPage() {
                     <MapPin className="w-4 h-4" />
                     <div className="font-medium">
                       {selectedStudio ? 
-                        Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio)?.name || selectedStudio.toUpperCase()
+                        (() => {
+                          const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio);
+                          console.log('Studio lookup:', { selectedStudio, studio, studioGroups });
+                          return studio?.name || selectedStudio.toUpperCase();
+                        })()
                         : 'スタジオを選択'
                       }
                     </div>
@@ -470,7 +474,10 @@ export default function WaitlistPage() {
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
-                  <span>{Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio)?.name} のスケジュール</span>
+                  <span>{(() => {
+                    const studio = Object.values(studioGroups).flat().find((s: any) => s.code.toLowerCase() === selectedStudio);
+                    return studio?.name || selectedStudio.toUpperCase();
+                  })()} のスケジュール</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
