@@ -79,6 +79,7 @@ export default function WaitlistPage() {
       );
       
       if (response.data.success) {
+        console.log('🔍 キャンセル待ちデータ:', response.data.data);
         setWaitlists(response.data.data);
       } else {
         throw new Error(response.data.message || 'キャンセル待ちリストの取得に失敗しました');
@@ -557,10 +558,20 @@ export default function WaitlistPage() {
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mx-auto mb-2"></div>
                     <p className="text-sm text-muted-foreground">レッスンを読み込み中...</p>
                   </div>
-                ) : Object.keys(lessonsByDate).length > 0 ? (
+                ) : selectedStudio ? (
                   <div className="overflow-x-auto">
                     <div className="flex min-w-max">
-                      {Object.keys(lessonsByDate).map(date => {
+                      {(() => {
+                        // 今日から60日間の日付を生成
+                        const dates = [];
+                        const today = new Date();
+                        for (let i = 0; i < 60; i++) {
+                          const date = new Date(today);
+                          date.setDate(today.getDate() + i);
+                          dates.push(date.toISOString().split('T')[0]);
+                        }
+                        return dates;
+                      })().map(date => {
                         const dateObj = new Date(date);
                         const month = dateObj.getMonth() + 1;
                         const day = dateObj.getDate();
@@ -576,7 +587,7 @@ export default function WaitlistPage() {
                               </div>
                             </div>
                             <div className="p-1.5 space-y-1.5 min-h-[400px]">
-                              {lessonsByDate[date].map((lesson: any, index: number) => (
+                              {lessonsByDate[date] ? lessonsByDate[date].map((lesson: any, index: number) => (
                                 <button 
                                   key={index} 
                                   className="w-full lesson-item text-left hover:bg-muted/50 transition-colors" 
@@ -618,7 +629,11 @@ export default function WaitlistPage() {
                                     </div>
                                   </div>
                                 </button>
-                              ))}
+                              )) : (
+                                <div className="text-center py-8 text-xs text-muted-foreground">
+                                  レッスンなし
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
