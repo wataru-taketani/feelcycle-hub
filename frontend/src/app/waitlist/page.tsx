@@ -138,9 +138,37 @@ export default function WaitlistPage() {
     }
   };
 
-  const getProgramClass = (program: string) => {
+  const getProgramStyle = (program: string) => {
     const normalizedProgram = program.toLowerCase().replace(/\s+/g, '');
-    return `program-${normalizedProgram}`;
+    
+    // FEELCYCLE プログラム色定義（HTMLサンプル通り）
+    if (normalizedProgram.includes('bb1')) {
+      return { backgroundColor: 'rgb(255, 255, 102)', color: 'rgb(0, 0, 0)' };
+    }
+    if (normalizedProgram.includes('bb2')) {
+      return { backgroundColor: 'rgb(255, 153, 51)', color: 'rgb(0, 0, 0)' };
+    }
+    if (normalizedProgram.includes('bb3')) {
+      return { backgroundColor: 'rgb(255, 51, 0)', color: 'rgb(0, 0, 0)' };
+    }
+    if (normalizedProgram.includes('bsl')) {
+      return { backgroundColor: 'rgb(0, 0, 204)', color: 'rgb(255, 255, 255)' };
+    }
+    if (normalizedProgram.includes('bsb')) {
+      return { backgroundColor: 'rgb(0, 204, 255)', color: 'rgb(0, 0, 0)' };
+    }
+    if (normalizedProgram.includes('bsw')) {
+      return { backgroundColor: 'rgb(204, 102, 255)', color: 'rgb(255, 255, 255)' };
+    }
+    if (normalizedProgram.includes('bswi')) {
+      return { backgroundColor: 'rgb(153, 0, 153)', color: 'rgb(255, 255, 102)' };
+    }
+    if (normalizedProgram.includes('bsbi')) {
+      return { backgroundColor: 'rgb(51, 102, 153)', color: 'rgb(255, 255, 102)' };
+    }
+    
+    // デフォルト
+    return { backgroundColor: 'rgb(128, 128, 128)', color: 'rgb(255, 255, 255)' };
   };
 
   const getStatusTextClass = (status: WaitlistStatus) => {
@@ -162,47 +190,6 @@ export default function WaitlistPage() {
         <h1 className="font-medium mb-1 text-[14px]">キャンセル待ち</h1>
         <p className="text-muted-foreground text-[12px]">人気レッスンのキャンセル待ち登録・管理 - 空席通知はLINE公式アカウントから送信されます</p>
       </div>
-
-      {/* 新規キャンセル待ち登録 */}
-      <Card className="mb-4">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CircleAlert className="w-4 h-4" />
-            新規キャンセル待ち登録
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="border border-border rounded-lg bg-card">
-            <Collapsible>
-              <CollapsibleTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="flex w-full justify-between items-center px-3 h-12 hover:bg-accent rounded-lg"
-                >
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    <div className="font-medium">スタジオを選択</div>
-                  </div>
-                  <div className="flex items-center justify-center w-5 h-5">
-                    <ChevronRight className="h-4 w-4" />
-                  </div>
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                {/* スタジオ選択コンテンツは将来実装 */}
-              </CollapsibleContent>
-            </Collapsible>
-          </div>
-          <div>
-            <Input
-              placeholder="レッスン名・インストラクター名で検索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 登録済みリスト */}
       <Card>
@@ -251,9 +238,12 @@ export default function WaitlistPage() {
                           
                           {/* プログラム名バッジ */}
                           <div className="flex justify-center">
-                            <Badge className={`${getProgramClass(waitlist.lessonName)} text-center border-0 text-sm`}>
+                            <div 
+                              className="text-sm font-medium rounded px-2 py-1"
+                              style={getProgramStyle(waitlist.lessonName)}
+                            >
                               {waitlist.lessonName}
-                            </Badge>
+                            </div>
                           </div>
                           
                           {/* インストラクター */}
@@ -298,9 +288,12 @@ export default function WaitlistPage() {
                         
                         {/* プログラム名とインストラクター */}
                         <div className="flex items-center gap-3">
-                          <span className={`program-name text-sm ${getProgramClass(waitlist.lessonName)}`}>
+                          <div 
+                            className="text-xs font-medium rounded px-2 py-1"
+                            style={getProgramStyle(waitlist.lessonName)}
+                          >
                             {waitlist.lessonName}
-                          </span>
+                          </div>
                           <span className="text-muted-foreground text-sm">
                             {waitlist.instructor}
                           </span>
@@ -330,6 +323,47 @@ export default function WaitlistPage() {
               現在キャンセル待ちに登録されているレッスンはありません
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* 新規キャンセル待ち登録 */}
+      <Card className="mb-4">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <CircleAlert className="w-4 h-4" />
+            新規キャンセル待ち登録
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="border border-border rounded-lg bg-card">
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="flex w-full justify-between items-center px-3 h-12 hover:bg-accent rounded-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    <div className="font-medium">スタジオを選択</div>
+                  </div>
+                  <div className="flex items-center justify-center w-5 h-5">
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                {/* スタジオ選択コンテンツは将来実装 */}
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+          <div>
+            <Input
+              placeholder="レッスン名・インストラクター名で検索..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-10"
+            />
+          </div>
         </CardContent>
       </Card>
     </div>
