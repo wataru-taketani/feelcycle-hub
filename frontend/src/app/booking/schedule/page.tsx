@@ -234,7 +234,7 @@ export default function BookingSchedulePage() {
 
   // FEELCYCLEサイトを開く
   const openFeelcycleSite = () => {
-    window.open('https://www.feelcycle.com/feelcycle/reserve/', '_blank');
+    window.open('https://m.feelcycle.com/reserve', '_blank');
   };
 
   const getSelectedStudioName = () => {
