@@ -320,7 +320,7 @@ export default function WaitlistSchedulePage() {
                           )}
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {studios.find(s => s.code === entry.studioCode)?.name || entry.studioCode} • {entry.instructor}
+                          {studios.find(s => s.code === entry.studioCode)?.name || entry.studioCode.toUpperCase()} • {entry.instructor}
                         </div>
                       </div>
                       <Button

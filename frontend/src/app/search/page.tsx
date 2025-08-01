@@ -1282,7 +1282,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                                 
                                 {/* スタジオ情報（右下） */}
                                 <div className="absolute bottom-0 right-0 text-xs text-muted-foreground flex items-center gap-1">
-                                  <span>{lesson.studio}({lesson.studioCode})</span>
+                                  <span>{lesson.studio}({lesson.studioCode.toUpperCase()})</span>
                                   {interestedLessons.includes(lesson.id.toString()) && (
                                     <BookmarkPlus className="h-3 w-3 text-blue-500 fill-current" />
                                   )}

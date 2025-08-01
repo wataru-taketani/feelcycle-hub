@@ -361,7 +361,7 @@ export default function BookingSchedulePage() {
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="text-blue-600">
-                              {studio?.name || rule.studioCode}
+                              {studio?.name || rule.studioCode.toUpperCase()}
                             </Badge>
                             <span className="text-sm font-medium">
                               {dayText} {rule.timeSlot}

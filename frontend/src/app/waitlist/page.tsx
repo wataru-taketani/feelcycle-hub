@@ -352,7 +352,7 @@ export default function WaitlistPage() {
                             {formatDate(waitlist.lessonDate)} {waitlist.startTime} - {waitlist.endTime}
                           </span>
                           <span className="text-muted-foreground text-sm">
-                            {waitlist.studioName}（{waitlist.studioCode}）
+                            {waitlist.studioName}（{waitlist.studioCode.toUpperCase()}）
                           </span>
                         </div>
                         
