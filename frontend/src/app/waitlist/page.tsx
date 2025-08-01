@@ -562,14 +562,20 @@ export default function WaitlistPage() {
                   <div className="overflow-x-auto">
                     <div className="flex min-w-max">
                       {(() => {
-                        // 今日から60日間の日付を生成
+                        // スクレイピングで取得された全日付を取得（レッスンがあるなしに関わらず）
+                        const allDates = Object.keys(lessonsByDate).sort();
+                        
+                        // 日付範囲を補完（開始日から終了日まで連続した日付を生成）
+                        if (allDates.length === 0) return [];
+                        
+                        const startDate = new Date(allDates[0]);
+                        const endDate = new Date(allDates[allDates.length - 1]);
                         const dates = [];
-                        const today = new Date();
-                        for (let i = 0; i < 60; i++) {
-                          const date = new Date(today);
-                          date.setDate(today.getDate() + i);
-                          dates.push(date.toISOString().split('T')[0]);
+                        
+                        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                          dates.push(d.toISOString().split('T')[0]);
                         }
+                        
                         return dates;
                       })().map(date => {
                         const dateObj = new Date(date);
