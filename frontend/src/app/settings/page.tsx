@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, User, Bell, Heart, X, MapPin } from "lucide-react";
+import StudioGrid from "@/components/shared/StudioGrid";
 import { 
   getUserSettings, 
   saveUserSettings, 
@@ -65,7 +66,6 @@ export default function SettingsPage() {
   const [favoriteInstructors, setFavoriteInstructors] = useState<string[]>(userSettings.favoriteInstructors);
   const [favoriteStudios, setFavoriteStudios] = useState<string[]>(userSettings.favoriteStudios);
   const [instructorSearch, setInstructorSearch] = useState("");
-  const [studioSearch, setStudioSearch] = useState("");
   const [favoriteTab, setFavoriteTab] = useState("studios");
   
   // 通知設定の状態管理
@@ -132,58 +132,30 @@ export default function SettingsPage() {
     }
   };
 
-  // 実際のスタジオデータ（簡略版）
-  const eastAreaStudios = [
-    { id: 'gnz', name: '銀座', code: 'GNZ' },
-    { id: 'sby', name: '渋谷', code: 'SBY' },
-    { id: 'sjk', name: '新宿', code: 'SJK' },
-    { id: 'ikb', name: '池袋', code: 'IKB' },
-    { id: 'kcj', name: '吉祥寺', code: 'KCJ' },
-    { id: 'kws', name: '川崎', code: 'KWS' },
-    { id: 'ykh', name: '横浜', code: 'YKH' }
-  ];
+  // スタジオ関連のロジックは共通コンポーネントに移動
 
-  const westAreaStudios = [
-    { id: 'ngy', name: '名古屋', code: 'NGY' },
-    { id: 'ssb', name: '心斎橋', code: 'SSB' },
-    { id: 'smy', name: '三ノ宮', code: 'SMY' }
-  ];
-
-  const southAreaStudios = [
-    { id: 'ftj', name: '福岡天神', code: 'FTJ' },
-    { id: 'spr', name: '札幌', code: 'SPR' }
-  ];
-
-  const allStudios = [...eastAreaStudios, ...westAreaStudios, ...southAreaStudios];
-
-  // スタジオ検索フィルター
-  const filteredStudios = allStudios.filter(studio =>
-    (studio.name.toLowerCase().includes(studioSearch.toLowerCase()) ||
-     studio.code.toLowerCase().includes(studioSearch.toLowerCase())) &&
-    !favoriteStudios.includes(studio.id)
-  );
-
-  const handleAddFavoriteStudio = async (studioId: string) => {
-    setFavoriteStudios(prev => [...prev, studioId]);
-    
-    // サーバー統合版を使用（認証済みかつAPIユーザーが存在する場合）
-    if (isAuthenticated && apiUser?.userId) {
-      await addFavoriteStudioWithSync(studioId, apiUser.userId);
+  // スタジオお気に入り変更ハンドラー（共通コンポーネント用）
+  const handleStudioChange = async (studioId: string, selected: boolean) => {
+    if (selected) {
+      setFavoriteStudios(prev => [...prev, studioId]);
+      
+      // サーバー統合版を使用（認証済みかつAPIユーザーが存在する場合）
+      if (isAuthenticated && apiUser?.userId) {
+        await addFavoriteStudioWithSync(studioId, apiUser.userId);
+      } else {
+        // フォールバック: ローカルのみ
+        addFavoriteStudio(studioId);
+      }
     } else {
-      // フォールバック: ローカルのみ
-      addFavoriteStudio(studioId);
-    }
-  };
-
-  const handleRemoveFavoriteStudio = async (studioId: string) => {
-    setFavoriteStudios(prev => prev.filter(id => id !== studioId));
-    
-    // サーバー統合版を使用（認証済みかつAPIユーザーが存在する場合）
-    if (isAuthenticated && apiUser?.userId) {
-      await removeFavoriteStudioWithSync(studioId, apiUser.userId);
-    } else {
-      // フォールバック: ローカルのみ
-      removeFavoriteStudio(studioId);
+      setFavoriteStudios(prev => prev.filter(id => id !== studioId));
+      
+      // サーバー統合版を使用（認証済みかつAPIユーザーが存在する場合）
+      if (isAuthenticated && apiUser?.userId) {
+        await removeFavoriteStudioWithSync(studioId, apiUser.userId);
+      } else {
+        // フォールバック: ローカルのみ
+        removeFavoriteStudio(studioId);
+      }
     }
   };
 
@@ -324,70 +296,13 @@ export default function SettingsPage() {
               </TabsList>
               
               <TabsContent value="studios" className="space-y-4 mt-4">
-                {/* 現在のお気に入りスタジオ */}
-                {favoriteStudios.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">現在のお気に入り ({favoriteStudios.length}店舗)</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {favoriteStudios.map((studioId) => {
-                        const studio = allStudios.find(s => s.id === studioId);
-                        return (
-                          <Badge
-                            key={studioId}
-                            variant="secondary"
-                            className="flex items-center gap-1 h-8 px-3"
-                          >
-                            {studio?.name || studioId}({studio?.code || ''})
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                              onClick={() => handleRemoveFavoriteStudio(studioId)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {favoriteStudios.length > 0 && <Separator />}
-
-                {/* スタジオ検索 */}
-                <div>
-                  <Input
-                    placeholder="スタジオ名またはコードで検索..."
-                    value={studioSearch}
-                    onChange={(e) => setStudioSearch(e.target.value)}
-                    className="h-9"
-                  />
-                </div>
-
-                {/* スタジオ追加 */}
-                <div>
-                  <h4 className="text-sm font-medium mb-2">スタジオを追加</h4>
-                  <ScrollArea className="h-[200px]">
-                    <div className="grid grid-cols-2 gap-2 p-1">
-                      {filteredStudios.map((studio) => (
-                        <Button
-                          key={studio.id}
-                          variant="outline"
-                          className="h-8 p-2 text-xs font-normal justify-center hover:bg-accent transition-colors"
-                          onClick={() => handleAddFavoriteStudio(studio.id)}
-                        >
-                          {studio.name}
-                        </Button>
-                      ))}
-                      {filteredStudios.length === 0 && (
-                        <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
-                          {studioSearch ? '該当するスタジオが見つかりません' : 'すべてのスタジオが既にお気に入りに追加されています'}
-                        </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </div>
+                <StudioGrid
+                  mode="favorites"
+                  selectedStudios={favoriteStudios}
+                  onStudioChange={handleStudioChange}
+                  showAreaSelection={true}
+                  showFavoriteIntegration={false}
+                />
               </TabsContent>
 
               <TabsContent value="instructors" className="space-y-4 mt-4">
