@@ -541,6 +541,39 @@ className={`transition-all duration-150 ${
 
 **✅ 不要なスタジオヘッダー削除: 実装完了**
 
+## Phase 2.5: タブ選択時の背景色を白に変更 (2025-08-02)
+
+### 要件
+タブの選択状態の背景色を黒から白に変更して視認性を改善。
+
+### 実装された変更
+
+#### タブ選択状態のスタイリング変更
+```typescript
+// 変更前: 黒背景 + 白文字
+className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+
+// 変更後: 白背景 + 通常文字色 + ボーダー
+className="data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border"
+```
+
+#### 技術的詳細
+- `data-[state=active]:bg-background` - 選択時に白背景適用
+- `data-[state=active]:text-foreground` - 選択時に通常の文字色適用
+- `data-[state=active]:border-border` - 選択時にボーダー追加で区別
+
+### 視覚的改善効果
+1. **可読性向上**: 白背景により文字が読みやすく
+2. **UI一貫性**: 他の白背景要素との統一感
+3. **アクセシビリティ**: コントラスト比の改善
+
+### 設計思想の統一
+- **タブ**: 白背景で選択状態を表現
+- **スタジオボタン**: 黒背景で選択状態を表現
+- 用途に応じた適切な視覚的フィードバック
+
+**✅ タブ選択時の背景色変更: 実装完了**
+
 ## 次のステップ（将来的な改善案）
 - [ ] CloudWatch Logsとの連携強化
 - [ ] Slackアラート機能追加

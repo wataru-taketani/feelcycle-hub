@@ -287,14 +287,14 @@ export default function SettingsPage() {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger 
                   value="studios" 
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border"
                 >
                   <MapPin className="w-3 h-3" />
                   スタジオ ({favoriteStudios.length})
                 </TabsTrigger>
                 <TabsTrigger 
                   value="instructors" 
-                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                  className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:border-border"
                 >
                   <User className="w-3 h-3" />
                   インストラクター ({favoriteInstructors.length})
