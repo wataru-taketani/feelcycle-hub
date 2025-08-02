@@ -285,11 +285,17 @@ export default function SettingsPage() {
           <CardContent>
             <Tabs value={favoriteTab} onValueChange={setFavoriteTab} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="studios" className="flex items-center gap-2">
+                <TabsTrigger 
+                  value="studios" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
                   <MapPin className="w-3 h-3" />
                   スタジオ ({favoriteStudios.length})
                 </TabsTrigger>
-                <TabsTrigger value="instructors" className="flex items-center gap-2">
+                <TabsTrigger 
+                  value="instructors" 
+                  className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
                   <User className="w-3 h-3" />
                   インストラクター ({favoriteInstructors.length})
                 </TabsTrigger>
