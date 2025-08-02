@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { Heart, X } from "lucide-react";
 import axios from 'axios';
 
@@ -171,6 +172,9 @@ export default function StudioGrid({
           </div>
         </div>
       )}
+
+      {/* 選択済みスタジオと操作ボタンの視覚的分離 */}
+      {selectedStudios.length > 0 && <Separator />}
 
       {/* 操作ボタン群 */}
       <div className="flex flex-wrap gap-2">
