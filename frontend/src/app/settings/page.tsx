@@ -19,26 +19,48 @@ import {
   addFavoriteStudio,
   removeFavoriteStudio,
   updateNotificationSettings,
-  updateProfileSettings
+  updateProfileSettings,
+  getUserFavoritesWithSync,
+  addFavoriteInstructorWithSync,
+  removeFavoriteInstructorWithSync,
+  addFavoriteStudioWithSync,
+  removeFavoriteStudioWithSync
 } from '@/utils/userSettings';
 
 export default function SettingsPage() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading, apiUser } = useAuth();
   
   // Add error boundary for debugging
   const [pageError, setPageError] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
   
-  useEffect(() => {
-    try {
-      // Basic page load test
-      console.log('SettingsPage mounted', { isAuthenticated, loading });
-    } catch (error) {
-      console.error('Settings page mount error:', error);
-      setPageError(error instanceof Error ? error.message : 'Unknown error');
-    }
-  }, []);
-  // ユーザー設定の状態管理（localStorageから復元）
+  // ユーザー設定の状態管理（サーバー同期対応）
   const [userSettings, setUserSettings] = useState(() => getUserSettings());
+  
+  // サーバーとの同期処理
+  useEffect(() => {
+    async function initializeSettings() {
+      try {
+        console.log('SettingsPage mounted', { isAuthenticated, loading, userId: apiUser?.userId });
+        
+        if (isAuthenticated && apiUser?.userId) {
+          setSyncStatus('syncing');
+          const syncedSettings = await getUserFavoritesWithSync(apiUser.userId);
+          setUserSettings(syncedSettings);
+          setSyncStatus('synced');
+          console.log('✅ Settings synced with server');
+        }
+      } catch (error) {
+        console.error('Settings sync error:', error);
+        setSyncStatus('error');
+        setPageError(error instanceof Error ? error.message : 'Settings sync failed');
+      }
+    }
+    
+    if (!loading && isAuthenticated) {
+      initializeSettings();
+    }
+  }, [isAuthenticated, loading, apiUser?.userId]);
   const [displayName, setDisplayName] = useState(userSettings.profile.displayName || user?.displayName || "");
   const [favoriteInstructors, setFavoriteInstructors] = useState<string[]>(userSettings.favoriteInstructors);
   const [favoriteStudios, setFavoriteStudios] = useState<string[]>(userSettings.favoriteStudios);
@@ -86,14 +108,28 @@ export default function SettingsPage() {
     !favoriteInstructors.includes(instructor.id)
   );
 
-  const handleAddFavorite = (instructorId: string) => {
+  const handleAddFavorite = async (instructorId: string) => {
     setFavoriteInstructors(prev => [...prev, instructorId]);
-    addFavoriteInstructor(instructorId);
+    
+    // サーバー統合版を使用（認証済みかつAPIユーザーが存在する場合）
+    if (isAuthenticated && apiUser?.userId) {
+      await addFavoriteInstructorWithSync(instructorId, apiUser.userId);
+    } else {
+      // フォールバック: ローカルのみ
+      addFavoriteInstructor(instructorId);
+    }
   };
 
-  const handleRemoveFavorite = (instructorId: string) => {
+  const handleRemoveFavorite = async (instructorId: string) => {
     setFavoriteInstructors(prev => prev.filter(id => id !== instructorId));
-    removeFavoriteInstructor(instructorId);
+    
+    // サーバー統合版を使用（認証済みかつAPIユーザーが存在する場合）
+    if (isAuthenticated && apiUser?.userId) {
+      await removeFavoriteInstructorWithSync(instructorId, apiUser.userId);
+    } else {
+      // フォールバック: ローカルのみ
+      removeFavoriteInstructor(instructorId);
+    }
   };
 
   // 実際のスタジオデータ（簡略版）
@@ -127,14 +163,28 @@ export default function SettingsPage() {
     !favoriteStudios.includes(studio.id)
   );
 
-  const handleAddFavoriteStudio = (studioId: string) => {
+  const handleAddFavoriteStudio = async (studioId: string) => {
     setFavoriteStudios(prev => [...prev, studioId]);
-    addFavoriteStudio(studioId);
+    
+    // サーバー統合版を使用（認証済みかつAPIユーザーが存在する場合）
+    if (isAuthenticated && apiUser?.userId) {
+      await addFavoriteStudioWithSync(studioId, apiUser.userId);
+    } else {
+      // フォールバック: ローカルのみ
+      addFavoriteStudio(studioId);
+    }
   };
 
-  const handleRemoveFavoriteStudio = (studioId: string) => {
+  const handleRemoveFavoriteStudio = async (studioId: string) => {
     setFavoriteStudios(prev => prev.filter(id => id !== studioId));
-    removeFavoriteStudio(studioId);
+    
+    // サーバー統合版を使用（認証済みかつAPIユーザーが存在する場合）
+    if (isAuthenticated && apiUser?.userId) {
+      await removeFavoriteStudioWithSync(studioId, apiUser.userId);
+    } else {
+      // フォールバック: ローカルのみ
+      removeFavoriteStudio(studioId);
+    }
   };
 
   // Show error if page failed to mount
@@ -171,8 +221,41 @@ export default function SettingsPage() {
   return (
     <div className="px-4 py-2">
       <div className="mb-2">
-        <h1 className="font-medium mb-1 text-[14px]">ユーザー設定</h1>
-        <p className="text-muted-foreground text-[12px]">アカウント設定・通知設定・データ管理</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-medium mb-1 text-[14px]">ユーザー設定</h1>
+            <p className="text-muted-foreground text-[12px]">アカウント設定・通知設定・データ管理</p>
+          </div>
+          {/* 同期ステータス表示 */}
+          {isAuthenticated && (
+            <div className="flex items-center gap-1 text-[10px]">
+              {syncStatus === 'syncing' && (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border border-primary border-t-transparent" />
+                  <span className="text-muted-foreground">同期中...</span>
+                </>
+              )}
+              {syncStatus === 'synced' && (
+                <>
+                  <div className="h-2 w-2 bg-green-500 rounded-full" />
+                  <span className="text-green-600">同期完了</span>
+                </>
+              )}
+              {syncStatus === 'error' && (
+                <>
+                  <div className="h-2 w-2 bg-red-500 rounded-full" />
+                  <span className="text-red-600">同期エラー</span>
+                </>
+              )}
+              {syncStatus === 'idle' && (
+                <>
+                  <div className="h-2 w-2 bg-gray-400 rounded-full" />
+                  <span className="text-muted-foreground">ローカル</span>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="space-y-4">

@@ -153,6 +153,149 @@ node direct-all-studios-scraper.js
 - **対策**: TypeScript型定義とフィールド名の一貫性確保
 - **学習**: 表面的な確認だけでなく、実データ構造の詳細検証が必要
 
+## 🚧 進行中の開発 (2025-08-02)
+
+### 設定画面お気に入り機能本番化
+**目的**: https://feelcycle-hub.netlify.app/settings/ のお気に入り機能を本番化
+
+**現状分析**:
+- ✅ LocalStorageベースのお気に入り機能実装済み
+- ✅ インストラクター・スタジオ選択UI完成
+- ✅ 通知設定管理機能あり
+- ❌ サーバーサイド保存なし（デバイス間同期不可）
+
+**実装済みインフラ**:
+- ✅ DynamoDB `feelcycle-hub-user-settings-dev` テーブル作成
+- ✅ Lambda環境変数 `USER_SETTINGS_TABLE` 設定済み
+- ✅ API Gateway `/user-settings` エンドポイント作成
+- ✅ user-settings.ts ハンドラー実装済み
+- ⚠️ ルーティング調整必要
+
+**決定した方針**: 選択肢B（フルサーバー移行）- 拡張性重視設計
+
+**現状分析結果** (2025-08-02 詳細調査完了):
+- 🔍 既存 `/user-lessons/favorites` = レッスン単位お気に入り（競合なし）
+- 🎯 新機能 = インストラクター・スタジオお気に入り（全く別機能）
+- ✅ 現在の設定画面 = LocalStorageベース（API無依存）
+- ✅ リスク評価 = 非常に低い（新機能追加のため）
+
+**段階的移行計画**:
+
+### Phase 1: 新API実装（既存システム無影響）
+```
+新規追加:
+- /auth/feelcycle/credentials    # FEELCYCLE認証情報
+- /user/preferences/notifications # 通知設定  
+- /user/preferences/favorites     # インストラクター・スタジオお気に入り
+- /user/profile                  # プロフィール情報
+
+既存保持:
+- /user-lessons/favorites        # レッスンお気に入り（無変更）
+- /auth/line/*                   # LINE認証（無変更）
+```
+
+### Phase 2: フロントエンド統合
+```
+- LocalStorage → サーバーサイド移行
+- 設定画面のAPI統合
+- データ移行ロジック実装
+```
+
+### Phase 3: 旧エンドポイント非推奨化（将来）
+```
+- auth.ts内のuser関連機能を段階的非推奨
+- 完全移行後に旧エンドポイント削除
+```
+
+### 重要ルール確認済み
+- ✅ 作業単位でのバックアップ必須
+- ✅ 開発メモ更新必須
+- ✅ 段階的移行で安全性確保
+- ✅ 既存機能への影響ゼロ確認済み
+
+## Phase 2 完了: フロントエンド統合実装 (2025-08-02)
+
+### 実装概要
+LocalStorageベースのお気に入り機能をサーバーサイドAPIと統合し、ハイブリッド管理システムを構築。
+
+### 実装されたファイル
+
+#### フロントエンド
+- ✅ `frontend/src/services/userPreferencesApi.ts` - サーバーサイドAPI統合サービス
+- ✅ `frontend/src/utils/userSettings.ts` - LocalStorage + サーバー統合ユーティリティ
+- ✅ `frontend/src/app/settings/page.tsx` - 設定画面のサーバー統合対応
+
+#### 実装した機能
+1. **サーバーサイドAPI統合サービス**
+   ```typescript
+   fetchUserFavorites(userId): Promise<ServerUserFavorites | null>
+   saveUserFavorites(userId, favorites): Promise<boolean>
+   syncUserFavorites(userId, localFavorites): Promise<ServerUserFavorites | null>
+   checkApiAvailability(): Promise<boolean>
+   ```
+
+2. **ハイブリッド管理機能**
+   - LocalStorageとサーバーの自動同期
+   - オフライン時のLocalStorageフォールバック
+   - 重複排除マージロジック
+   - 非同期エラーハンドリング
+
+3. **ユーザーエクスペリエンス向上**
+   - 同期ステータス表示（同期中/完了/エラー/ローカル）
+   - 即座のローカル更新 + バックグラウンド同期
+   - API障害時の安全なフォールバック
+
+### 統合テスト結果
+
+#### バックエンドAPI
+```bash
+✅ GET /user/preferences/favorites?userId=test-user-001
+✅ PUT /user/preferences/favorites (保存成功)
+✅ DynamoDB永続化確認
+```
+
+#### フロントエンド
+```bash
+✅ npm run build (コンパイル成功)
+✅ TypeScript型安全性確認
+✅ 既存機能の互換性保持
+```
+
+#### データベース確認
+```bash
+✅ DynamoDB: feelcycle-hub-user-settings-dev
+✅ テストデータ正常保存・取得
+✅ 既存テーブルとの分離確認
+```
+
+### 安全性確保
+- ✅ バックアップ作成: `BACKUP_PHASE2_FRONTEND_20250802_*`
+- ✅ 段階的実装: LocalStorage → ハイブリッド → フル統合
+- ✅ フォールバック機能: API障害時の自動切り替え
+- ✅ エラーハンドリング: 非破壊的エラー処理
+
+### デプロイメント準備
+- ✅ `lambda-deployment-favorites-integration.zip` 作成済み
+- ✅ user-settings.tsコンパイル確認
+- ✅ main.tsルーティング更新済み
+
+### 移行戦略の実現
+**フェーズ1**: サーバーサイドAPI実装 (✅完了)
+**フェーズ2**: フロントエンド統合実装 (✅完了)
+**フェーズ3**: 本番リリース・最終検証 (次期予定)
+
+### 技術的ハイライト
+1. **ゼロダウンタイム移行**: 既存LocalStorage機能を保持しつつ段階的サーバー統合
+2. **レジリエンス設計**: API障害時の自動フォールバック機能
+3. **データ整合性**: 重複排除機能付きマージロジック
+4. **開発者体験**: TypeScript型安全性とエラーハンドリング
+
+### 次期課題
+- [ ] 通知設定のサーバー統合 (`/user/preferences/notifications`)
+- [ ] FEELCYCLE認証情報管理 (`/auth/feelcycle/credentials`)
+- [ ] プロフィール統合機能 (`/user/profile`)
+- [ ] 本番環境での負荷テスト
+
 ## 次のステップ（将来的な改善案）
 - [ ] CloudWatch Logsとの連携強化
 - [ ] Slackアラート機能追加

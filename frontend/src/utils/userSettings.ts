@@ -1,4 +1,6 @@
-// ユーザー設定の永続化管理
+// ユーザー設定の永続化管理（LocalStorage + サーバーサイドAPI統合）
+
+import { fetchUserFavorites, saveUserFavorites, syncUserFavorites, checkApiAvailability } from '@/services/userPreferencesApi';
 
 const USER_SETTINGS_KEY = 'feelcycle-hub-user-settings';
 
@@ -147,5 +149,173 @@ export function clearUserSettings(): void {
     localStorage.removeItem(USER_SETTINGS_KEY);
   } catch (error) {
     console.error('Failed to clear user settings:', error);
+  }
+}
+
+// ==========================================
+// サーバーサイドAPI統合機能
+// ==========================================
+
+/**
+ * サーバーサイドからお気に入りを同期して取得
+ */
+export async function getUserFavoritesWithSync(userId?: string): Promise<UserSettings> {
+  const localSettings = getUserSettings();
+  
+  // ユーザーIDがない場合はローカル設定のみ返す
+  if (!userId) {
+    console.log('No userId provided, returning local settings only');
+    return localSettings;
+  }
+  
+  try {
+    // API可用性チェック
+    const apiAvailable = await checkApiAvailability();
+    if (!apiAvailable) {
+      console.log('API not available, using local settings');
+      return localSettings;
+    }
+    
+    // サーバーとの同期
+    const syncedFavorites = await syncUserFavorites(userId, {
+      favoriteInstructors: localSettings.favoriteInstructors,
+      favoriteStudios: localSettings.favoriteStudios,
+    });
+    
+    if (syncedFavorites) {
+      // 同期結果をローカルに保存
+      const updatedSettings: UserSettings = {
+        ...localSettings,
+        favoriteInstructors: syncedFavorites.favoriteInstructors,
+        favoriteStudios: syncedFavorites.favoriteStudios,
+      };
+      
+      saveUserSettings(updatedSettings);
+      console.log('✅ User favorites synced with server');
+      return updatedSettings;
+    }
+    
+  } catch (error) {
+    console.error('Error syncing with server, using local settings:', error);
+  }
+  
+  return localSettings;
+}
+
+/**
+ * お気に入りをサーバーとローカルの両方に保存
+ */
+export async function saveFavoritesToServer(
+  userId: string,
+  favoriteInstructors: string[],
+  favoriteStudios: string[]
+): Promise<boolean> {
+  try {
+    // ローカルにも保存
+    const currentSettings = getUserSettings();
+    const updatedSettings: UserSettings = {
+      ...currentSettings,
+      favoriteInstructors,
+      favoriteStudios,
+    };
+    saveUserSettings(updatedSettings);
+    
+    // サーバーに保存
+    const success = await saveUserFavorites(userId, {
+      favoriteInstructors,
+      favoriteStudios,
+    });
+    
+    if (success) {
+      console.log('✅ Favorites saved to both local and server');
+      return true;
+    } else {
+      console.warn('⚠️  Server save failed, but local save succeeded');
+      return false;
+    }
+    
+  } catch (error) {
+    console.error('Error saving favorites to server:', error);
+    return false;
+  }
+}
+
+/**
+ * お気に入りインストラクターを追加（サーバー統合版）
+ */
+export async function addFavoriteInstructorWithSync(instructorId: string, userId?: string): Promise<void> {
+  const settings = getUserSettings();
+  if (!settings.favoriteInstructors.includes(instructorId)) {
+    const updatedInstructors = [...settings.favoriteInstructors, instructorId];
+    
+    // ローカル更新
+    settings.favoriteInstructors = updatedInstructors;
+    saveUserSettings(settings);
+    
+    // サーバー同期（非同期、エラーがあってもローカル更新は成功扱い）
+    if (userId) {
+      saveFavoritesToServer(userId, updatedInstructors, settings.favoriteStudios).catch(error => {
+        console.warn('Failed to sync instructor favorite to server:', error);
+      });
+    }
+  }
+}
+
+/**
+ * お気に入りインストラクターを削除（サーバー統合版）
+ */
+export async function removeFavoriteInstructorWithSync(instructorId: string, userId?: string): Promise<void> {
+  const settings = getUserSettings();
+  const updatedInstructors = settings.favoriteInstructors.filter(id => id !== instructorId);
+  
+  // ローカル更新
+  settings.favoriteInstructors = updatedInstructors;
+  saveUserSettings(settings);
+  
+  // サーバー同期（非同期、エラーがあってもローカル更新は成功扱い）
+  if (userId) {
+    saveFavoritesToServer(userId, updatedInstructors, settings.favoriteStudios).catch(error => {
+      console.warn('Failed to sync instructor favorite removal to server:', error);
+    });
+  }
+}
+
+/**
+ * お気に入りスタジオを追加（サーバー統合版）
+ */
+export async function addFavoriteStudioWithSync(studioId: string, userId?: string): Promise<void> {
+  const settings = getUserSettings();
+  if (!settings.favoriteStudios.includes(studioId)) {
+    const updatedStudios = [...settings.favoriteStudios, studioId];
+    
+    // ローカル更新
+    settings.favoriteStudios = updatedStudios;
+    saveUserSettings(settings);
+    
+    // サーバー同期（非同期、エラーがあってもローカル更新は成功扱い）
+    if (userId) {
+      saveFavoritesToServer(userId, settings.favoriteInstructors, updatedStudios).catch(error => {
+        console.warn('Failed to sync studio favorite to server:', error);
+      });
+    }
+  }
+}
+
+/**
+ * お気に入りスタジオを削除（サーバー統合版）
+ */
+export async function removeFavoriteStudioWithSync(studioId: string, userId?: string): Promise<void> {
+  const settings = getUserSettings();
+  const updatedStudios = settings.favoriteStudios.filter(id => id !== studioId);
+  
+  // ローカル更新
+  settings.favoriteStudios = updatedStudios;
+  saveUserSettings(settings);
+  
+  // サーバー同期（非同期、エラーがあってもローカル更新は成功扱い）
+  if (userId) {
+    saveFavoritesToServer(userId, settings.favoriteInstructors, updatedStudios).catch(error => {
+      console.warn('Failed to sync studio favorite removal to server:', error);
+    });
   }
 }

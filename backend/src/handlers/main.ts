@@ -10,6 +10,7 @@ import { handler as lessonsHandler } from './lessons';
 import { handler as waitlistMonitorHandler } from './waitlist-monitor';
 import { handler as userLessonsHandler } from './user-lessons';
 import { programsHandler } from './programs';
+import { userSettingsHandler } from './user-settings';
 import { progressiveDailyRefresh } from '../scripts/progressive-daily-refresh';
 import { debugLambdaModules } from '../debug-lambda-modules';
 import { simpleTest } from '../simple-test';
@@ -77,8 +78,12 @@ export async function handler(
     // ルーティング
     if (path.startsWith('/auth/')) {
       result = await authHandler(apiEvent);
+    } else if (path === '/user/preferences/favorites') {
+      return await userSettingsHandler(apiEvent);
+    } else if (path.startsWith('/user-settings')) {
+      return await userSettingsHandler(apiEvent); // 後方互換性のため維持
     } else if (path.startsWith('/user/')) {
-      result = await authHandler(apiEvent); // User settings handled in auth handler
+      result = await authHandler(apiEvent); // 既存のuser関連エンドポイント
     } else if (path.startsWith('/watch')) {
       result = await reservationHandler(apiEvent);
     } else if (path.startsWith('/waitlist')) {
