@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MapPin, Heart, X } from "lucide-react";
+import { Heart, X } from "lucide-react";
 import axios from 'axios';
 
 export interface Studio {
@@ -133,135 +133,125 @@ export default function StudioGrid({
 
   return (
     <div className="space-y-4">
-      {/* ヘッダー（折りたたみなし） */}
-      <div className="flex items-center gap-2">
-        <MapPin className="w-4 h-4" />
-        <span className="font-medium">スタジオ</span>
-        {selectedStudios.length > 0 && (
-          <Badge variant="secondary" className="ml-2">
-            {selectedStudios.length}
-          </Badge>
-        )}
-      </div>
-        {/* 選択済みスタジオ表示 */}
-        {selectedStudios.length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium mb-2">
-              {mode === 'favorites' ? '現在のお気に入り' : '選択中のスタジオ'} ({selectedStudios.length})
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {selectedStudios.map((studioId) => {
-                // 選択されたスタジオの情報を取得
-                let studioInfo: Studio | undefined;
-                for (const groupStudios of Object.values(studioGroups)) {
-                  studioInfo = groupStudios.find(studio => 
-                    normalizeStudioId(studio) === studioId
-                  );
-                  if (studioInfo) break;
-                }
-
-                return (
-                  <Badge
-                    key={studioId}
-                    variant="secondary"
-                    className="flex items-center gap-1 h-8 px-3"
-                  >
-                    {studioInfo?.name || studioId}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                      onClick={() => onStudioChange(studioId, false)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
+      {/* 選択済みスタジオ表示 */}
+      {selectedStudios.length > 0 && (
+        <div>
+          <h4 className="text-sm font-medium mb-2">
+            {mode === 'favorites' ? '現在のお気に入り' : '選択中のスタジオ'} ({selectedStudios.length})
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {selectedStudios.map((studioId) => {
+              // 選択されたスタジオの情報を取得
+              let studioInfo: Studio | undefined;
+              for (const groupStudios of Object.values(studioGroups)) {
+                studioInfo = groupStudios.find(studio => 
+                  normalizeStudioId(studio) === studioId
                 );
-              })}
-            </div>
-          </div>
-        )}
+                if (studioInfo) break;
+              }
 
-        {/* 操作ボタン群 */}
-        <div className="flex flex-wrap gap-2">
-          {showAreaSelection && (
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-                className="h-8 px-3 text-xs"
-              >
-                すべて選択
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearAll}
-                className="h-8 px-3 text-xs"
-              >
-                すべて解除
-              </Button>
-            </>
-          )}
-          
-          {showFavoriteIntegration && favoriteStudios.length > 0 && onSelectFavorites && (
+              return (
+                <Badge
+                  key={studioId}
+                  variant="secondary"
+                  className="flex items-center gap-1 h-8 px-3"
+                >
+                  {studioInfo?.name || studioId}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => onStudioChange(studioId, false)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 操作ボタン群 */}
+      <div className="flex flex-wrap gap-2">
+        {showAreaSelection && (
+          <>
             <Button
               variant="outline"
               size="sm"
-              onClick={onSelectFavorites}
-              className="h-8 px-3 text-xs flex items-center gap-1"
+              onClick={handleSelectAll}
+              className="h-8 px-3 text-xs"
             >
-              <Heart className="w-3 h-3" />
-              お気に入りを選択
+              すべて選択
             </Button>
-          )}
-        </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearAll}
+              className="h-8 px-3 text-xs"
+            >
+              すべて解除
+            </Button>
+          </>
+        )}
+        
+        {showFavoriteIntegration && favoriteStudios.length > 0 && onSelectFavorites && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSelectFavorites}
+            className="h-8 px-3 text-xs flex items-center gap-1"
+          >
+            <Heart className="w-3 h-3" />
+            お気に入りを選択
+          </Button>
+        )}
+      </div>
 
-        {/* 地域別スタジオ選択 */}
-        <ScrollArea className="h-[300px]">
-          <div className="space-y-4">
-            {Object.entries(studioGroups).map(([groupName, groupStudios]) => (
-              <div key={groupName}>
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-sm font-medium">{groupName}</h4>
-                  {showAreaSelection && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleSelectAreaStudios(groupStudios)}
-                      className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      エリア選択
-                    </Button>
-                  )}
-                </div>
-                
-                <div className={`grid gap-2 ${isFromApi ? 'grid-cols-2' : 'grid-cols-3'}`}>
-                  {groupStudios.map((studio) => {
-                    const studioId = normalizeStudioId(studio);
-                    const isSelected = selectedStudios.includes(studioId);
-                    
-                    return (
-                      <Button
-                        key={studioId}
-                        variant={isSelected ? "default" : "outline"}
-                        className={`h-8 px-2 text-xs font-normal justify-center transition-all duration-150 ${
-                          isSelected 
-                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-                            : "hover:bg-accent hover:text-accent-foreground"
-                        }`}
-                        onClick={() => onStudioChange(studioId, !isSelected)}
-                      >
-                        {studio.name}
-                      </Button>
-                    );
-                  })}
-                </div>
+      {/* 地域別スタジオ選択 */}
+      <ScrollArea className="h-[300px]">
+        <div className="space-y-4">
+          {Object.entries(studioGroups).map(([groupName, groupStudios]) => (
+            <div key={groupName}>
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-medium">{groupName}</h4>
+                {showAreaSelection && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSelectAreaStudios(groupStudios)}
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    エリア選択
+                  </Button>
+                )}
               </div>
-            ))}
-          </div>
-        </ScrollArea>
+              
+              <div className={`grid gap-2 ${isFromApi ? 'grid-cols-2' : 'grid-cols-3'}`}>
+                {groupStudios.map((studio) => {
+                  const studioId = normalizeStudioId(studio);
+                  const isSelected = selectedStudios.includes(studioId);
+                  
+                  return (
+                    <Button
+                      key={studioId}
+                      variant={isSelected ? "default" : "outline"}
+                      className={`h-8 px-2 text-xs font-normal justify-center transition-all duration-150 ${
+                        isSelected 
+                          ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                          : "hover:bg-accent hover:text-accent-foreground"
+                      }`}
+                      onClick={() => onStudioChange(studioId, !isSelected)}
+                    >
+                      {studio.name}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 }
