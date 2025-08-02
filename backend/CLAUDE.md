@@ -411,6 +411,57 @@ interface StudioGridProps {
 
 **✅ スタジオUI統一化: 実装完了**
 
+## Phase 2.2: スタジオボタン視覚フィードバック改善 (2025-08-02)
+
+### 問題点
+- 選択されたスタジオボタンの視認性不良（白文字で見づらい）
+- 選択時の背景色変化タイミングの遅延
+- 不要な折りたたみ機能による操作性の複雑化
+
+### 実装された改善
+
+#### 1. 折りたたみ機能削除
+- Collapsibleコンポーネントを削除
+- 常時展開表示でアクセシビリティ向上
+- シンプルな固定ヘッダー形式に変更
+
+#### 2. 選択状態の視覚フィードバック強化
+```typescript
+// 改善前: 基本的なvariant切り替えのみ
+variant={isSelected ? "default" : "outline"}
+
+// 改善後: 明示的なスタイリングと即座反映
+className={`transition-all duration-150 ${
+  isSelected 
+    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+    : "hover:bg-accent hover:text-accent-foreground"
+}`}
+```
+
+#### 3. パフォーマンス改善
+- 不要なstate削除（`isStudioOpen`）
+- Import削除（Collapsible関連）
+- バンドルサイズ削減（14.5kB → 13.7kB）
+
+### 技術的改善点
+
+#### 即座の視覚フィードバック
+- `transition-all duration-150` による高速トランジション
+- 明示的な`bg-primary`/`text-primary-foreground`指定
+- ホバー状態の適切な差別化
+
+#### アクセシビリティ向上
+- 常時表示による操作性向上
+- 選択状態の明確な視覚的区別
+- カラーコントラストの改善
+
+### 安全性確保
+- ✅ バックアップ作成: `BACKUP_STUDIO_BUTTON_FIX_20250802_*`
+- ✅ 既存機能保持: 他の設定項目への影響なし
+- ✅ ビルド確認: 型安全性・パフォーマンス改善確認
+
+**✅ スタジオボタン視覚フィードバック改善: 実装完了**
+
 ## 次のステップ（将来的な改善案）
 - [ ] CloudWatch Logsとの連携強化
 - [ ] Slackアラート機能追加

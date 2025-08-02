@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, MapPin, Heart, X } from "lucide-react";
+import { MapPin, Heart, X } from "lucide-react";
 import axios from 'axios';
 
 export interface Studio {
@@ -77,7 +76,6 @@ export default function StudioGrid({
 }: StudioGridProps) {
   const [studioGroups, setStudioGroups] = useState<StudioGroups>(defaultStudioGroups);
   const [isFromApi, setIsFromApi] = useState(false);
-  const [isStudioOpen, setIsStudioOpen] = useState(true);
 
   // APIからスタジオデータを取得
   useEffect(() => {
@@ -134,23 +132,17 @@ export default function StudioGrid({
   };
 
   return (
-    <Collapsible open={isStudioOpen} onOpenChange={setIsStudioOpen}>
-      <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="flex items-center justify-between w-full p-0 h-auto">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4" />
-            <span className="font-medium">スタジオ</span>
-            {selectedStudios.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {selectedStudios.length}
-              </Badge>
-            )}
-          </div>
-          <ChevronDown className={`w-4 h-4 transition-transform ${isStudioOpen ? 'rotate-180' : ''}`} />
-        </Button>
-      </CollapsibleTrigger>
-
-      <CollapsibleContent className="space-y-4 mt-4">
+    <div className="space-y-4">
+      {/* ヘッダー（折りたたみなし） */}
+      <div className="flex items-center gap-2">
+        <MapPin className="w-4 h-4" />
+        <span className="font-medium">スタジオ</span>
+        {selectedStudios.length > 0 && (
+          <Badge variant="secondary" className="ml-2">
+            {selectedStudios.length}
+          </Badge>
+        )}
+      </div>
         {/* 選択済みスタジオ表示 */}
         {selectedStudios.length > 0 && (
           <div>
@@ -254,7 +246,11 @@ export default function StudioGrid({
                       <Button
                         key={studioId}
                         variant={isSelected ? "default" : "outline"}
-                        className="h-8 px-2 text-xs font-normal justify-center hover:bg-accent transition-colors"
+                        className={`h-8 px-2 text-xs font-normal justify-center transition-all duration-150 ${
+                          isSelected 
+                            ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                            : "hover:bg-accent hover:text-accent-foreground"
+                        }`}
                         onClick={() => onStudioChange(studioId, !isSelected)}
                       >
                         {studio.name}
@@ -266,7 +262,6 @@ export default function StudioGrid({
             ))}
           </div>
         </ScrollArea>
-      </CollapsibleContent>
-    </Collapsible>
+    </div>
   );
 }
