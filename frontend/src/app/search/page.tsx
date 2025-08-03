@@ -634,9 +634,61 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     return allLessons;
   };
 
+  // スタジオの表示順序を取得（エリア順 + エリア内順序）
+  const getStudioSortOrder = (studioCode: string): number => {
+    // APIからのスタジオグループがある場合
+    if (Object.keys(studioGroups).length > 0) {
+      let order = 0;
+      for (const [groupName, groupStudios] of Object.entries(studioGroups)) {
+        for (const studio of groupStudios) {
+          if (studio.code.toLowerCase() === studioCode.toLowerCase()) {
+            return order;
+          }
+          order++;
+        }
+      }
+      return 9999; // 見つからない場合は最後に
+    } else {
+      // フォールバック：静的エリア順序
+      const allStudios = [
+        ...eastAreaStudios,   // EAST AREA
+        ...northAreaStudios,  // NORTH AREA  
+        ...westAreaStudios,   // WEST AREA
+        ...southAreaStudios   // SOUTH AREA
+      ];
+      const index = allStudios.findIndex(studio => 
+        studio.code.toLowerCase() === studioCode.toLowerCase() ||
+        studio.id === studioCode.toLowerCase()
+      );
+      return index >= 0 ? index : 9999;
+    }
+  };
+
   const getLessonsForDate = (date: string) => {
     const filteredLessons = getFilteredLessons();
-    return filteredLessons.filter(lesson => lesson.date === date);
+    const lessonsForDate = filteredLessons.filter(lesson => lesson.date === date);
+    
+    // 並び替え: 1.時間 → 2.スタジオ → 3.インストラクター
+    return lessonsForDate.sort((a, b) => {
+      // 1. 時間で並び替え (startTime)
+      const timeA = a.startTime || '00:00';
+      const timeB = b.startTime || '00:00';
+      if (timeA !== timeB) {
+        return timeA.localeCompare(timeB);
+      }
+      
+      // 2. スタジオで並び替え（エリア順 + エリア内順序）
+      const studioOrderA = getStudioSortOrder(a.studioCode);
+      const studioOrderB = getStudioSortOrder(b.studioCode);
+      if (studioOrderA !== studioOrderB) {
+        return studioOrderA - studioOrderB;
+      }
+      
+      // 3. インストラクターで並び替え（アルファベット順）
+      const instructorA = a.instructor || '';
+      const instructorB = b.instructor || '';
+      return instructorA.localeCompare(instructorB);
+    });
   };
 
   // インストラクター検索フィルター（選択済みを除外）
