@@ -10,8 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings, User, Bell, Heart, X, MapPin } from "lucide-react";
+import { Settings, User, Bell, Heart, X, MapPin, RefreshCw } from "lucide-react";
 import StudioGrid from "@/components/shared/StudioGrid";
+import { useInstructors } from "@/hooks/useInstructors";
 import { 
   getUserSettings, 
   saveUserSettings, 
@@ -91,16 +92,17 @@ export default function SettingsPage() {
     updateNotificationSettings(updatedNotifications);
   };
 
-  // 実際のインストラクターデータ（簡略版）
-  const instructors = [
-    { id: 'a-airi', name: 'A.Airi' }, { id: 'a-honoka', name: 'A.Honoka' }, { id: 'a-mako', name: 'A.Mako' },
-    { id: 'a-riko', name: 'A.Riko' }, { id: 'a-yuto', name: 'A.Yuto' }, { id: 'ai', name: 'Ai' },
-    { id: 'aini', name: 'Aini' }, { id: 'airi-f', name: 'Airi.F' }, { id: 'akane', name: 'Akane' },
-    { id: 'akito', name: 'Akito' }, { id: 'ami', name: 'Ami' }, { id: 'aoi', name: 'Aoi' },
-    { id: 'mizuki', name: 'Mizuki' }, { id: 'k-miku', name: 'K.Miku' }, { id: 'taiyo', name: 'Taiyo' },
-    { id: 'yuriko', name: 'Yuriko' }, { id: 'masaki', name: 'Masaki' }, { id: 'rui', name: 'Rui' },
-    { id: 'yosui', name: 'Yosui' }, { id: 't-mai', name: 'T.Mai' }, { id: 'y-yuri', name: 'Y.Yuri' }
-  ];
+  // インストラクターデータ（APIから取得、フォールバック付き）
+  const { 
+    instructors: apiInstructors, 
+    loading: instructorsLoading, 
+    error: instructorsError,
+    isApiConnected,
+    refresh: refreshInstructors 
+  } = useInstructors();
+  
+  // インストラクターデータ（APIまたはキャッシュから取得）
+  const instructors = apiInstructors;
 
   // インストラクター検索フィルター
   const filteredInstructors = instructors.filter(instructor =>
@@ -355,7 +357,40 @@ export default function SettingsPage() {
 
                 {/* インストラクター追加 */}
                 <div>
-                  <h4 className="text-sm font-medium mb-2">インストラクターを追加</h4>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium">インストラクターを追加</h4>
+                    <div className="flex items-center gap-2">
+                      {/* データソース表示 */}
+                      <div className="flex items-center gap-1 text-[10px]">
+                        {instructorsLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-3 w-3 border border-primary border-t-transparent" />
+                            <span className="text-muted-foreground">読み込み中...</span>
+                          </>
+                        ) : isApiConnected ? (
+                          <>
+                            <div className="h-2 w-2 bg-green-500 rounded-full" />
+                            <span className="text-green-600">API ({apiInstructors.length}人)</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="h-2 w-2 bg-amber-500 rounded-full" />
+                            <span className="text-amber-600">キャッシュ ({apiInstructors.length}人)</span>
+                          </>
+                        )}
+                      </div>
+                      {/* リフレッシュボタン */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={refreshInstructors}
+                        disabled={instructorsLoading}
+                      >
+                        <RefreshCw className={`h-3 w-3 ${instructorsLoading ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
+                  </div>
                   <ScrollArea className="h-[200px]">
                     <div className="grid grid-cols-2 gap-2 p-1">
                       {filteredInstructors.map((instructor) => (
@@ -368,7 +403,13 @@ export default function SettingsPage() {
                           {instructor.name}
                         </Button>
                       ))}
-                      {filteredInstructors.length === 0 && (
+                      {instructors.length === 0 ? (
+                        <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
+                          {instructorsLoading ? 'インストラクター情報を読み込み中...' : 
+                           instructorsError ? 'インストラクター情報の取得に失敗しました。リフレッシュボタンを押して再試行してください。' :
+                           '現在インストラクター情報を取得できません'}
+                        </div>
+                      ) : filteredInstructors.length === 0 && (
                         <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
                           {instructorSearch ? '該当するインストラクターが見つかりません' : 'すべてのインストラクターが既にお気に入りに追加されています'}
                         </div>
