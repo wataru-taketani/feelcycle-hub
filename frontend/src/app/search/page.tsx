@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, Calendar, MapPin, User, ChevronDown, ChevronRight, Heart, X, BookmarkPlus, List } from "lucide-react";
+import { Search, Calendar, MapPin, User, ChevronDown, ChevronRight, Heart, X, BookmarkPlus, List, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { getTodayJST, getDateAfterDaysJST, formatDateJST } from '@/utils/dateUtils';
 import { fetchProgramsData, getProgramColors } from '@/utils/programsApi';
@@ -21,6 +22,7 @@ import {
   removeInterestedLesson 
 } from '@/utils/interestedLessons';
 import { getUserSettings } from '@/utils/userSettings';
+import { useInstructors } from '@/hooks/useInstructors';
 
 interface LessonSearchProps {
   onNavigate?: (page: string) => void;
@@ -124,88 +126,17 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     { id: 'ftj', name: '福岡天神', code: 'FTJ' }
   ];
 
-  // 実際のインストラクターデータ
-  const instructors = [
-    { id: 'a-airi', name: 'A.Airi' }, { id: 'a-honoka', name: 'A.Honoka' }, { id: 'a-mako', name: 'A.Mako' },
-    { id: 'a-riko', name: 'A.Riko' }, { id: 'a-yuto', name: 'A.Yuto' }, { id: 'ai', name: 'Ai' },
-    { id: 'aini', name: 'Aini' }, { id: 'airi-f', name: 'Airi.F' }, { id: 'akane', name: 'Akane' },
-    { id: 'akito', name: 'Akito' }, { id: 'ami', name: 'Ami' }, { id: 'aoi', name: 'Aoi' },
-    { id: 'aru', name: 'Aru' }, { id: 'asami', name: 'Asami' }, { id: 'asuka', name: 'Asuka' },
-    { id: 'ayaka-s', name: 'Ayaka.S' }, { id: 'ayame', name: 'Ayame' }, { id: 'ayana', name: 'Ayana' },
-    { id: 'ayane', name: 'Ayane' }, { id: 'ayumu', name: 'Ayumu' }, { id: 'azusa', name: 'Azusa' },
-    { id: 'chiharu', name: 'Chiharu' }, { id: 'chiho', name: 'Chiho' }, { id: 'chika', name: 'Chika' },
-    { id: 'chisaki', name: 'Chisaki' }, { id: 'daichi', name: 'Daichi' }, { id: 'daisuke', name: 'Daisuke' },
-    { id: 'e-ruka', name: 'E.Ruka' }, { id: 'eiichi', name: 'Eiichi' }, { id: 'elly', name: 'Elly' },
-    { id: 'erina', name: 'Erina' }, { id: 'f-ayaka', name: 'F.Ayaka' }, { id: 'f-hinako', name: 'F.Hinako' },
-    { id: 'f-sakura', name: 'F.Sakura' }, { id: 'f-saya', name: 'F.Saya' }, { id: 'f-yuko', name: 'F.Yuko' },
-    { id: 'fuka', name: 'Fuka' }, { id: 'fumi', name: 'Fumi' }, { id: 'g-ryoma', name: 'G.Ryoma' },
-    { id: 'h-ibuki', name: 'H.Ibuki' }, { id: 'h-ikumi', name: 'H.Ikumi' }, { id: 'h-nao', name: 'H.Nao' },
-    { id: 'h-rena', name: 'H.Rena' }, { id: 'haruhi', name: 'Haruhi' }, { id: 'haruka', name: 'Haruka' },
-    { id: 'haruna', name: 'Haruna' }, { id: 'hikaru', name: 'Hikaru' }, { id: 'himari', name: 'Himari' },
-    { id: 'hinako', name: 'Hinako' }, { id: 'hiro', name: 'Hiro' }, { id: 'hiroki', name: 'Hiroki' },
-    { id: 'hiroko', name: 'Hiroko' }, { id: 'hiromu', name: 'Hiromu' }, { id: 'hitomi', name: 'Hitomi' },
-    { id: 'i-misaki', name: 'I.Misaki' }, { id: 'i-shiori', name: 'I.Shiori' }, { id: 'izu', name: 'IZU' },
-    { id: 'ibuki', name: 'Ibuki' }, { id: 'igor', name: 'Igor' }, { id: 'jigen', name: 'Jigen' },
-    { id: 'joanna', name: 'Joanna' }, { id: 'junna', name: 'Junna' }, { id: 'k-haruka', name: 'K.Haruka' },
-    { id: 'k-miho', name: 'K.Miho' }, { id: 'k-miku', name: 'K.Miku' }, { id: 'k-miyuu', name: 'K.Miyuu' },
-    { id: 'k-naoki', name: 'K.Naoki' }, { id: 'k-riho', name: 'K.Riho' }, { id: 'k-rina', name: 'K.Rina' },
-    { id: 'k-risa', name: 'K.Risa' }, { id: 'k-saki', name: 'K.Saki' }, { id: 'k-shiori', name: 'K.Shiori' },
-    { id: 'k-yuki', name: 'K.Yuki' }, { id: 'kaede', name: 'Kaede' }, { id: 'kako', name: 'Kako' },
-    { id: 'kanon', name: 'Kanon' }, { id: 'kaori', name: 'Kaori' }, { id: 'kaori-n', name: 'Kaori.N' },
-    { id: 'kaori-s', name: 'Kaori.S' }, { id: 'karin', name: 'Karin' }, { id: 'kasumi', name: 'Kasumi' },
-    { id: 'kazuha', name: 'Kazuha' }, { id: 'kazuhiro', name: 'Kazuhiro' }, { id: 'kentaro', name: 'Kentaro' },
-    { id: 'kiko', name: 'Kiko' }, { id: 'kirika', name: 'Kirika' }, { id: 'kita-yuki', name: 'Kita.Yuki' },
-    { id: 'koki', name: 'Koki' }, { id: 'koyuki', name: 'Koyuki' }, { id: 'kurara', name: 'Kurara' },
-    { id: 'kyoko', name: 'Kyoko' }, { id: 'liz', name: 'Liz' }, { id: 'm-kaho', name: 'M.Kaho' },
-    { id: 'm-mami', name: 'M.Mami' }, { id: 'm-megumi', name: 'M.Megumi' }, { id: 'm-minami', name: 'M.Minami' },
-    { id: 'm-mizuki', name: 'M.Mizuki' }, { id: 'm-natsuki', name: 'M.Natsuki' }, { id: 'm-ryo', name: 'M.Ryo' },
-    { id: 'm-yuka', name: 'M.Yuka' }, { id: 'maaya', name: 'Maaya' }, { id: 'machi', name: 'Machi' },
-    { id: 'mae', name: 'Mae' }, { id: 'maho', name: 'Maho' }, { id: 'mako', name: 'Mako' },
-    { id: 'makoto', name: 'Makoto' }, { id: 'manaki', name: 'Manaki' }, { id: 'masa', name: 'Masa' },
-    { id: 'masaki', name: 'Masaki' }, { id: 'masaya', name: 'Masaya' }, { id: 'meg', name: 'Meg' },
-    { id: 'megu', name: 'Megu' }, { id: 'megumi', name: 'Megumi' }, { id: 'mei', name: 'Mei' },
-    { id: 'miho', name: 'Miho' }, { id: 'mika', name: 'Mika' }, { id: 'miko', name: 'Miko' },
-    { id: 'miku-i', name: 'Miku.I' }, { id: 'mina', name: 'Mina' }, { id: 'mirai', name: 'Mirai' },
-    { id: 'mitsuki', name: 'Mitsuki' }, { id: 'miu', name: 'Miu' }, { id: 'mizuki', name: 'Mizuki' },
-    { id: 'moeka', name: 'Moeka' }, { id: 'moeto', name: 'Moeto' }, { id: 'momoko', name: 'Momoko' },
-    { id: 'n-ai', name: 'N.Ai' }, { id: 'n-kanna', name: 'N.Kanna' }, { id: 'n-mika', name: 'N.Mika' },
-    { id: 'n-sakura', name: 'N.Sakura' }, { id: 'n-sena', name: 'N.Sena' }, { id: 'nagisa', name: 'Nagisa' },
-    { id: 'nahki', name: 'Nahki' }, { id: 'nana', name: 'Nana' }, { id: 'nana-y', name: 'Nana.Y' },
-    { id: 'nao', name: 'Nao' }, { id: 'narumi', name: 'Narumi' }, { id: 'natsumi', name: 'Natsumi' },
-    { id: 'noa', name: 'Noa' }, { id: 'o-airi', name: 'O.Airi' }, { id: 'o-hiroyuki', name: 'O.Hiroyuki' },
-    { id: 'o-manami', name: 'O.Manami' }, { id: 'o-miyu', name: 'O.Miyu' }, { id: 'o-motoki', name: 'O.Motoki' },
-    { id: 'osamu', name: 'Osamu' }, { id: 'r-hikaru', name: 'R.Hikaru' }, { id: 'reika', name: 'Reika' },
-    { id: 'reiko', name: 'Reiko' }, { id: 'reina', name: 'Reina' }, { id: 'ren', name: 'Ren' },
-    { id: 'riko', name: 'Riko' }, { id: 'rin', name: 'Rin' }, { id: 'rina', name: 'Rina' },
-    { id: 'rio', name: 'Rio' }, { id: 'risa', name: 'Risa' }, { id: 'rui', name: 'Rui' },
-    { id: 'runa', name: 'Runa' }, { id: 'ryo', name: 'Ryo' }, { id: 'ryuga', name: 'Ryuga' },
-    { id: 'ryuhei', name: 'Ryuhei' }, { id: 'ryuhi', name: 'Ryuhi' }, { id: 'ryutaro', name: 'Ryutaro' },
-    { id: 's-akane', name: 'S.Akane' }, { id: 's-atsushi', name: 'S.Atsushi' }, { id: 's-ayaka', name: 'S.Ayaka' },
-    { id: 's-ayumi', name: 'S.Ayumi' }, { id: 's-hinako', name: 'S.Hinako' }, { id: 's-kaori', name: 'S.Kaori' },
-    { id: 's-koyuki', name: 'S.Koyuki' }, { id: 's-manaka', name: 'S.Manaka' }, { id: 's-natsumi', name: 'S.Natsumi' },
-    { id: 's-risa', name: 'S.Risa' }, { id: 's-takeshi', name: 'S.Takeshi' }, { id: 's-yui', name: 'S.Yui' },
-    { id: 's-yurina', name: 'S.Yurina' }, { id: 'sachi', name: 'Sachi' }, { id: 'sachika', name: 'Sachika' },
-    { id: 'sadao', name: 'Sadao' }, { id: 'sae', name: 'Sae' }, { id: 'sakurako', name: 'Sakurako' },
-    { id: 'satomi', name: 'Satomi' }, { id: 'sawako', name: 'Sawako' }, { id: 'sayo', name: 'Sayo' },
-    { id: 'seiji', name: 'Seiji' }, { id: 'senna', name: 'Senna' }, { id: 'shige', name: 'Shige' },
-    { id: 'shiho', name: 'Shiho' }, { id: 'shiori-i', name: 'Shiori.I' }, { id: 'shoka', name: 'Shoka' },
-    { id: 'shunsuke', name: 'Shunsuke' }, { id: 'shunta', name: 'Shunta' }, { id: 'soma', name: 'Soma' },
-    { id: 'sota', name: 'Sota' }, { id: 'sumiki', name: 'Sumiki' }, { id: 'suzu', name: 'Suzu' },
-    { id: 't-ai', name: 'T.Ai' }, { id: 't-haruka', name: 'T.Haruka' }, { id: 't-harumi', name: 'T.Harumi' },
-    { id: 't-kazuya', name: 'T.Kazuya' }, { id: 't-mai', name: 'T.Mai' }, { id: 't-misaki', name: 'T.Misaki' },
-    { id: 't-mizuki', name: 'T.Mizuki' }, { id: 't-natsuki', name: 'T.Natsumi' }, { id: 't-sakura', name: 'T.Sakura' },
-    { id: 't-taiga', name: 'T.Taiga' }, { id: 't-yui', name: 'T.Yui' }, { id: 't-yurina', name: 'T.Yurina' },
-    { id: 'taiyo', name: 'Taiyo' }, { id: 'tamaki', name: 'Tamaki' }, { id: 'toshiaki', name: 'Toshiaki' },
-    { id: 'tsubasa', name: 'Tsubasa' }, { id: 'tsukasa', name: 'Tsukasa' }, { id: 'u-tatsuya', name: 'U.Tatsuya' },
-    { id: 'u-yuto', name: 'U.Yuto' }, { id: 'w-miki', name: 'W.Miki' }, { id: 'wataru', name: 'Wataru' },
-    { id: 'y-arisa', name: 'Y.Arisa' }, { id: 'y-daiki', name: 'Y.Daiki' }, { id: 'y-nozomi', name: 'Y.Nozomi' },
-    { id: 'y-yuri', name: 'Y.Yuri' }, { id: 'yae', name: 'Yae' }, { id: 'yoshifumi', name: 'Yoshifumi' },
-    { id: 'yosui', name: 'Yosui' }, { id: 'yuco', name: 'Yuco' }, { id: 'yudai', name: 'Yudai' },
-    { id: 'yui', name: 'Yui' }, { id: 'yui-o', name: 'Yui.O' }, { id: 'yukako', name: 'Yukako' },
-    { id: 'yuko', name: 'Yuko' }, { id: 'yumi', name: 'Yumi' }, { id: 'yuriko', name: 'Yuriko' },
-    { id: 'yusei', name: 'Yusei' }, { id: 'yusuke', name: 'Yusuke' }, { id: 'yuta', name: 'Yuta' },
-    { id: 'yuyuri', name: 'Yuyuri' }
-  ];
+  // インストラクターデータ（APIから取得、フォールバック付き）
+  const { 
+    instructors: apiInstructors, 
+    loading: instructorsLoading, 
+    error: instructorsError,
+    isApiConnected,
+    refresh: refreshInstructors 
+  } = useInstructors();
+  
+  // インストラクターデータ（APIまたはキャッシュから取得）
+  const instructors = apiInstructors;
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -708,9 +639,10 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     return filteredLessons.filter(lesson => lesson.date === date);
   };
 
-  // インストラクター検索フィルター
+  // インストラクター検索フィルター（選択済みを除外）
   const filteredInstructors = instructors.filter(instructor =>
-    instructor.name.toLowerCase().includes(instructorSearch.toLowerCase())
+    instructor.name.toLowerCase().includes(instructorSearch.toLowerCase()) &&
+    !selectedInstructors.includes(instructor.id)
   );
 
   // 日付フォーマット用ヘルパー関数（日本時間対応）
@@ -1052,29 +984,34 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                     {/* 選択されたインストラクターの表示 */}
                     {selectedInstructors.length > 0 && (
                       <div className="mb-3">
-                        <h5 className="text-sm font-medium mb-2">選択中のインストラクター ({selectedInstructors.length}名)</h5>
-                        <div className="flex flex-wrap gap-1">
+                        <h4 className="text-sm font-medium mb-2">選択中のインストラクター ({selectedInstructors.length}名)</h4>
+                        <div className="flex flex-wrap gap-2">
                           {selectedInstructors.map((instructorId) => {
                             const instructor = instructors.find(i => i.id === instructorId);
                             return instructor ? (
-                              <Badge 
+                              <Badge
                                 key={instructorId}
-                                variant="secondary" 
-                                className="bg-muted text-muted-foreground px-2 py-1 flex items-center gap-1"
+                                variant="secondary"
+                                className="flex items-center gap-1 h-8 px-3"
                               >
                                 {instructor.name}
-                                <button
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-4 w-4 p-0 hover:bg-destructive hover:text-destructive-foreground"
                                   onClick={() => handleInstructorChange(instructorId, false)}
-                                  className="ml-1 hover:bg-muted-foreground/20 rounded p-0.5"
                                 >
                                   <X className="h-3 w-3" />
-                                </button>
+                                </Button>
                               </Badge>
                             ) : null;
                           })}
                         </div>
                       </div>
                     )}
+                    
+                    {/* 選択済みインストラクターと操作ボタンの視覚的分離 */}
+                    {selectedInstructors.length > 0 && <Separator />}
                     
                     <div className="flex gap-2 mb-3">
                       <Button 
@@ -1111,30 +1048,72 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                         placeholder="インストラクター名で検索..."
                         value={instructorSearch}
                         onChange={(e) => setInstructorSearch(e.target.value)}
-                        className="h-8 text-sm"
+                        className="h-9"
                       />
                     </div>
-                    
-                    <ScrollArea className="h-[250px]">
-                      <div className="grid grid-cols-3 gap-1">
-                        {filteredInstructors.map((instructor) => (
+
+                    {/* インストラクター追加 */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium">インストラクターを追加</h4>
+                        <div className="flex items-center gap-2">
+                          {/* データソース表示 */}
+                          <div className="flex items-center gap-1 text-[10px]">
+                            {instructorsLoading ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border border-primary border-t-transparent" />
+                                <span className="text-muted-foreground">読み込み中...</span>
+                              </>
+                            ) : isApiConnected ? (
+                              <>
+                                <div className="h-2 w-2 bg-green-500 rounded-full" />
+                                <span className="text-green-600">API ({apiInstructors.length}人)</span>
+                              </>
+                            ) : (
+                              <>
+                                <div className="h-2 w-2 bg-amber-500 rounded-full" />
+                                <span className="text-amber-600">キャッシュ ({apiInstructors.length}人)</span>
+                              </>
+                            )}
+                          </div>
+                          {/* リフレッシュボタン */}
                           <Button
-                            key={instructor.id}
-                            variant={selectedInstructors.includes(instructor.id) ? "default" : "outline"}
+                            variant="ghost"
                             size="sm"
-                            className="h-8 px-2 text-xs font-normal justify-center"
-                            onClick={() => handleInstructorChange(instructor.id, !selectedInstructors.includes(instructor.id))}
+                            className="h-6 w-6 p-0"
+                            onClick={refreshInstructors}
+                            disabled={instructorsLoading}
                           >
-                            {instructor.name}
+                            <RefreshCw className={`h-3 w-3 ${instructorsLoading ? 'animate-spin' : ''}`} />
                           </Button>
-                        ))}
-                      </div>
-                      {filteredInstructors.length === 0 && (
-                        <div className="text-center py-4 text-sm text-muted-foreground">
-                          該当するインストラクターが見つかりません
                         </div>
-                      )}
-                    </ScrollArea>
+                      </div>
+                      <ScrollArea className="h-[200px]">
+                        <div className="grid grid-cols-2 gap-2 p-1">
+                          {filteredInstructors.map((instructor) => (
+                            <Button
+                              key={instructor.id}
+                              variant="outline"
+                              className="h-8 p-2 text-xs font-normal justify-center hover:bg-accent transition-colors"
+                              onClick={() => handleInstructorChange(instructor.id, true)}
+                            >
+                              {instructor.name}
+                            </Button>
+                          ))}
+                          {instructors.length === 0 ? (
+                            <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
+                              {instructorsLoading ? 'インストラクター情報を読み込み中...' : 
+                               instructorsError ? 'インストラクター情報の取得に失敗しました。リフレッシュボタンを押して再試行してください。' :
+                               '現在インストラクター情報を取得できません'}
+                            </div>
+                          ) : filteredInstructors.length === 0 && (
+                            <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
+                              {instructorSearch ? '該当するインストラクターが見つかりません' : 'すべてのインストラクターが既に選択されています'}
+                            </div>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </div>
                   </div>
                 </CollapsibleContent>
               </Collapsible>
