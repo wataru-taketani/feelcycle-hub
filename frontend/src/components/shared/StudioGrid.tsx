@@ -113,24 +113,6 @@ export default function StudioGrid({
     });
   };
 
-  // 全選択・全解除ハンドラー
-  const handleSelectAll = () => {
-    const allStudioIds = Object.values(studioGroups)
-      .flat()
-      .map(studio => normalizeStudioId(studio));
-    
-    allStudioIds.forEach(studioId => {
-      if (!selectedStudios.includes(studioId)) {
-        onStudioChange(studioId, true);
-      }
-    });
-  };
-
-  const handleClearAll = () => {
-    selectedStudios.forEach(studioId => {
-      onStudioChange(studioId, false);
-    });
-  };
 
   return (
     <div className="space-y-4">
@@ -177,29 +159,8 @@ export default function StudioGrid({
       {selectedStudios.length > 0 && <Separator />}
 
       {/* 操作ボタン群 */}
-      <div className="flex flex-wrap gap-2">
-        {showAreaSelection && (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSelectAll}
-              className="h-8 px-3 text-xs"
-            >
-              すべて選択
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearAll}
-              className="h-8 px-3 text-xs"
-            >
-              すべて解除
-            </Button>
-          </>
-        )}
-        
-        {showFavoriteIntegration && favoriteStudios.length > 0 && onSelectFavorites && (
+      {showFavoriteIntegration && favoriteStudios.length > 0 && onSelectFavorites && (
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -209,8 +170,8 @@ export default function StudioGrid({
             <Heart className="w-3 h-3" />
             お気に入りを選択
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 地域別スタジオ選択 */}
       <ScrollArea className="h-[300px]">
