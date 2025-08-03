@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, User, Bell, Heart, X, MapPin, RefreshCw } from "lucide-react";
+import FeelcycleAuthModal from '@/components/auth/FeelcycleAuthModal';
 import StudioGrid from "@/components/shared/StudioGrid";
 import { useInstructors } from "@/hooks/useInstructors";
 import { 
@@ -39,6 +40,11 @@ export default function SettingsPage() {
   // ユーザー設定の状態管理（サーバー同期対応）
   const [userSettings, setUserSettings] = useState(() => getUserSettings());
   
+  // FEELCYCLE連携状態
+  const [feelcycleLinked, setFeelcycleLinked] = useState(false);
+  const [feelcycleData, setFeelcycleData] = useState<any>(null);
+  const [showFeelcycleModal, setShowFeelcycleModal] = useState(false);
+  
   // サーバーとの同期処理
   useEffect(() => {
     async function initializeSettings() {
@@ -49,6 +55,13 @@ export default function SettingsPage() {
           setSyncStatus('syncing');
           const syncedSettings = await getUserFavoritesWithSync(apiUser.userId);
           setUserSettings(syncedSettings);
+          
+          // FEELCYCLE連携状態チェック
+          // TODO: 実装後にAPI呼び出し追加
+          // const feelcycleInfo = await checkFeelcycleAccountStatus(apiUser.userId);
+          // setFeelcycleLinked(feelcycleInfo?.linked || false);
+          // setFeelcycleData(feelcycleInfo?.data || null);
+          
           setSyncStatus('synced');
           console.log('✅ Settings synced with server');
         }
@@ -161,6 +174,13 @@ export default function SettingsPage() {
     }
   };
 
+  // FEELCYCLE認証成功時の処理
+  const handleFeelcycleAuthSuccess = (data: any) => {
+    setFeelcycleLinked(true);
+    setFeelcycleData(data);
+    console.log('FEELCYCLE認証成功:', data);
+  };
+
   // Show error if page failed to mount
   if (pageError) {
     return (
@@ -256,20 +276,45 @@ export default function SettingsPage() {
                 LINEアカウントに紐づいたメールアドレスです
               </p>
             </div>
-            <div>
-              <label className="block mb-1.5 text-sm font-medium">所属店舗</label>
-              <Input defaultValue="銀座（GNZ）" disabled />
-              <p className="text-xs text-muted-foreground mt-1">
-                FEELCYCLEサイトから自動取得されます
-              </p>
-            </div>
-            <div>
-              <label className="block mb-1.5 text-sm font-medium">会員種別</label>
-              <Input defaultValue="マンスリー30" disabled />
-              <p className="text-xs text-muted-foreground mt-1">
-                FEELCYCLEサイトから自動取得されます
-              </p>
-            </div>
+            {/* FEELCYCLE連携状態に応じた表示 */}
+            {feelcycleLinked ? (
+              <>
+                <div>
+                  <label className="block mb-1.5 text-sm font-medium">所属店舗</label>
+                  <Input 
+                    value={feelcycleData?.homeStudio || '取得中...'} 
+                    disabled 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    FEELCYCLEサイトから自動取得されます
+                  </p>
+                </div>
+                <div>
+                  <label className="block mb-1.5 text-sm font-medium">会員種別</label>
+                  <Input 
+                    value={feelcycleData?.membershipType || '取得中...'} 
+                    disabled 
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    FEELCYCLEサイトから自動取得されます
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div>
+                <label className="block mb-1.5 text-sm font-medium">FEELCYCLEアカウント連携</label>
+                <Button 
+                  variant="outline" 
+                  className="w-full h-11"
+                  onClick={() => setShowFeelcycleModal(true)}
+                >
+                  FEELCYCLEアカウントを連携する
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  連携により所属店舗・会員種別情報が自動取得されます
+                </p>
+              </div>
+            )}
             <Button className="w-full h-11" onClick={handleSaveProfile}>
               プロフィールを保存
             </Button>
@@ -477,6 +522,14 @@ export default function SettingsPage() {
         </Card>
 
       </div>
+
+      {/* FEELCYCLEアカウント連携モーダル */}
+      <FeelcycleAuthModal
+        isOpen={showFeelcycleModal}
+        onClose={() => setShowFeelcycleModal(false)}
+        onSuccess={handleFeelcycleAuthSuccess}
+        userId={apiUser?.userId || ''}
+      />
     </div>
   );
 }
