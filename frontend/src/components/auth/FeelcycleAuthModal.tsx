@@ -39,7 +39,7 @@ export default function FeelcycleAuthModal({
     setError(null);
 
     try {
-      const response = await fetch('https://feelcycle-hub-main-dev-1157382628.ap-northeast-1.elb.amazonaws.com/feelcycle/auth/verify', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/feelcycle/auth/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +68,23 @@ export default function FeelcycleAuthModal({
 
     } catch (err) {
       console.error('FEELCYCLE認証エラー:', err);
-      setError(err instanceof Error ? err.message : '認証に失敗しました。メールアドレスとパスワードを確認してください。');
+      
+      // より分かりやすいエラーメッセージに変換
+      let errorMessage = '認証に失敗しました。';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('fetch')) {
+          errorMessage = 'サーバーとの通信に失敗しました。インターネット接続を確認してください。';
+        } else if (err.message.includes('401') || err.message.includes('認証')) {
+          errorMessage = 'メールアドレスまたはパスワードが正しくありません。';
+        } else if (err.message.includes('timeout')) {
+          errorMessage = 'サーバーの応答がタイムアウトしました。しばらく後に再試行してください。';
+        } else {
+          errorMessage = `エラー: ${err.message}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

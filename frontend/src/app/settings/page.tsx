@@ -57,10 +57,17 @@ export default function SettingsPage() {
           setUserSettings(syncedSettings);
           
           // FEELCYCLE連携状態チェック
-          // TODO: 実装後にAPI呼び出し追加
-          // const feelcycleInfo = await checkFeelcycleAccountStatus(apiUser.userId);
-          // setFeelcycleLinked(feelcycleInfo?.linked || false);
-          // setFeelcycleData(feelcycleInfo?.data || null);
+          try {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/feelcycle/auth/status?userId=${apiUser.userId}`);
+            const feelcycleInfo = await response.json();
+            setFeelcycleLinked(feelcycleInfo?.linked || false);
+            setFeelcycleData(feelcycleInfo?.data || null);
+          } catch (error) {
+            console.error('FEELCYCLE連携状況確認エラー:', error);
+            // エラーが発生した場合は未連携として扱う
+            setFeelcycleLinked(false);
+            setFeelcycleData(null);
+          }
           
           setSyncStatus('synced');
           console.log('✅ Settings synced with server');
