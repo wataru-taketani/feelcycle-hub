@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ interface StudioGroups {
 
 export default function SearchPage({ onNavigate }: LessonSearchProps) {
   const { isAuthenticated, apiUser, loading } = useAuth();
+  const router = useRouter();
   
   const [hasSearched, setHasSearched] = useState(false);
   const [selectedStudios, setSelectedStudios] = useState<string[]>([]);
@@ -846,7 +848,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                         variant="outline" 
                         size="sm" 
                         className="h-8 px-3 text-sm flex items-center gap-1" 
-                        onClick={favoriteStudios.length > 0 ? handleSelectFavoriteStudios : () => onNavigate?.('user-settings')}
+                        onClick={favoriteStudios.length > 0 ? handleSelectFavoriteStudios : () => router.push('/settings')}
                         disabled={favoriteStudios.length === 0}
                       >
                         <Heart className="h-3 w-3" />
@@ -1086,7 +1088,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                         variant="outline" 
                         size="sm" 
                         className="h-8 px-3 text-sm flex items-center gap-1" 
-                        onClick={favoriteInstructors.length > 0 ? handleSelectFavoriteInstructors : () => onNavigate?.('user-settings')}
+                        onClick={favoriteInstructors.length > 0 ? handleSelectFavoriteInstructors : () => router.push('/settings')}
                         disabled={favoriteInstructors.length === 0}
                       >
                         <Heart className="h-3 w-3" />
@@ -1192,7 +1194,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                     variant="ghost" 
                     size="sm" 
                     className="w-full h-9 px-4 flex items-center gap-2 justify-center bg-accent text-accent-foreground hover:bg-accent/80" 
-                    onClick={() => onNavigate?.('user-settings')}
+                    onClick={() => router.push('/settings')}
                   >
                     お気に入りを編集
                   </Button>
