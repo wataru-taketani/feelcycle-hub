@@ -594,11 +594,17 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     const allLessons: any[] = [];
     Object.keys(lessonsByDate).forEach(date => {
       lessonsByDate[date].forEach(lesson => {
-        // インストラクター条件チェック
+        // インストラクター条件チェック（複数インストラクター対応）
         const instructorMatch = selectedInstructors.length === 0 || 
           selectedInstructors.some(instructorId => {
             const instructor = instructors.find(i => i.id === instructorId);
-            return instructor?.name === lesson.instructor;
+            if (!instructor) return false;
+            
+            // レッスンインストラクター名を「/」で分割して部分一致判定
+            const lessonInstructors = (lesson.instructor || '').split('/').map(name => name.trim());
+            return lessonInstructors.some(lessonInstructor => 
+              lessonInstructor === instructor.name || instructor.name === lessonInstructor
+            );
           });
         
         // スタジオは既に選択したものだけを取得済みなのでスタジオフィルタは不要
