@@ -717,10 +717,9 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
     });
   };
 
-  // インストラクター検索フィルター（選択済みを除外）
+  // インストラクター検索フィルター（選択済みも表示）
   const filteredInstructors = instructors.filter(instructor =>
-    instructor.name.toLowerCase().includes(instructorSearch.toLowerCase()) &&
-    !selectedInstructors.includes(instructor.id)
+    instructor.name.toLowerCase().includes(instructorSearch.toLowerCase())
   );
 
   // 日付フォーマット用ヘルパー関数（日本時間対応）
@@ -1168,25 +1167,32 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
                       </div>
                       <ScrollArea className="h-[200px]">
                         <div className="grid grid-cols-2 gap-2 p-1">
-                          {filteredInstructors.map((instructor) => (
-                            <Button
-                              key={instructor.id}
-                              variant="outline"
-                              className="h-8 p-2 text-xs font-normal justify-center hover:bg-accent transition-colors"
-                              onClick={() => handleInstructorChange(instructor.id, true)}
-                            >
-                              {instructor.name}
-                            </Button>
-                          ))}
+                          {filteredInstructors.map((instructor) => {
+                            const isSelected = selectedInstructors.includes(instructor.id);
+                            return (
+                              <Button
+                                key={instructor.id}
+                                variant={isSelected ? "default" : "outline"}
+                                className={`h-8 p-2 text-xs font-normal justify-center transition-all duration-150 ${
+                                  isSelected 
+                                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                    : "hover:bg-accent hover:text-accent-foreground"
+                                }`}
+                                onClick={() => handleInstructorChange(instructor.id, !isSelected)}
+                              >
+                                {instructor.name}
+                              </Button>
+                            );
+                          })}
                           {instructors.length === 0 ? (
                             <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
                               {instructorsLoading ? 'インストラクター情報を読み込み中...' : 
                                instructorsError ? 'インストラクター情報の取得に失敗しました。リフレッシュボタンを押して再試行してください。' :
                                '現在インストラクター情報を取得できません'}
                             </div>
-                          ) : filteredInstructors.length === 0 && (
+                          ) : filteredInstructors.length === 0 && instructorSearch && (
                             <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
-                              {instructorSearch ? '該当するインストラクターが見つかりません' : 'すべてのインストラクターが既に選択されています'}
+                              該当するインストラクターが見つかりません
                             </div>
                           )}
                         </div>
