@@ -184,7 +184,7 @@ export interface WaitlistCreateRequest {
 }
 
 export interface WaitlistUpdateRequest {
-  action: 'resume' | 'cancel';
+  action: 'resume' | 'cancel' | 'pause';
   userId?: string; // フロントエンドから送信されるユーザーID
 }
 

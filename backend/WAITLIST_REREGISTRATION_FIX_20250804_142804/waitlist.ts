@@ -241,9 +241,6 @@ async function updateWaitlist(userId: string, waitlistId: string, body: string |
       case 'resume':
         await waitlistService.resumeWaitlist(userId, waitlistId);
         break;
-      case 'pause':
-        await waitlistService.pauseWaitlist(userId, waitlistId);
-        break;
       case 'cancel':
         await waitlistService.cancelWaitlist(userId, waitlistId);
         break;
@@ -256,7 +253,7 @@ async function updateWaitlist(userId: string, waitlistId: string, body: string |
           },
           body: JSON.stringify({
             success: false,
-            error: 'Invalid action. Must be "resume", "pause", or "cancel"',
+            error: 'Invalid action. Must be "resume" or "cancel"',
           } as ApiResponse),
         };
     }

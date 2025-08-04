@@ -1,0 +1,9 @@
+{
+    "Targets": [
+        {
+            "Id": "Target0",
+            "Arn": "arn:aws:lambda:ap-northeast-1:234156130688:function:feelcycle-hub-main-dev",
+            "Input": "{\"source\":\"eventbridge.monitoring\",\"action\":\"checkAvailability\"}"
+        }
+    ]
+}

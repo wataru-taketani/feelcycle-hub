@@ -1,0 +1,44 @@
+{
+    "Rules": [
+        {
+            "Name": "FeelcycleWaitlistMonitorS-WaitlistMonitoringRule70E-EiGAcxs8Abdv",
+            "Arn": "arn:aws:events:ap-northeast-1:234156130688:rule/FeelcycleWaitlistMonitorS-WaitlistMonitoringRule70E-EiGAcxs8Abdv",
+            "State": "ENABLED",
+            "Description": "Trigger waitlist monitoring every minute",
+            "ScheduleExpression": "rate(1 minute)",
+            "EventBusName": "default"
+        },
+        {
+            "Name": "feelcycle-hub-cleanup-dev",
+            "Arn": "arn:aws:events:ap-northeast-1:234156130688:rule/feelcycle-hub-cleanup-dev",
+            "State": "ENABLED",
+            "Description": "Daily cleanup of expired waitlists",
+            "ScheduleExpression": "cron(0 2 * * ? *)",
+            "EventBusName": "default"
+        },
+        {
+            "Name": "feelcycle-hub-data-refresh-dev",
+            "Arn": "arn:aws:events:ap-northeast-1:234156130688:rule/feelcycle-hub-data-refresh-dev",
+            "State": "ENABLED",
+            "Description": "Daily refresh of lesson data - TEST at 11:55 JST",
+            "ScheduleExpression": "cron(55 2 * * ? *)",
+            "EventBusName": "default"
+        },
+        {
+            "Name": "feelcycle-hub-monitoring-dev",
+            "Arn": "arn:aws:events:ap-northeast-1:234156130688:rule/feelcycle-hub-monitoring-dev",
+            "State": "ENABLED",
+            "Description": "Trigger lesson monitoring every minute",
+            "ScheduleExpression": "rate(5 minutes)",
+            "EventBusName": "default"
+        },
+        {
+            "Name": "feelcycle-waitlist-monitoring",
+            "Arn": "arn:aws:events:ap-northeast-1:234156130688:rule/feelcycle-waitlist-monitoring",
+            "State": "ENABLED",
+            "Description": "Monitor waitlists for available seats every minute",
+            "ScheduleExpression": "rate(1 minute)",
+            "EventBusName": "default"
+        }
+    ]
+}

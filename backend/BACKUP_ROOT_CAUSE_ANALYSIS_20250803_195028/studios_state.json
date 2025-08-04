@@ -1,0 +1,939 @@
+{
+    "Items": [
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.654Z"
+            },
+            "studioCode": {
+                "S": "sdm"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "汐留"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:26:39.620Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.424Z"
+            },
+            "studioCode": {
+                "S": "ikb"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "池袋"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:29:14.891Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.995Z"
+            },
+            "studioCode": {
+                "S": "ssb"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "心斎橋"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:29:34.215Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.836Z"
+            },
+            "studioCode": {
+                "S": "azn"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "あざみ野"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:29:47.088Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.522Z"
+            },
+            "studioCode": {
+                "S": "mcd"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "町田"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:29:59.936Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.862Z"
+            },
+            "studioCode": {
+                "S": "aznp"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "あざみ野Pilates"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:30:13.646Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.627Z"
+            },
+            "studioCode": {
+                "S": "sby"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "渋谷"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:30:26.781Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.380Z"
+            },
+            "studioCode": {
+                "S": "gkbs"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "銀座京橋"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:30:39.988Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.245Z"
+            },
+            "studioCode": {
+                "S": "spr"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "札幌"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:30:52.907Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.129Z"
+            },
+            "studioCode": {
+                "S": "tkm"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "高松"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T11:31:05.772Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.402Z"
+            },
+            "studioCode": {
+                "S": "gnz"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "銀座"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:56:00.707Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.101Z"
+            },
+            "studioCode": {
+                "S": "hsm"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "広島"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:56:19.193Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.076Z"
+            },
+            "studioCode": {
+                "S": "smy"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "三ノ宮"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:57:01.379Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.357Z"
+            },
+            "studioCode": {
+                "S": "fnb"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "船橋"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:57:14.675Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.681Z"
+            },
+            "studioCode": {
+                "S": "gtd"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "五反田"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:57:27.905Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.942Z"
+            },
+            "studioCode": {
+                "S": "ngy"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "名古屋"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:57:40.852Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.602Z"
+            },
+            "studioCode": {
+                "S": "tmc"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "多摩センター"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:57:53.560Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.706Z"
+            },
+            "studioCode": {
+                "S": "kws"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "川崎"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:58:06.112Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.025Z"
+            },
+            "studioCode": {
+                "S": "umdc"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "梅田茶屋町"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:58:19.643Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.810Z"
+            },
+            "studioCode": {
+                "S": "mkg"
+            },
+            "batchStatus": {
+                "S": "completed"
+            },
+            "studioName": {
+                "S": "武蔵小杉"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:58:32.237Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.576Z"
+            },
+            "studioCode": {
+                "S": "kcj"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "吉祥寺"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-30T16:58:33.792Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.496Z"
+            },
+            "studioCode": {
+                "S": "nmg"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "中目黒"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-07-31T18:01:05.267Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.785Z"
+            },
+            "studioCode": {
+                "S": "ykh"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "横浜"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-01T18:01:05.441Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.888Z"
+            },
+            "studioCode": {
+                "S": "gif"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "岐阜"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.471Z"
+            },
+            "studioCode": {
+                "S": "uen"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "上野"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.050Z"
+            },
+            "studioCode": {
+                "S": "okbs"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "大阪京橋"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.758Z"
+            },
+            "studioCode": {
+                "S": "kok"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "上大岡"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.314Z"
+            },
+            "studioCode": {
+                "S": "ksw"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "柏"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.734Z"
+            },
+            "studioCode": {
+                "S": "ysc"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "横須賀中央"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.915Z"
+            },
+            "studioCode": {
+                "S": "ske"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "栄"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.155Z"
+            },
+            "studioCode": {
+                "S": "ftj"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "福岡天神"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.970Z"
+            },
+            "studioCode": {
+                "S": "ktk"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "京都河原町"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.449Z"
+            },
+            "studioCode": {
+                "S": "sjk"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "新宿"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.293Z"
+            },
+            "studioCode": {
+                "S": "ksg"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "越谷"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.337Z"
+            },
+            "studioCode": {
+                "S": "khm"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "海浜幕張"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.271Z"
+            },
+            "studioCode": {
+                "S": "omy"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "大宮"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.549Z"
+            },
+            "studioCode": {
+                "S": "jyo"
+            },
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "自由が丘"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        }
+    ],
+    "Count": 37,
+    "ScannedCount": 37,
+    "ConsumedCapacity": null
+}

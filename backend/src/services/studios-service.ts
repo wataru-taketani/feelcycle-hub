@@ -66,7 +66,7 @@ export class StudiosService {
         ':completed': 'completed',
         ':failed': 'failed',
       },
-      Limit: 1,
+      Limit: 40,
     }));
 
     if (result.Items && result.Items.length > 0) {
@@ -333,7 +333,7 @@ export class StudiosService {
     const errors: string[] = [];
     let created = 0;
     let updated = 0;
-    let removed = 0;
+    let removed = 0;  // 削除処理は無効化済み
     let backupCreated = false;
 
     console.log(`🚀 Starting safe studio refresh with ${scrapedStudios.length} scraped studios`);
@@ -402,30 +402,32 @@ export class StudiosService {
         }
       }
 
-      // Step 4: Sweep Phase - マークされていない古いスタジオを削除
-      console.log('🧹 Phase 2: Sweeping unmarked studios...');
+      // Step 4: Safe Status Update - マークされていないスタジオの状態確認（削除しない）
+      console.log('🔍 Phase 2: Checking unmarked studios (safe mode - no deletions)...');
       const allStudios = await this.getAllStudios();
       
       for (const studio of allStudios) {
         const lastScrapedAt = (studio as any).lastScrapedAt;
         
-        // マークされていない（古い）スタジオを特定
+        // マークされていない（スクレイピング対象外）スタジオを特定
         if (!lastScrapedAt || lastScrapedAt !== refreshTimestamp) {
           try {
-            console.log(`🗑️  Removing outdated studio: ${studio.studioName} (${studio.studioCode})`);
-            await this.deleteStudio(studio.studioCode);
-            removed++;
+            console.log(`📍 Studio not found in current scraping: ${studio.studioName} (${studio.studioCode})`);
+            
+            // 削除ではなくログ記録のみ（データ保護）
+            // 注意: lastCheckedAt, scrapingStatusフィールドは未実装のため、ログのみで実データは保護
+            console.log(`✅ Studio ${studio.studioCode} preserved (not deleted due to safe mode)`);
+            
           } catch (error) {
-            const errorMsg = `Failed to remove old studio ${studio.studioCode}: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            const errorMsg = `Failed to update status for studio ${studio.studioCode}: ${error instanceof Error ? error.message : 'Unknown error'}`;
             errors.push(errorMsg);
             console.error(`❌ ${errorMsg}`);
-            // 削除エラーは記録するが処理は続行
           }
         }
       }
 
       console.log('✅ Safe studio refresh completed successfully');
-      console.log(`📊 Summary: +${created} created, ~${updated} updated, -${removed} removed`);
+      console.log(`📊 Summary: +${created} created, ~${updated} updated, 0 deleted (safe mode)`);
       
       if (errors.length > 0) {
         console.warn(`⚠️  ${errors.length} errors occurred during refresh`);
@@ -442,7 +444,7 @@ export class StudiosService {
     return {
       created,
       updated,
-      removed,
+      removed: 0,  // 削除処理無効化のため常に0
       total: scrapedStudios.length,
       backupCreated,
       errors,

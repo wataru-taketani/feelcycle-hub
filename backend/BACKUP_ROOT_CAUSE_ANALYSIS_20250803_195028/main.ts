@@ -109,9 +109,6 @@ export async function handler(
       // LINE通知テスト用エンドポイント
       const { handler: lineTestHandler } = await import('../test-line-lambda');
       return await lineTestHandler(apiEvent, context);
-    } else if (path.startsWith('/instructors')) {
-      const { instructorsHandler } = await import('./instructors');
-      return await instructorsHandler(apiEvent);
     } else {
       result = {
         success: false,

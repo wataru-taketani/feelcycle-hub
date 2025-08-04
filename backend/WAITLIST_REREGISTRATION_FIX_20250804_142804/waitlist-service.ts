@@ -30,14 +30,8 @@ export class WaitlistService {
 
     // 3. Check if user already has waitlist for this lesson
     const existingWaitlist = await this.getUserWaitlistForLesson(userId, request);
-    if (existingWaitlist && (existingWaitlist.status === 'active' || existingWaitlist.status === 'paused')) {
+    if (existingWaitlist) {
       throw new Error('このレッスンには既にキャンセル待ち登録済みです。');
-    }
-
-    // 4. If cancelled/expired waitlist exists, reactivate it instead of creating new
-    if (existingWaitlist && (existingWaitlist.status === 'cancelled' || existingWaitlist.status === 'expired')) {
-      console.log(`🔄 Reactivating ${existingWaitlist.status} waitlist: ${existingWaitlist.waitlistId}`);
-      return await this.reactivateWaitlist(existingWaitlist);
     }
 
     const now = new Date();
@@ -144,8 +138,7 @@ export class WaitlistService {
    */
   async updateWaitlistStatus(userId: string, waitlistId: string, status: WaitlistStatus, additionalFields?: Partial<Waitlist>): Promise<void> {
     const now = new Date().toISOString();
-    const setExpressions: string[] = ['#status = :status', 'updatedAt = :updatedAt'];
-    const removeExpressions: string[] = [];
+    const updateExpressions: string[] = ['#status = :status', 'updatedAt = :updatedAt'];
     const expressionAttributeNames: Record<string, string> = { '#status': 'status' };
     const expressionAttributeValues: Record<string, any> = {
       ':status': status,
@@ -155,52 +148,36 @@ export class WaitlistService {
     // Add status-specific timestamp
     switch (status) {
       case 'paused':
-        setExpressions.push('pausedAt = :pausedAt');
+        updateExpressions.push('pausedAt = :pausedAt');
         expressionAttributeValues[':pausedAt'] = now;
         break;
       case 'expired':
-        setExpressions.push('expiredAt = :expiredAt');
+        updateExpressions.push('expiredAt = :expiredAt');
         expressionAttributeValues[':expiredAt'] = now;
         break;
       case 'cancelled':
-        setExpressions.push('cancelledAt = :cancelledAt');
+        updateExpressions.push('cancelledAt = :cancelledAt');
         expressionAttributeValues[':cancelledAt'] = now;
         break;
       case 'completed':
-        setExpressions.push('completedAt = :completedAt');
+        updateExpressions.push('completedAt = :completedAt');
         expressionAttributeValues[':completedAt'] = now;
         break;
     }
 
-    // Add additional fields (filtering out undefined values)
+    // Add additional fields
     if (additionalFields) {
-      let additionalIndex = 0;
-      Object.entries(additionalFields).forEach(([key, value]) => {
-        if (value !== undefined) {
-          const attrKey = `:additional${additionalIndex}`;
-          setExpressions.push(`${key} = ${attrKey}`);
-          expressionAttributeValues[attrKey] = value;
-          additionalIndex++;
-        } else {
-          // Handle undefined values by removing the attribute
-          removeExpressions.push(key);
-        }
+      Object.entries(additionalFields).forEach(([key, value], index) => {
+        const attrKey = `:additional${index}`;
+        updateExpressions.push(`${key} = ${attrKey}`);
+        expressionAttributeValues[attrKey] = value;
       });
-    }
-
-    // Build the UpdateExpression
-    const updateExpressionParts = [];
-    if (setExpressions.length > 0) {
-      updateExpressionParts.push(`SET ${setExpressions.join(', ')}`);
-    }
-    if (removeExpressions.length > 0) {
-      updateExpressionParts.push(`REMOVE ${removeExpressions.join(', ')}`);
     }
 
     await docClient.send(new UpdateCommand({
       TableName: WAITLIST_TABLE_NAME,
       Key: { userId, waitlistId },
-      UpdateExpression: updateExpressionParts.join(' '),
+      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
     }));
@@ -232,13 +209,6 @@ export class WaitlistService {
   }
 
   /**
-   * Pause waitlist (change from active to paused)
-   */
-  async pauseWaitlist(userId: string, waitlistId: string): Promise<void> {
-    await this.updateWaitlistStatus(userId, waitlistId, 'paused');
-  }
-
-  /**
    * Cancel waitlist
    */
   async cancelWaitlist(userId: string, waitlistId: string): Promise<void> {
@@ -246,34 +216,13 @@ export class WaitlistService {
   }
 
   /**
-   * Cancel waitlist entry (soft delete)
+   * Delete waitlist (hard delete)
    */
   async deleteWaitlist(userId: string, waitlistId: string): Promise<void> {
-    const now = new Date();
-    
-    try {
-      await docClient.send(new UpdateCommand({
-        TableName: WAITLIST_TABLE_NAME,
-        Key: { userId, waitlistId },
-        UpdateExpression: 'SET #status = :cancelled, #updatedAt = :updatedAt, #cancelledAt = :cancelledAt',
-        ExpressionAttributeNames: {
-          '#status': 'status',
-          '#updatedAt': 'updatedAt',
-          '#cancelledAt': 'cancelledAt'
-        },
-        ExpressionAttributeValues: {
-          ':cancelled': 'cancelled' as WaitlistStatus,
-          ':updatedAt': now.toISOString(),
-          ':cancelledAt': now.toISOString()
-        },
-        ConditionExpression: 'attribute_exists(userId) AND attribute_exists(waitlistId)'
-      }));
-      
-      console.log(`✅ Waitlist cancelled: ${waitlistId}`);
-    } catch (error) {
-      console.error('❌ Error cancelling waitlist:', error);
-      throw new Error('キャンセル待ちの削除に失敗しました。');
-    }
+    await docClient.send(new DeleteCommand({
+      TableName: WAITLIST_TABLE_NAME,
+      Key: { userId, waitlistId },
+    }));
   }
 
   /**
@@ -461,49 +410,6 @@ export class WaitlistService {
       lessonName: request.lessonName.substring(0, 20) + '...',
       instructor: request.instructor
     });
-  }
-
-  /**
-   * Reactivate a cancelled or expired waitlist
-   */
-  private async reactivateWaitlist(existingWaitlist: Waitlist): Promise<Waitlist> {
-    const now = new Date();
-    
-    // Recalculate TTL based on current time
-    const lessonDateTime = new Date(`${existingWaitlist.lessonDate}T${existingWaitlist.startTime}:00+09:00`);
-    const ttl = Math.floor((lessonDateTime.getTime() + 150 * 60 * 1000) / 1000);
-    
-    const updateParams = {
-      TableName: WAITLIST_TABLE_NAME,
-      Key: {
-        userId: existingWaitlist.userId,
-        waitlistId: existingWaitlist.waitlistId
-      },
-      UpdateExpression: 'SET #status = :status, #updatedAt = :updatedAt, #ttl = :ttl REMOVE #cancelledAt, #expiredAt, #pausedAt',
-      ExpressionAttributeNames: {
-        '#status': 'status',
-        '#updatedAt': 'updatedAt', 
-        '#ttl': 'ttl',
-        '#cancelledAt': 'cancelledAt',
-        '#expiredAt': 'expiredAt',
-        '#pausedAt': 'pausedAt'
-      },
-      ExpressionAttributeValues: {
-        ':status': 'active' as WaitlistStatus,
-        ':updatedAt': now.toISOString(),
-        ':ttl': ttl
-      },
-      ReturnValues: 'ALL_NEW' as const
-    };
-
-    try {
-      const result = await docClient.send(new UpdateCommand(updateParams));
-      console.log(`✅ Waitlist reactivated: ${existingWaitlist.waitlistId}`);
-      return result.Attributes as Waitlist;
-    } catch (error) {
-      console.error('❌ Error reactivating waitlist:', error);
-      throw new Error('キャンセル待ちの再登録に失敗しました。');
-    }
   }
 }
 

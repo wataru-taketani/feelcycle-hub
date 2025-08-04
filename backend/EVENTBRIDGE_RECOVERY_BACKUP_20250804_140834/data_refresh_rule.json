@@ -1,0 +1,9 @@
+{
+    "Name": "feelcycle-hub-data-refresh-dev",
+    "Arn": "arn:aws:events:ap-northeast-1:234156130688:rule/feelcycle-hub-data-refresh-dev",
+    "ScheduleExpression": "cron(55 2 * * ? *)",
+    "State": "ENABLED",
+    "Description": "Daily refresh of lesson data - TEST at 11:55 JST",
+    "EventBusName": "default",
+    "CreatedBy": "234156130688"
+}

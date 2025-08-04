@@ -183,20 +183,20 @@ export class RealFeelcycleScraper {
         browser = await this.initBrowser();
         page = await browser.newPage();
         
-        // Set page configuration with reduced timeouts for Lambda
+        // Set page configuration
         await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
-        await page.setDefaultTimeout(15000);  // 30s -> 15s
-        await page.setDefaultNavigationTimeout(15000);  // 30s -> 15s
+        await page.setDefaultTimeout(30000);
+        await page.setDefaultNavigationTimeout(30000);
       
-      // Step 1: Go to reservation site with optimized settings
+      // Step 1: Go to reservation site
       await page.goto('https://m.feelcycle.com/reserve', { 
-        waitUntil: 'domcontentloaded',  // Changed from networkidle2
-        timeout: 20000  // Reduced from 60s to 20s
+        waitUntil: 'networkidle2',
+        timeout: 60000 
       });
       
-      // Wait for studio list to load with reduced timeout
-      await page.waitForSelector('li.address_item.handle', { timeout: 10000 });  // 30s -> 10s
-      await new Promise(resolve => setTimeout(resolve, 1000));  // 2s -> 1s
+      // Wait for studio list to load
+      await page.waitForSelector('li.address_item.handle', { timeout: 30000 });
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Step 2: Select studio (click on the matching studio)
       console.log(`Selecting studio ${studioCode}...`);

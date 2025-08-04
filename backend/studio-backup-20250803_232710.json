@@ -1,0 +1,938 @@
+{
+    "Items": [
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.654Z"
+            },
+            "studioCode": {
+                "S": "sdm"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "汐留"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T11:15:43.601Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.424Z"
+            },
+            "studioCode": {
+                "S": "ikb"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "池袋"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:06:58.173Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.995Z"
+            },
+            "studioCode": {
+                "S": "ssb"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "心斎橋"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:09:59.811Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.836Z"
+            },
+            "studioCode": {
+                "S": "azn"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "あざみ野"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:10:14.052Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.522Z"
+            },
+            "studioCode": {
+                "S": "mcd"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "町田"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:10:28.271Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.862Z"
+            },
+            "studioCode": {
+                "S": "aznp"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "あざみ野Pilates"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:10:42.554Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.627Z"
+            },
+            "studioCode": {
+                "S": "sby"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "渋谷"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:10:56.763Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.380Z"
+            },
+            "studioCode": {
+                "S": "gkbs"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "銀座京橋"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:11:11.356Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.245Z"
+            },
+            "studioCode": {
+                "S": "spr"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "札幌"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:11:25.574Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.129Z"
+            },
+            "studioCode": {
+                "S": "tkm"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "高松"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:11:39.682Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.402Z"
+            },
+            "studioCode": {
+                "S": "gnz"
+            },
+            "batchStatus": {
+                "S": "failed"
+            },
+            "studioName": {
+                "S": "銀座"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastProcessed": {
+                "S": "2025-08-03T14:11:53.735Z"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "studioName": {
+                "S": "広島"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.101Z"
+            },
+            "studioCode": {
+                "S": "hsm"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "studioName": {
+                "S": "三ノ宮"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.076Z"
+            },
+            "studioCode": {
+                "S": "smy"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "studioName": {
+                "S": "船橋"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.357Z"
+            },
+            "studioCode": {
+                "S": "fnb"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "studioName": {
+                "S": "五反田"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.681Z"
+            },
+            "studioCode": {
+                "S": "gtd"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "studioName": {
+                "S": "名古屋"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.942Z"
+            },
+            "studioCode": {
+                "S": "ngy"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "studioName": {
+                "S": "多摩センター"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.602Z"
+            },
+            "studioCode": {
+                "S": "tmc"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "studioName": {
+                "S": "川崎"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.706Z"
+            },
+            "studioCode": {
+                "S": "kws"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "studioName": {
+                "S": "梅田茶屋町"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.025Z"
+            },
+            "studioCode": {
+                "S": "umdc"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "studioName": {
+                "S": "武蔵小杉"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.810Z"
+            },
+            "studioCode": {
+                "S": "mkg"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.576Z"
+            },
+            "studioCode": {
+                "S": "kcj"
+            },
+            "studioName": {
+                "S": "吉祥寺"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "batchStatus": {
+                "S": "pending"
+            },
+            "studioName": {
+                "S": "自由が丘"
+            },
+            "lastUpdated": {
+                "S": "2025-08-03T14:26:46.3NZ"
+            },
+            "studioCode": {
+                "S": "0"
+            },
+            "region": {
+                "S": "関東"
+            }
+        },
+        {
+            "retryCount": {
+                "N": "1"
+            },
+            "studioCode": {
+                "S": "nmg"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            }
+        },
+        {
+            "retryCount": {
+                "N": "1"
+            },
+            "studioCode": {
+                "S": "ykh"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.888Z"
+            },
+            "studioCode": {
+                "S": "gif"
+            },
+            "studioName": {
+                "S": "岐阜"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.471Z"
+            },
+            "studioCode": {
+                "S": "uen"
+            },
+            "studioName": {
+                "S": "上野"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.050Z"
+            },
+            "studioCode": {
+                "S": "okbs"
+            },
+            "studioName": {
+                "S": "大阪京橋"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.758Z"
+            },
+            "studioCode": {
+                "S": "kok"
+            },
+            "studioName": {
+                "S": "上大岡"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.314Z"
+            },
+            "studioCode": {
+                "S": "ksw"
+            },
+            "studioName": {
+                "S": "柏"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.734Z"
+            },
+            "studioCode": {
+                "S": "ysc"
+            },
+            "studioName": {
+                "S": "横須賀中央"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.915Z"
+            },
+            "studioCode": {
+                "S": "ske"
+            },
+            "studioName": {
+                "S": "栄"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:20.155Z"
+            },
+            "studioCode": {
+                "S": "ftj"
+            },
+            "studioName": {
+                "S": "福岡天神"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.970Z"
+            },
+            "studioCode": {
+                "S": "ktk"
+            },
+            "studioName": {
+                "S": "京都河原町"
+            },
+            "ttl": {
+                "N": "1755565170"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "retryCount": {
+                "N": "1"
+            },
+            "studioCode": {
+                "S": "sjk"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.293Z"
+            },
+            "studioCode": {
+                "S": "ksg"
+            },
+            "studioName": {
+                "S": "越谷"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.337Z"
+            },
+            "studioCode": {
+                "S": "khm"
+            },
+            "studioName": {
+                "S": "海浜幕張"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "lastUpdated": {
+                "S": "2025-07-29T05:37:19.271Z"
+            },
+            "studioCode": {
+                "S": "omy"
+            },
+            "studioName": {
+                "S": "大宮"
+            },
+            "ttl": {
+                "N": "1755565169"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            },
+            "region": {
+                "S": "unknown"
+            },
+            "lastScrapedAt": {
+                "S": "2025-07-29T05:37:19.214Z"
+            },
+            "retryCount": {
+                "N": "1"
+            }
+        },
+        {
+            "retryCount": {
+                "N": "1"
+            },
+            "studioCode": {
+                "S": "jyo"
+            },
+            "lastError": {
+                "S": "Fallback used: Maintained existing studio data, scheduled retry in 1 hour"
+            }
+        }
+    ],
+    "Count": 38,
+    "ScannedCount": 38,
+    "ConsumedCapacity": null
+}
