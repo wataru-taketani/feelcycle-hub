@@ -182,8 +182,9 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
 
   // レッスン検索（複数スタジオ対応、全日程取得）
   const searchLessons = async () => {
-    if (selectedStudios.length === 0) {
-      toast.success("スタジオを選択してください");
+    // スタジオもインストラクターも未選択の場合はエラー
+    if (selectedStudios.length === 0 && selectedInstructors.length === 0) {
+      toast.error("スタジオまたはインストラクターを選択してください");
       return;
     }
     
@@ -194,7 +195,24 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
       // 複数スタジオの全日程レッスンを取得
       const allLessonsData: LessonsByDate = {};
       
-      for (const studioId of selectedStudios) {
+      // インストラクターのみが選択されている場合は全スタジオを対象とする
+      let studiesToSearch = selectedStudios;
+      if (selectedStudios.length === 0 && selectedInstructors.length > 0) {
+        // 全スタジオのコードを取得
+        const allStudioCodes: string[] = [];
+        if (Object.keys(studioGroups).length > 0) {
+          Object.values(studioGroups).forEach(studioList => {
+            studioList.forEach(studio => allStudioCodes.push(studio.code.toLowerCase()));
+          });
+        } else {
+          // フォールバック: 静的スタジオリストから取得
+          allStudioCodes.push(...allAreaStudios.map(s => s.id), ...westAreaStudios.map(s => s.id), ...southAreaStudios.map(s => s.id));
+        }
+        studiesToSearch = allStudioCodes;
+        console.log(`🔍 インストラクター検索: 全 ${studiesToSearch.length} スタジオを対象`);
+      }
+      
+      for (const studioId of studiesToSearch) {
         // APIから取得したスタジオリストまたはフォールバックの静的リストから検索
         let studioCode = studioId;
         
@@ -1222,7 +1240,7 @@ export default function SearchPage({ onNavigate }: LessonSearchProps) {
             <Button 
               className="flex-1 h-12" 
               onClick={handleSearch}
-              disabled={selectedStudios.length === 0 || loadingLessons}
+              disabled={(selectedStudios.length === 0 && selectedInstructors.length === 0) || loadingLessons}
             >
               {loadingLessons ? '検索中...' : '検索'}
             </Button>
