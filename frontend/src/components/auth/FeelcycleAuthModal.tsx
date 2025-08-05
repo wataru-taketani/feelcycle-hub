@@ -56,15 +56,46 @@ export default function FeelcycleAuthModal({
         throw new Error(errorData.message || 'ログインに失敗しました');
       }
 
-      const feelcycleData = await response.json();
+      const result = await response.json();
+      console.log('FEELCYCLE認証レスポンス:', result);
       
-      setIsSuccess(true);
-      
-      // 成功時のUI表示を少し待ってからコールバック実行
-      setTimeout(() => {
-        onSuccess(feelcycleData);
-        handleClose();
-      }, 1000);
+      if (result.status === 'processing') {
+        // 非同期処理の場合：ポーリングで完了を待機
+        setIsSuccess(true);
+        
+        // ポーリングで認証完了を確認
+        const checkAuthStatus = async () => {
+          try {
+            const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/feelcycle/auth/status?userId=${userId}`);
+            const statusData = await statusResponse.json();
+            
+            if (statusData.linked && statusData.data) {
+              // 認証完了
+              console.log('FEELCYCLE認証完了:', statusData.data);
+              onSuccess(statusData.data);
+              handleClose();
+            } else {
+              // まだ処理中：3秒後に再確認
+              setTimeout(checkAuthStatus, 3000);
+            }
+          } catch (pollError) {
+            console.error('認証状況確認エラー:', pollError);
+            // エラーの場合は10秒後に再確認（最大30秒）
+            setTimeout(checkAuthStatus, 10000);
+          }
+        };
+        
+        // 1秒後にポーリング開始
+        setTimeout(checkAuthStatus, 1000);
+        
+      } else if (result.status === 'completed') {
+        // 同期処理完了の場合（デバッグモード）
+        setIsSuccess(true);
+        setTimeout(() => {
+          onSuccess(result.data);
+          handleClose();
+        }, 1000);
+      }
 
     } catch (err) {
       console.error('FEELCYCLE認証エラー:', err);
@@ -122,7 +153,7 @@ export default function FeelcycleAuthModal({
             <div className="text-center">
               <h3 className="font-medium text-green-800">認証に成功しました</h3>
               <p className="text-sm text-green-600 mt-1">
-                FEELCYCLEアカウント情報を取得中...
+                マイページ情報を取得中...しばらくお待ちください
               </p>
             </div>
           </div>
