@@ -63,9 +63,15 @@ export default function FeelcycleAuthModal({
         // 非同期処理の場合：ポーリングで完了を待機
         setIsSuccess(true);
         
-        // ポーリングで認証完了を確認
+        // ポーリングで認証完了を確認（最大60秒でタイムアウト）
+        let pollCount = 0;
+        const maxPolls = 20; // 3秒 × 20回 = 最大60秒
+        
         const checkAuthStatus = async () => {
           try {
+            pollCount++;
+            console.log(`認証状況確認中... (${pollCount}/${maxPolls})`);
+            
             const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/feelcycle/auth/status?userId=${userId}`);
             const statusData = await statusResponse.json();
             
@@ -74,14 +80,26 @@ export default function FeelcycleAuthModal({
               console.log('FEELCYCLE認証完了:', statusData.data);
               onSuccess(statusData.data);
               handleClose();
+            } else if (pollCount >= maxPolls) {
+              // タイムアウト
+              console.error('認証処理がタイムアウトしました');
+              setError('認証処理に時間がかかっています。しばらく後に再度お試しください。');
+              setIsSuccess(false);
+              setIsLoading(false);
             } else {
               // まだ処理中：3秒後に再確認
               setTimeout(checkAuthStatus, 3000);
             }
           } catch (pollError) {
             console.error('認証状況確認エラー:', pollError);
-            // エラーの場合は10秒後に再確認（最大30秒）
-            setTimeout(checkAuthStatus, 10000);
+            if (pollCount >= maxPolls) {
+              setError('認証状況の確認に失敗しました。再度お試しください。');
+              setIsSuccess(false);
+              setIsLoading(false);
+            } else {
+              // エラーの場合は5秒後に再確認
+              setTimeout(checkAuthStatus, 5000);
+            }
           }
         };
         
