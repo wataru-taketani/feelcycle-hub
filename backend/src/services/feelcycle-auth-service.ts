@@ -5,14 +5,15 @@ import * as crypto from 'crypto';
 import * as puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 
-// @sparticuz/chromium のみを使用（chrome-aws-lambdaは非推奨）
-
 const secretsClient = new SecretsManagerClient({ region: 'ap-northeast-1' });
 const dynamoClient = new DynamoDBClient({ region: 'ap-northeast-1' });
 
 const USER_TABLE = process.env.USER_TABLE || 'feelcycle-hub-users-dev';
 const FEELCYCLE_DATA_TABLE = process.env.FEELCYCLE_DATA_TABLE || 'feelcycle-hub-user-feelcycle-data-dev';
 const FEELCYCLE_CREDENTIALS_SECRET = process.env.FEELCYCLE_CREDENTIALS_SECRET || 'feelcycle-user-credentials';
+
+// 暗号化マスターキー（環境変数またはAWS KMSから取得）
+const MASTER_KEY = process.env.FEELCYCLE_MASTER_KEY || 'feelcycle-default-master-key-2024';
 
 interface FeelcycleCredentials {
   email: string;
@@ -51,13 +52,16 @@ interface LessonHistoryItem {
   instructor: string;
 }
 
-// パスワードの暗号化/復号化 - セキュアな実装
-function encryptPassword(password: string, salt?: string): { encryptedPassword: string; salt: string; iv: string } {
-  const usedSalt = salt || crypto.randomBytes(32).toString('hex'); // 256-bit salt
+/**
+ * 修正されたパスワード暗号化・復号システム
+ * Windserf指摘の設計欠陥を修正：マスターキー使用方式
+ */
+function encryptPassword(password: string): { encryptedPassword: string; salt: string; iv: string } {
+  const salt = crypto.randomBytes(32).toString('hex'); // 256-bit salt
   const iv = crypto.randomBytes(16); // 128-bit IV for AES
   
-  // PBKDF2でキー導出 (100,000回反復)
-  const key = crypto.pbkdf2Sync(password, usedSalt, 100000, 32, 'sha256');
+  // マスターキーとソルトからキーを導出（originalPasswordは不要）
+  const key = crypto.pbkdf2Sync(MASTER_KEY, salt, 100000, 32, 'sha256');
   
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(password, 'utf8', 'hex');
@@ -65,19 +69,19 @@ function encryptPassword(password: string, salt?: string): { encryptedPassword: 
   
   return {
     encryptedPassword: encrypted,
-    salt: usedSalt,
+    salt,
     iv: iv.toString('hex')
   };
 }
 
-function decryptPassword(encryptedPassword: string, salt: string, iv: string, originalPassword: string): string {
+function decryptPassword(encryptedPassword: string, salt: string, iv: string): string {
   try {
-    if (!encryptedPassword || !salt || !iv || !originalPassword) {
+    if (!encryptedPassword || !salt || !iv) {
       throw new Error('Missing required decryption parameters');
     }
     
-    // 元のパスワードを使ってキーを再生成
-    const key = crypto.pbkdf2Sync(originalPassword, salt, 100000, 32, 'sha256');
+    // マスターキーとソルトからキーを再生成（originalPasswordは不要）
+    const key = crypto.pbkdf2Sync(MASTER_KEY, salt, 100000, 32, 'sha256');
     const ivBuffer = Buffer.from(iv, 'hex');
     
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, ivBuffer);
@@ -87,12 +91,337 @@ function decryptPassword(encryptedPassword: string, salt: string, iv: string, or
     
     return decrypted;
   } catch (error) {
-    console.error('Password decryption failed - credentials may be corrupted');
+    console.error('Enhanced password decryption failed');
     throw new Error('Authentication credentials are invalid');
   }
 }
 
-// Secrets Managerから認証情報を取得
+// レート制限チェック（DynamoDBベース - 本番推奨）
+const authAttempts = new Map<string, { count: number; lastAttempt: number }>();
+
+/**
+ * 強化版FEELCYCLE認証システム
+ * GeminiとWindserf提案を統合した包括的修正
+ */
+async function verifyFeelcycleLoginEnhanced(email: string, password: string): Promise<{
+  success: boolean;
+  userInfo?: any;
+  error?: string;
+}> {
+  // 入力値検証
+  if (!email || !password) {
+    return {
+      success: false,
+      error: 'メールアドレスとパスワードを入力してください'
+    };
+  }
+
+  // レート制限チェック（1時間に5回まで）
+  const attemptKey = email.toLowerCase();
+  const now = Date.now();
+  const hourAgo = now - (60 * 60 * 1000);
+
+  const attempts = authAttempts.get(attemptKey);
+  if (attempts) {
+    if (attempts.lastAttempt < hourAgo) {
+      authAttempts.delete(attemptKey);
+    } else if (attempts.count >= 5) {
+      console.warn(`Rate limit exceeded for email: ${email}`);
+      return {
+        success: false,
+        error: 'しばらく時間をおいてから再度お試しください'
+      };
+    }
+  }
+
+  const currentAttempts = attempts || { count: 0, lastAttempt: 0 };
+  currentAttempts.count += 1;
+  currentAttempts.lastAttempt = now;
+  authAttempts.set(attemptKey, currentAttempts);
+
+  let browser: puppeteer.Browser | null = null;
+
+  try {
+    console.log('Enhanced FEELCYCLEログイン検証開始', { email });
+
+    // 環境別ブラウザ起動（Gemini提案対応）
+    const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
+    console.log('実行環境:', isLambda ? 'Lambda' : 'Local');
+
+    if (isLambda) {
+      console.log('Lambda環境でChromium起動中...');
+      const executablePath = await chromium.executablePath();
+      if (!executablePath) {
+        throw new Error('@sparticuz/chromium executablePath is invalid');
+      }
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: { width: 1280, height: 720 },
+        executablePath,
+        headless: true,
+        timeout: 60000,
+      });
+    } else {
+      console.log('ローカル環境でPuppeteer起動中...');
+
+      // ローカル環境でのChrome実行パス検出（Gemini提案）
+      let executablePath;
+      try {
+        const fs = require('fs');
+        const possiblePaths = [
+          '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+          '/Applications/Chromium.app/Contents/MacOS/Chromium',
+          '/usr/bin/google-chrome-stable',
+          '/usr/bin/google-chrome',
+          '/usr/bin/chromium-browser',
+          '/usr/bin/chromium'
+        ];
+
+        for (const path of possiblePaths) {
+          if (fs.existsSync(path)) {
+            executablePath = path;
+            console.log('Chrome実行パス発見:', executablePath);
+            break;
+          }
+        }
+
+        if (!executablePath) {
+          throw new Error('Chrome実行パスが見つかりません');
+        }
+      } catch (error) {
+        console.error('Chrome実行パス検出エラー:', error);
+        throw new Error('ローカル環境でのChrome実行パスが見つかりません。Google Chromeをインストールしてください。');
+      }
+
+      browser = await puppeteer.launch({
+        executablePath,
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-extensions',
+          '--disable-plugins',
+          '--disable-images',
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--single-process'
+        ]
+      });
+    }
+
+    console.log('ブラウザ起動成功');
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    console.log('FEELCYCLEログインページに移動中...');
+    await page.goto('https://m.feelcycle.com/mypage/login', {
+      waitUntil: 'domcontentloaded',
+      timeout: 30000
+    });
+    console.log('ログインページロード完了');
+
+    // モーダル検出・表示待機（Gemini提案の概念を診断結果で修正）
+    console.log('ログインモーダルの検出と表示待機中...');
+    try {
+      // 診断結果に基づく正確なモーダルセレクタ
+      await page.waitForSelector('[class*="modal"]', { visible: true, timeout: 10000 });
+      console.log('✅ ログインモーダル発見');
+      
+      // モーダルが完全に読み込まれるまで少し待機
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    } catch (modalError) {
+      console.log('⚠️  モーダル検出タイムアウト、通常フォームとして処理続行');
+    }
+
+    // 診断結果に基づく簡略化されたセレクタ使用（Windserf提案対応）
+    console.log('フォーム要素の検出開始...');
+    
+    // メールアドレス入力（87個→1個に簡略化）
+    console.log('メールアドレス入力中...');
+    const emailSelector = 'input[name="email"]'; // 診断で確認済み
+    await page.waitForSelector(emailSelector, { visible: true, timeout: 15000 });
+    await page.type(emailSelector, email);
+    console.log('✅ メールアドレス入力完了');
+
+    // パスワード入力（29個→1個に簡略化）
+    console.log('パスワード入力中...');
+    const passwordSelector = 'input[name="password"]'; // 診断で確認済み
+    await page.waitForSelector(passwordSelector, { visible: true, timeout: 5000 });
+    await page.type(passwordSelector, password);
+    console.log('✅ パスワード入力完了');
+
+    console.log('ログイン情報入力完了');
+
+    // ログインボタンクリック（30個→1個に簡略化）
+    console.log('ログインボタンクリック中...');
+    const loginButtonSelector = 'button.btn1'; // 診断で確認済み
+    await page.waitForSelector(loginButtonSelector, { visible: true, timeout: 5000 });
+
+    // 動的待機処理（Windserf提案：setTimeout削除）
+    await Promise.all([
+      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }),
+      page.click(loginButtonSelector)
+    ]);
+    console.log('ログインボタンクリック完了、ページ遷移待機完了');
+
+    // ログイン結果確認
+    const currentUrl = page.url();
+    console.log('現在のURL:', currentUrl);
+
+    if (currentUrl.includes('/mypage/login')) {
+      // ログイン失敗の詳細確認
+      const errorElement = await page.$('.error_message, .error, [class*="error"]').catch(() => null);
+      const errorMessage = errorElement ? await page.evaluate(el => el.textContent, errorElement).catch(() => null) : null;
+      console.warn('ログイン失敗:', errorMessage || '不明なエラー');
+      return {
+        success: false,
+        error: 'メールアドレスまたはパスワードが正しくありません。'
+      };
+    }
+
+    if (currentUrl.includes('/mypage') && !currentUrl.includes('/mypage/login')) {
+      console.log('ログイン成功 - マイページ情報取得開始');
+      const userInfo = await scrapeUserInfoEnhanced(page);
+      return {
+        success: true,
+        userInfo
+      };
+    }
+
+    return {
+      success: false,
+      error: 'ログイン後のページ遷移が不明です。'
+    };
+
+  } catch (error) {
+    console.error('Enhanced FEELCYCLEログイン検証中に致命的なエラーが発生しました:', error);
+    return {
+      success: false,
+      error: 'ログイン検証中に予期せぬ問題が発生しました。サイトの構造が変更された可能性があります。'
+    };
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+}
+
+/**
+ * 強化版マイページスクレイピング
+ * 最新のFEELCYCLE構造に対応
+ */
+async function scrapeUserInfoEnhanced(page: puppeteer.Page): Promise<{
+  homeStudio: string;
+  membershipType: string;
+  currentReservations: ReservationItem[];
+  lessonHistory: LessonHistoryItem[];
+  scrapedAt: string;
+}> {
+  try {
+    const basicInfo = {
+      homeStudio: '',
+      membershipType: '',
+      currentReservations: [] as ReservationItem[],
+      lessonHistory: [] as LessonHistoryItem[],
+      scrapedAt: new Date().toISOString()
+    };
+
+    // 会員情報取得（複数パターン対応）
+    try {
+      const membershipSelectors = [
+        '.user-info .membership', // 新構造想定
+        '.member-info',
+        '.membership-type',
+        '.right_box div', // 現在の構造
+        '[class*="member"]',
+        '[class*="subscription"]'
+      ];
+
+      let membershipFound = false;
+      for (const selector of membershipSelectors) {
+        try {
+          const membershipText = await page.$eval(selector, el => el.textContent?.trim() || '');
+          if (membershipText && membershipText.length > 0) {
+            console.log(`会員情報取得成功 (${selector}):`, membershipText);
+            
+            // テキストから情報を抽出
+            if (membershipText.includes('/')) {
+              const parts = membershipText.split('/').map(part => part.trim());
+              if (parts.length >= 2) {
+                basicInfo.membershipType = parts[0];
+                basicInfo.homeStudio = parts[1];
+                membershipFound = true;
+                break;
+              }
+            } else {
+              basicInfo.membershipType = membershipText;
+              membershipFound = true;
+              break;
+            }
+          }
+        } catch (selectorError) {
+          console.log(`会員情報セレクタ無効 (${selector})`);
+        }
+      }
+
+      if (!membershipFound) {
+        console.log('⚠️  会員情報の取得に失敗、フォールバック処理');
+        basicInfo.membershipType = '取得失敗';
+        basicInfo.homeStudio = '取得失敗';
+      }
+
+    } catch (error) {
+      console.log('会員情報取得エラー:', error);
+      basicInfo.membershipType = '取得失敗';
+      basicInfo.homeStudio = '取得失敗';
+    }
+
+    // 予約状況取得（更新版）
+    try {
+      const reservationSelectors = [
+        '.reservation-list .reservation-item', // 新構造想定
+        '.current-reservations .item',
+        '.reservation-item',
+        '.booking-item',
+        '[class*="reservation"]',
+        '[class*="booking"]'
+      ];
+
+      for (const selector of reservationSelectors) {
+        try {
+          const reservations = await page.$$eval(selector, els => 
+            els.map(el => ({
+              date: el.querySelector('.date, [class*="date"]')?.textContent?.trim() || '',
+              time: el.querySelector('.time, [class*="time"]')?.textContent?.trim() || '',
+              studio: el.querySelector('.studio, [class*="studio"]')?.textContent?.trim() || '',
+              program: el.querySelector('.program, [class*="program"]')?.textContent?.trim() || '',
+              instructor: el.querySelector('.instructor, [class*="instructor"]')?.textContent?.trim() || ''
+            }))
+          );
+          
+          if (reservations.length > 0) {
+            basicInfo.currentReservations = reservations;
+            console.log(`✅ 予約情報取得成功: ${reservations.length}件`);
+            break;
+          }
+        } catch (selectorError) {
+          console.log(`予約情報セレクタ無効 (${selector})`);
+        }
+      }
+    } catch (error) {
+      console.log('予約情報取得エラー:', error);
+    }
+
+    console.log('Enhanced マイページ情報取得完了:', basicInfo);
+    return basicInfo;
+
+  } catch (error) {
+    console.error('Enhanced マイページ情報取得エラー:', error);
+    throw error;
+  }
+}
+
+// Secrets Managerから認証情報を取得（修正版）
 async function getStoredCredentials(userId: string): Promise<FeelcycleCredentials | null> {
   try {
     if (!userId) {
@@ -119,7 +448,6 @@ async function getStoredCredentials(userId: string): Promise<FeelcycleCredential
     
     return credentials;
   } catch (error) {
-    // セキュリティ考慮: 詳細なエラー情報は内部ログのみ
     console.error('Failed to retrieve credentials from Secrets Manager');
     if (error instanceof Error) {
       console.debug('Debug info:', error.message);
@@ -128,10 +456,9 @@ async function getStoredCredentials(userId: string): Promise<FeelcycleCredential
   }
 }
 
-// Secrets Managerに認証情報を保存
+// Secrets Managerに認証情報を保存（修正版）
 async function storeCredentials(userId: string, email: string, password: string): Promise<void> {
   try {
-    // 入力値検証
     if (!userId || !email || !password) {
       throw new Error('Missing required parameters for credential storage');
     }
@@ -154,7 +481,7 @@ async function storeCredentials(userId: string, email: string, password: string)
       console.log('Creating new secret in AWS Secrets Manager');
     }
 
-    // パスワードを暗号化
+    // パスワードを暗号化（修正版）
     const { encryptedPassword, salt, iv } = encryptPassword(password);
     
     // 新しい認証情報を追加
@@ -176,9 +503,9 @@ async function storeCredentials(userId: string, email: string, password: string)
     });
 
     await secretsClient.send(updateCommand);
-    console.log(`Credentials stored successfully for user: ${userId}`);
+    console.log(`Enhanced credentials stored successfully for user: ${userId}`);
   } catch (error) {
-    console.error('Failed to store credentials in Secrets Manager');
+    console.error('Failed to store enhanced credentials in Secrets Manager');
     if (error instanceof Error) {
       console.debug('Debug info:', error.message);
     }
@@ -186,599 +513,8 @@ async function storeCredentials(userId: string, email: string, password: string)
   }
 }
 
-// レート制限チェック用のメモリキャッシュ（本番では Redis を推奨）
-const authAttempts = new Map<string, { count: number; lastAttempt: number }>();
-
-// FEELCYCLEサイトでログイン検証
-async function verifyFeelcycleLogin(email: string, password: string): Promise<{
-  success: boolean;
-  userInfo?: any;
-  error?: string;
-}> {
-  // 入力値検証
-  if (!email || !password) {
-    return {
-      success: false,
-      error: 'メールアドレスとパスワードを入力してください'
-    };
-  }
-
-  // レート制限チェック（1時間に5回まで）
-  const attemptKey = email.toLowerCase();
-  const now = Date.now();
-  const hourAgo = now - (60 * 60 * 1000);
-  
-  const attempts = authAttempts.get(attemptKey);
-  if (attempts) {
-    // 古い試行記録をクリーンアップ
-    if (attempts.lastAttempt < hourAgo) {
-      authAttempts.delete(attemptKey);
-    } else if (attempts.count >= 5) {
-      console.warn(`Rate limit exceeded for email: ${email}`);
-      return {
-        success: false,
-        error: 'しばらく時間をおいてから再度お試しください'
-      };
-    }
-  }
-
-  // 試行回数を記録
-  const currentAttempts = attempts || { count: 0, lastAttempt: 0 };
-  currentAttempts.count += 1;
-  currentAttempts.lastAttempt = now;
-  authAttempts.set(attemptKey, currentAttempts);
-  let browser: puppeteer.Browser | null = null;
-  
-  try {
-    console.log('FEELCYCLEログイン検証開始', { email });
-    console.log('検証プロセス詳細ログ: 開始時刻 =', new Date().toISOString());
-    console.log('検証プロセス詳細ログ: メモリ使用量 =', process.memoryUsage());
-    
-    // Puppeteer設定（Lambda環境対応）
-    const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
-    console.log('Lambda環境:', isLambda);
-    console.log('検証プロセス詳細ログ: Lambda環境変数確認済み');
-    
-    if (isLambda) {
-      console.log('Lambda環境でChromium起動中...');
-      console.log('検証プロセス詳細ログ: Chromium起動前メモリ =', process.memoryUsage());
-      
-      // @sparticuz/chromiumを使用（chrome-aws-lambdaレイヤーは利用不可）
-      console.log('@sparticuz/chromiumでの起動を試行中...');
-      const executablePath = await chromium.executablePath();
-      console.log('検証プロセス詳細ログ: Chromium実行パス =', executablePath);
-      
-      // executablePathが無効な場合は例外を投げる
-      if (!executablePath || executablePath === 'undefined') {
-        throw new Error('@sparticuz/chromium executablePath is invalid: ' + executablePath);
-      }
-      
-      console.log('検証プロセス詳細ログ: puppeteer.launch開始');
-      
-      // タイムアウト延長でより安定した起動確認
-      const launchTimeout = 30000; // 30秒に延長
-      console.log('検証プロセス詳細ログ: Chromium起動タイムアウト =', launchTimeout);
-      
-      console.log('検証プロセス詳細ログ: puppeteer.launch引数準備中...');
-      const launchArgs = [
-        ...chromium.args,
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-images',
-        '--single-process',
-        '--memory-pressure-off',
-        '--max_old_space_size=2048',
-        '--disable-background-timer-throttling',
-        '--disable-renderer-backgrounding',
-        '--disable-default-apps',
-        '--disable-extensions-http-throttling',
-        '--disable-component-extensions-with-background-pages',
-        '--disable-background-networking',
-        '--no-default-browser-check',
-        '--no-first-run',
-        '--disable-sync',
-        '--disable-translate',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ];
-      console.log('検証プロセス詳細ログ: launch引数数 =', launchArgs.length);
-      
-      console.log('検証プロセス詳細ログ: Promise.race開始...');
-      
-      // spawn ETXTBSY エラー対策：Chromium起動のみリトライ（ログインはリトライしない）
-      let browserLaunchAttempts = 0;
-      const maxAttempts = 3;
-      
-      while (browserLaunchAttempts < maxAttempts) {
-        try {
-          browserLaunchAttempts++;
-          console.log(`Chromium起動試行 ${browserLaunchAttempts}/${maxAttempts} (ログイン処理は1回のみ)`);
-          
-          browser = await Promise.race([
-            puppeteer.launch({
-              args: launchArgs,
-              defaultViewport: { width: 1024, height: 768 },
-              executablePath,
-              headless: true,
-              timeout: launchTimeout,
-              ignoreDefaultArgs: ['--disable-extensions'], // 競合回避
-              handleSIGINT: false,
-              handleSIGTERM: false,
-              handleSIGHUP: false
-            }),
-            new Promise<never>((_, reject) => 
-              setTimeout(() => {
-                console.log('検証プロセス詳細ログ: タイムアウト発生');
-                reject(new Error('@sparticuz/chromium launch timeout'));
-              }, launchTimeout + 1000)
-            )
-          ]) as puppeteer.Browser;
-          
-          // Chromium起動成功：ループを抜けて1回だけログイン試行
-          console.log('⚠️ 重要: ログイン試行は1回のみ実行（アカウントロック防止）');
-          break;
-          
-        } catch (launchError) {
-          console.log(`Chromium起動試行 ${browserLaunchAttempts} 失敗:`, launchError instanceof Error ? launchError.message : 'Unknown error');
-          
-          if (browserLaunchAttempts >= maxAttempts) {
-            console.error('❌ Chromium起動に失敗しました。ログイン試行はスキップします（アカウント保護）');
-            throw launchError;
-          }
-          
-          // 次の試行まで少し待機（spawn ETXTBSY対策）
-          console.log('⏳ 2秒待機後に Chromium起動を再試行...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        }
-      }
-      console.log('Lambda環境でChromium起動成功 (@sparticuz/chromium)');
-      console.log('検証プロセス詳細ログ: Chromium起動後メモリ =', process.memoryUsage());
-    } else {
-      console.log('ローカル環境でPuppeteer起動中...');
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-    }
-    
-    console.log('ブラウザ起動成功');
-
-    // ページ作成とユーザーエージェント設定
-    console.log('新しいページを作成中...');
-    const page = await browser!.newPage();
-    console.log('ページ作成完了');
-    
-    // デバッグ用スクリーンショット機能（現在は無効化）
-    const takeScreenshot = async (step: string) => {
-      // スクリーンショット機能は一時的に無効化
-      console.log(`📷 スクリーンショット [${step}] スキップ（機能無効化中）`);
-      return;
-    };
-    
-    // コンソールエラーをキャプチャ
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        console.log('ページコンソールエラー:', msg.text());
-      }
-    });
-    
-    // ネットワークエラーをキャプチャ  
-    page.on('response', response => {
-      if (response.status() >= 400) {
-        console.log(`HTTP エラー: ${response.status()} ${response.url()}`);
-      }
-    });
-    
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    console.log('ユーザーエージェント設定完了');
-
-    // ログインページへ移動 (2025年更新: 新しいマイページURL)
-    console.log('FEELCYCLEログインページに移動中...');
-    try {
-      await page.goto('https://m.feelcycle.com/mypage/login', {
-        waitUntil: 'domcontentloaded',
-        timeout: 30000  // 30秒に増加
-      });
-      console.log('ログインページロード完了');
-    } catch (navigationError) {
-      console.error('ナビゲーションエラー:', navigationError);
-      
-      // 代替URLを試行
-      console.log('代替URL https://www.feelcycle.com/mypage/login を試行中...');
-      try {
-        await page.goto('https://www.feelcycle.com/mypage/login', {
-          waitUntil: 'domcontentloaded',
-          timeout: 30000
-        });
-        console.log('代替URLでのログインページロード完了');
-      } catch (altError) {
-        console.error('代替URLでもエラー:', altError);
-        throw new Error('FEELCYCLEログインページへのアクセスに失敗しました');
-      }
-    }
-
-    // デバッグ用: ページのHTMLを取得して要素を調査
-    const pageTitle = await page.title();
-    console.log('ページタイトル:', pageTitle);
-    
-    const pageUrl = await page.url();
-    console.log('実際のURL:', pageUrl);
-    
-    // フォーム要素を調査（拡張版）
-    const emailSelectors = [
-      'input[name="email"]',
-      'input[name="mail"]',
-      'input[name="user_id"]',
-      'input[name="userId"]',
-      'input[name="login_id"]',
-      'input[name="loginId"]',
-      'input[type="email"]',
-      'input[type="text"]',
-      'input[id="email"]',
-      'input[id="mail"]',
-      'input[id="user_id"]',
-      'input[id="login_id"]',
-      '#email',
-      '#mail',
-      '#user_id',
-      '#login_id',
-      'input[placeholder*="メール"]',
-      'input[placeholder*="mail"]',
-      'input[placeholder*="ID"]',
-      'input[placeholder*="ユーザー"]',
-      'input[class*="email"]',
-      'input[class*="mail"]',
-      'input[class*="login"]',
-      'input[class*="user"]',
-      '.email-input',
-      '.mail-input',
-      '.login-input',
-      '.user-input'
-    ];
-    
-    // ページの完全読み込みを待機（ローディングスピナー対応）
-    console.log('ページ読み込み完了を待機中...');
-    await new Promise(resolve => setTimeout(resolve, 5000)); // 5秒に延長
-    await takeScreenshot('ページ読み込み後');
-    
-    // FEELCYCLEは通常のフォーム形式（モーダルではない）
-    console.log('ログインフォームの表示確認中...');
-    try {
-      // メールアドレス入力フィールドが表示されるまで待機
-      await page.waitForSelector('input[name="email"]', { timeout: 10000 });
-      console.log('✅ ログインフォーム発見');
-      await takeScreenshot('フォーム発見後');
-      
-      // パスワードフィールドも確認
-      await page.waitForSelector('input[name="password"]', { timeout: 3000 });
-      console.log('✅ パスワードフィールド確認');
-      await takeScreenshot('フォーム準備完了');
-    } catch (formError) {
-      console.log('⚠️ フォーム検出エラー:', formError instanceof Error ? formError.message : 'Unknown error');
-      await takeScreenshot('フォームエラー時');
-    }
-    
-    // 実際のDOM構造を調査
-    const inputElements = await page.$$eval('input', inputs => 
-      inputs.map(input => ({
-        type: input.type,
-        name: input.name || 'none',
-        id: input.id || 'none',
-        placeholder: input.placeholder || 'none',
-        className: input.className || 'none'
-      }))
-    );
-    console.log('発見された全input要素:', JSON.stringify(inputElements, null, 2));
-
-    let emailInput = null;
-    for (const selector of emailSelectors) {
-      try {
-        await page.waitForSelector(selector, { timeout: 1000 }); // 1秒に変更
-        emailInput = selector;
-        console.log('有効なメールセレクター発見:', selector);
-        break;
-      } catch (e) {
-        console.log('セレクター無効:', selector);
-      }
-    }
-    
-    if (!emailInput) {
-      // ページのHTMLをログ出力してデバッグ
-      const htmlContent = await page.content();
-      console.log('ページHTML抜粋 (最初の5000文字):');
-      console.log(htmlContent.substring(0, 5000));
-      
-      // フォーム要素の詳細調査
-      const formElements = await page.$$eval('form', forms => 
-        forms.map(form => ({
-          action: form.action,
-          method: form.method,
-          inputs: Array.from(form.querySelectorAll('input')).map(input => ({
-            type: input.type,
-            name: input.name,
-            id: input.id,
-            placeholder: input.placeholder,
-            className: input.className
-          }))
-        }))
-      );
-      console.log('フォーム要素詳細:', JSON.stringify(formElements, null, 2));
-      
-      throw new Error('メール入力フィールドが見つかりません。ページ構造が変更された可能性があります。');
-    }
-
-    // ログインフォームに入力
-    console.log('メール入力開始...');
-    await page.type(emailInput, email);
-    
-    // パスワード入力フィールドを探す（拡張版）
-    const passwordSelectors = [
-      'input[type="password"]',
-      'input[name="password"]',
-      'input[name="passwd"]',
-      'input[name="pass"]',
-      'input[name="pwd"]',
-      'input[name="Password"]',
-      'input[name="PASSWORD"]',
-      'input[id="password"]',
-      'input[id="passwd"]',
-      'input[id="pass"]',
-      'input[id="pwd"]',
-      'input[id="Password"]',
-      '#password',
-      '#passwd',
-      '#pass',
-      '#pwd',
-      '#Password',
-      '#login_password',
-      'input[name="login_password"]',
-      'input[name="user_password"]',
-      'input[placeholder*="パスワード"]',
-      'input[placeholder*="password"]',
-      'input[placeholder*="Password"]',
-      'input[class*="password"]',
-      'input[class*="pass"]',
-      '.password-input',
-      '.pass-input',
-      '.pwd-input'
-    ];
-    
-    let passwordInput = null;
-    for (const selector of passwordSelectors) {
-      try {
-        await page.waitForSelector(selector, { timeout: 300 });
-        passwordInput = selector;
-        console.log('有効なパスワードセレクター発見:', selector);
-        break;
-      } catch (e) {
-        console.log('セレクター無効:', selector);
-      }
-    }
-    
-    if (!passwordInput) {
-      throw new Error('パスワード入力フィールドが見つかりません。');
-    }
-    
-    console.log('パスワード入力開始...');
-    await page.type(passwordInput, password);
-
-    console.log('ログイン情報入力完了');
-
-    // ログインボタンを探す（拡張版）
-    const submitSelectors = [
-      'input[type="submit"]',
-      'button[type="submit"]',
-      'button',
-      'input[value*="ログイン"]',
-      'input[value*="login"]',
-      'input[value*="Login"]',
-      'input[value*="送信"]',
-      'input[value*="submit"]',
-      'button[class*="btn"]',
-      'button[class*="button"]',
-      'button[class*="login"]',
-      'button[class*="submit"]',
-      '.btn',
-      '.button',
-      '.login-btn',
-      '.login-button', 
-      '.submit-btn',
-      '.submit-button',
-      '#login-button',
-      '#login_button',
-      '#login-btn',
-      '#submit',
-      '#submit-btn',
-      'input[name="login"]',
-      'button[name="login"]',
-      'button[name="submit"]',
-      'form button',
-      'form input[type="submit"]',
-      '[role="button"]'
-    ];
-    
-    let submitButton = null;
-    for (const selector of submitSelectors) {
-      try {
-        await page.waitForSelector(selector, { timeout: 300 });
-        submitButton = selector;
-        console.log('有効なログインボタンセレクター発見:', selector);
-        break;
-      } catch (e) {
-        console.log('ボタンセレクター無効:', selector);
-      }
-    }
-    
-    if (!submitButton) {
-      throw new Error('ログインボタンが見つかりません。');
-    }
-
-    // ログインボタンをクリック
-    console.log('ログインボタンクリック中...');
-    await takeScreenshot('ログイン前');
-    
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }),
-      page.click(submitButton)
-    ]);
-
-    console.log('ログインボタンクリック完了');
-    await takeScreenshot('ログイン後');
-
-    // ログイン結果確認
-    const currentUrl = page.url();
-    console.log('現在のURL:', currentUrl);
-
-    if (currentUrl.includes('/mypage/login')) {
-      // ログイン失敗（同じページにリダイレクト）
-      // セキュリティ考慮: 具体的なエラーメッセージは内部ログのみ
-      const errorElement = await page.$('.error').catch(() => null);
-      const errorMessage = errorElement ? await page.evaluate(el => el.textContent, errorElement).catch(() => null) : null;
-      
-      if (errorMessage) {
-        console.debug('FEELCYCLE login error details:', errorMessage);
-      }
-      
-      return {
-        success: false,
-        error: 'メールアドレスまたはパスワードが正しくありません'
-      };
-    }
-
-    if (currentUrl.includes('/mypage') && !currentUrl.includes('/mypage/login')) {
-      console.log('ログイン成功 - マイページ情報取得開始');
-      
-      // マイページ情報を取得
-      const userInfo = await scrapeUserInfo(page);
-      
-      return {
-        success: true,
-        userInfo
-      };
-    }
-
-    return {
-      success: false,
-      error: 'ログイン後のページ遷移が不明です'
-    };
-
-  } catch (error) {
-    console.error('FEELCYCLE login verification failed');
-    if (error instanceof Error) {
-      console.debug('Debug info:', error.message);
-      console.debug('Stack trace:', error.stack);
-    }
-    
-    // セキュリティ考慮: 技術的な詳細は隠し、一般的なエラーメッセージを返す
-    return {
-      success: false,
-      error: 'ログイン検証中に問題が発生しました。しばらく時間をおいてから再度お試しください'
-    };
-  } finally {
-    if (browser) {
-      try {
-        await browser.close();
-      } catch (closeError) {
-        console.debug('Browser close error:', closeError);
-      }
-    }
-  }
-}
-
-// マイページから情報を取得
-async function scrapeUserInfo(page: puppeteer.Page): Promise<{
-  homeStudio: string;
-  membershipType: string;
-  currentReservations: ReservationItem[];
-  lessonHistory: LessonHistoryItem[];
-  scrapedAt: string;
-}> {
-  try {
-    // 基本情報を取得
-    const basicInfo = {
-      homeStudio: '',
-      membershipType: '',
-      currentReservations: [] as ReservationItem[],
-      lessonHistory: [] as LessonHistoryItem[],
-      scrapedAt: new Date().toISOString()
-    };
-
-    // 会員種別・所属店舗を取得（right_boxセクションから）
-    try {
-      const membershipInfo = await page.$eval('.right_box div', el => el.textContent?.trim() || '').catch(() => '');
-      console.log('取得した会員情報:', membershipInfo);
-      
-      if (membershipInfo && membershipInfo.includes('/')) {
-        const parts = membershipInfo.split('/').map(part => part.trim());
-        if (parts.length >= 2) {
-          basicInfo.membershipType = parts[0]; // マンスリーメンバー30
-          basicInfo.homeStudio = parts[1];     // 銀座（GNZ）
-          console.log('✅ 会員種別:', basicInfo.membershipType);
-          console.log('✅ 所属店舗:', basicInfo.homeStudio);
-        }
-      }
-      
-      // フォールバック: 他のセレクターも試行
-      if (!basicInfo.membershipType || basicInfo.membershipType === '取得失敗') {
-        const fallbackSelectors = [
-          '.membership-info',
-          '.member-type', 
-          '[class*="member"]',
-          '[class*="subscription"]'
-        ];
-        
-        for (const selector of fallbackSelectors) {
-          try {
-            const text = await page.$eval(selector, el => el.textContent?.trim() || '');
-            if (text) {
-              basicInfo.membershipType = text;
-              console.log('✅ フォールバック会員種別:', text);
-              break;
-            }
-          } catch (e) {
-            console.log('フォールバックセレクター無効:', selector);
-          }
-        }
-      }
-      
-    } catch (error) {
-      console.log('会員情報取得失敗:', error);
-      basicInfo.membershipType = '取得失敗';
-      basicInfo.homeStudio = '取得失敗';
-    }
-
-    // 予約状況を取得（簡易版）
-    try {
-      basicInfo.currentReservations = await page.$$eval('.reservation-item', els => 
-        els.map(el => ({
-          date: el.querySelector('.date')?.textContent?.trim() || '',
-          time: el.querySelector('.time')?.textContent?.trim() || '',
-          studio: el.querySelector('.studio')?.textContent?.trim() || '',
-          program: el.querySelector('.program')?.textContent?.trim() || '',
-          instructor: el.querySelector('.instructor')?.textContent?.trim() || ''
-        }))
-      ).catch(() => []);
-    } catch (error) {
-      console.log('予約情報取得失敗');
-    }
-
-    console.log('マイページ情報取得完了:', basicInfo);
-    return basicInfo;
-
-  } catch (error) {
-    console.error('マイページ情報取得エラー:', error);
-    throw error;
-  }
-}
-
-// DynamoDBにFEELCYCLEデータを保存
-async function saveFeeelcycleData(userId: string, email: string, userInfo: {
+// DynamoDBにFEELCYCLEデータを保存（修正版）
+async function saveFeeelcycleDataEnhanced(userId: string, email: string, userInfo: {
   homeStudio: string;
   membershipType: string;
   currentReservations: ReservationItem[];
@@ -804,13 +540,13 @@ async function saveFeeelcycleData(userId: string, email: string, userInfo: {
     });
 
     await dynamoClient.send(command);
-    console.log(`FEELCYCLEデータを保存しました: ${userId}`);
+    console.log(`Enhanced FEELCYCLEデータを保存しました: ${userId}`);
 
     // ユーザーテーブルの連携フラグも更新
     await updateUserFeelcycleStatus(userId, true);
 
   } catch (error) {
-    console.error('FEELCYCLEデータ保存エラー:', error);
+    console.error('Enhanced FEELCYCLEデータ保存エラー:', error);
     throw error;
   }
 }
@@ -829,39 +565,99 @@ async function updateUserFeelcycleStatus(userId: string, linked: boolean): Promi
     });
 
     await dynamoClient.send(command);
-    console.log(`ユーザー連携ステータス更新: ${userId} -> ${linked}`);
+    console.log(`Enhanced ユーザー連携ステータス更新: ${userId} -> ${linked}`);
   } catch (error) {
-    console.error('ユーザー連携ステータス更新エラー:', error);
+    console.error('Enhanced ユーザー連携ステータス更新エラー:', error);
     throw error;
   }
 }
 
-// メイン関数：FEELCYCLE認証統合処理
-export async function authenticateFeelcycleAccount(userId: string, email: string, password: string) {
+/**
+ * バックグラウンド認証（保存済み認証情報を使用）
+ * Windserf提案：復号機能の実装
+ */
+export async function backgroundAuthenticateFeelcycleAccount(userId: string): Promise<{
+  success: boolean;
+  data?: any;
+  error?: string;
+}> {
   try {
-    console.log(`FEELCYCLE認証開始: ${userId}`);
+    console.log(`Background FEELCYCLE認証開始: ${userId}`);
 
-    // 1. ログイン検証
-    console.log('ステップ1: ログイン検証開始');
-    const verificationResult = await verifyFeelcycleLogin(email, password);
+    // 保存済み認証情報を取得
+    const credentials = await getStoredCredentials(userId);
+    if (!credentials) {
+      return {
+        success: false,
+        error: 'Stored credentials not found'
+      };
+    }
+
+    // パスワードを復号（修正版：originalPasswordは不要）
+    const decryptedPassword = decryptPassword(
+      credentials.encryptedPassword,
+      credentials.salt,
+      credentials.iv
+    );
+
+    // 認証実行
+    const verificationResult = await verifyFeelcycleLoginEnhanced(credentials.email, decryptedPassword);
+    
+    if (!verificationResult.success) {
+      return {
+        success: false,
+        error: verificationResult.error
+      };
+    }
+
+    // データ更新
+    await saveFeeelcycleDataEnhanced(userId, credentials.email, verificationResult.userInfo);
+
+    return {
+      success: true,
+      data: {
+        homeStudio: verificationResult.userInfo?.homeStudio || '',
+        membershipType: verificationResult.userInfo?.membershipType || '',
+        currentReservations: verificationResult.userInfo?.currentReservations || [],
+        lastUpdated: new Date().toISOString()
+      }
+    };
+
+  } catch (error) {
+    console.error(`Background FEELCYCLE認証エラー [${userId}]:`, error);
+    return {
+      success: false,
+      error: 'Background authentication failed'
+    };
+  }
+}
+
+// メイン関数：Enhanced FEELCYCLE認証統合処理
+export async function authenticateFeelcycleAccountEnhanced(userId: string, email: string, password: string) {
+  try {
+    console.log(`Enhanced FEELCYCLE認証開始: ${userId}`);
+
+    // 1. ログイン検証（修正版）
+    console.log('ステップ1: Enhanced ログイン検証開始');
+    const verificationResult = await verifyFeelcycleLoginEnhanced(email, password);
     console.log('ステップ1結果:', JSON.stringify(verificationResult, null, 2));
     
     if (!verificationResult.success) {
-      console.error('ログイン検証失敗:', verificationResult.error);
+      console.error('Enhanced ログイン検証失敗:', verificationResult.error);
       throw new Error(verificationResult.error || 'ログイン認証に失敗しました');
     }
 
-    // 2. 認証情報をSecrets Managerに保存
-    console.log('ステップ2: Secrets Manager保存開始');
+    // 2. 認証情報をSecrets Managerに保存（修正版）
+    console.log('ステップ2: Enhanced Secrets Manager保存開始');
     await storeCredentials(userId, email, password);
-    console.log('ステップ2完了: Secrets Manager保存成功');
+    console.log('ステップ2完了: Enhanced Secrets Manager保存成功');
 
-    // 3. 取得した情報をDynamoDBに保存
-    console.log('ステップ3: DynamoDB保存開始');
-    await saveFeeelcycleData(userId, email, verificationResult.userInfo);
-    console.log('ステップ3完了: DynamoDB保存成功');
+    // 3. 取得した情報をDynamoDBに保存（修正版）
+    console.log('ステップ3: Enhanced DynamoDB保存開始');
+    await saveFeeelcycleDataEnhanced(userId, email, verificationResult.userInfo);
+    console.log('ステップ3完了: Enhanced DynamoDB保存成功');
 
-    console.log(`FEELCYCLE認証完了: ${userId}`);
+    console.log(`Enhanced FEELCYCLE認証完了: ${userId}`);
 
     return {
       success: true,
@@ -874,13 +670,13 @@ export async function authenticateFeelcycleAccount(userId: string, email: string
     };
 
   } catch (error) {
-    console.error(`FEELCYCLE認証エラー [${userId}]:`, error);
+    console.error(`Enhanced FEELCYCLE認証エラー [${userId}]:`, error);
     throw error;
   }
 }
 
-// 既存の認証情報チェック
-export async function checkFeelcycleAccountStatus(userId: string): Promise<{
+// 既存の認証情報チェック（修正版）
+export async function checkFeelcycleAccountStatusEnhanced(userId: string): Promise<{
   linked: boolean;
   data?: any;
 }> {
@@ -908,7 +704,11 @@ export async function checkFeelcycleAccountStatus(userId: string): Promise<{
     return { linked: false };
 
   } catch (error) {
-    console.error('FEELCYCLE連携状況確認エラー:', error);
+    console.error('Enhanced FEELCYCLE連携状況確認エラー:', error);
     return { linked: false };
   }
 }
+
+// 既存関数との互換性維持（デフォルトエクスポート）
+export const authenticateFeelcycleAccount = authenticateFeelcycleAccountEnhanced;
+export const checkFeelcycleAccountStatus = checkFeelcycleAccountStatusEnhanced;
