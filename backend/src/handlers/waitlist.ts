@@ -48,10 +48,11 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       case 'POST':
         return await createWaitlist(userId, body);
       
-      case 'GET':
+      case 'GET': {
         // Get userId from query parameter
         const getUserId = queryStringParameters?.userId || 'test-user-id';
         return await getUserWaitlists(getUserId, queryStringParameters?.status as any);
+      }
       
       case 'PUT':
         if (pathParameters?.waitlistId) {

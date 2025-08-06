@@ -18,7 +18,6 @@ interface FeelcycleCredentials {
   email: string;
   encryptedPassword: string;
   salt: string;
-  iv: string;
   createdAt: string;
   lastUsed: string;
 }
@@ -51,79 +50,36 @@ interface LessonHistoryItem {
   instructor: string;
 }
 
-// パスワードの暗号化/復号化 - セキュアな実装
-function encryptPassword(password: string, salt?: string): { encryptedPassword: string; salt: string; iv: string } {
-  const usedSalt = salt || crypto.randomBytes(32).toString('hex'); // 256-bit salt
-  const iv = crypto.randomBytes(16); // 128-bit IV for AES
-  
-  // PBKDF2でキー導出 (100,000回反復)
-  const key = crypto.pbkdf2Sync(password, usedSalt, 100000, 32, 'sha256');
-  
-  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+// パスワードの暗号化/復号化
+function encryptPassword(password: string, salt?: string): { encryptedPassword: string; salt: string } {
+  const usedSalt = salt || crypto.randomBytes(16).toString('hex');
+  const cipher = crypto.createCipher('aes256', usedSalt);
   let encrypted = cipher.update(password, 'utf8', 'hex');
   encrypted += cipher.final('hex');
-  
-  return {
-    encryptedPassword: encrypted,
-    salt: usedSalt,
-    iv: iv.toString('hex')
-  };
+  return { encryptedPassword: encrypted, salt: usedSalt };
 }
 
-function decryptPassword(encryptedPassword: string, salt: string, iv: string, originalPassword: string): string {
-  try {
-    if (!encryptedPassword || !salt || !iv || !originalPassword) {
-      throw new Error('Missing required decryption parameters');
-    }
-    
-    // 元のパスワードを使ってキーを再生成
-    const key = crypto.pbkdf2Sync(originalPassword, salt, 100000, 32, 'sha256');
-    const ivBuffer = Buffer.from(iv, 'hex');
-    
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, ivBuffer);
-    
-    let decrypted = decipher.update(encryptedPassword, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    
-    return decrypted;
-  } catch (error) {
-    console.error('Password decryption failed - credentials may be corrupted');
-    throw new Error('Authentication credentials are invalid');
-  }
+function decryptPassword(encryptedPassword: string, salt: string): string {
+  const decipher = crypto.createDecipher('aes256', salt);
+  let decrypted = decipher.update(encryptedPassword, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
 }
 
 // Secrets Managerから認証情報を取得
 async function getStoredCredentials(userId: string): Promise<FeelcycleCredentials | null> {
   try {
-    if (!userId) {
-      console.error('Invalid userId provided to getStoredCredentials');
-      return null;
-    }
-
     const command = new GetSecretValueCommand({
       SecretId: FEELCYCLE_CREDENTIALS_SECRET
     });
     
     const response = await secretsClient.send(command);
-    if (!response.SecretString) {
-      console.warn('No secret string found in AWS Secrets Manager');
-      return null;
-    }
+    if (!response.SecretString) return null;
     
     const secrets = JSON.parse(response.SecretString);
-    const credentials = secrets[userId] || null;
-    
-    if (credentials) {
-      console.log(`Retrieved credentials for user: ${userId}`);
-    }
-    
-    return credentials;
+    return secrets[userId] || null;
   } catch (error) {
-    // セキュリティ考慮: 詳細なエラー情報は内部ログのみ
-    console.error('Failed to retrieve credentials from Secrets Manager');
-    if (error instanceof Error) {
-      console.debug('Debug info:', error.message);
-    }
+    console.error('認証情報取得エラー:', error);
     return null;
   }
 }
@@ -131,15 +87,6 @@ async function getStoredCredentials(userId: string): Promise<FeelcycleCredential
 // Secrets Managerに認証情報を保存
 async function storeCredentials(userId: string, email: string, password: string): Promise<void> {
   try {
-    // 入力値検証
-    if (!userId || !email || !password) {
-      throw new Error('Missing required parameters for credential storage');
-    }
-
-    if (password.length < 8) {
-      throw new Error('Password must be at least 8 characters long');
-    }
-
     // 既存のシークレットを取得
     let existingSecrets = {};
     try {
@@ -151,11 +98,11 @@ async function storeCredentials(userId: string, email: string, password: string)
         existingSecrets = JSON.parse(response.SecretString);
       }
     } catch (error) {
-      console.log('Creating new secret in AWS Secrets Manager');
+      console.log('新規シークレット作成');
     }
 
     // パスワードを暗号化
-    const { encryptedPassword, salt, iv } = encryptPassword(password);
+    const { encryptedPassword, salt } = encryptPassword(password);
     
     // 新しい認証情報を追加
     const updatedSecrets = {
@@ -164,7 +111,6 @@ async function storeCredentials(userId: string, email: string, password: string)
         email,
         encryptedPassword,
         salt,
-        iv,
         createdAt: new Date().toISOString(),
         lastUsed: new Date().toISOString()
       }
@@ -176,18 +122,12 @@ async function storeCredentials(userId: string, email: string, password: string)
     });
 
     await secretsClient.send(updateCommand);
-    console.log(`Credentials stored successfully for user: ${userId}`);
+    console.log(`認証情報を保存しました: ${userId}`);
   } catch (error) {
-    console.error('Failed to store credentials in Secrets Manager');
-    if (error instanceof Error) {
-      console.debug('Debug info:', error.message);
-    }
-    throw new Error('Failed to save authentication credentials');
+    console.error('認証情報保存エラー:', error);
+    throw error;
   }
 }
-
-// レート制限チェック用のメモリキャッシュ（本番では Redis を推奨）
-const authAttempts = new Map<string, { count: number; lastAttempt: number }>();
 
 // FEELCYCLEサイトでログイン検証
 async function verifyFeelcycleLogin(email: string, password: string): Promise<{
@@ -195,150 +135,103 @@ async function verifyFeelcycleLogin(email: string, password: string): Promise<{
   userInfo?: any;
   error?: string;
 }> {
-  // 入力値検証
-  if (!email || !password) {
-    return {
-      success: false,
-      error: 'メールアドレスとパスワードを入力してください'
-    };
-  }
-
-  // レート制限チェック（1時間に5回まで）
-  const attemptKey = email.toLowerCase();
-  const now = Date.now();
-  const hourAgo = now - (60 * 60 * 1000);
-  
-  const attempts = authAttempts.get(attemptKey);
-  if (attempts) {
-    // 古い試行記録をクリーンアップ
-    if (attempts.lastAttempt < hourAgo) {
-      authAttempts.delete(attemptKey);
-    } else if (attempts.count >= 5) {
-      console.warn(`Rate limit exceeded for email: ${email}`);
-      return {
-        success: false,
-        error: 'しばらく時間をおいてから再度お試しください'
-      };
-    }
-  }
-
-  // 試行回数を記録
-  const currentAttempts = attempts || { count: 0, lastAttempt: 0 };
-  currentAttempts.count += 1;
-  currentAttempts.lastAttempt = now;
-  authAttempts.set(attemptKey, currentAttempts);
   let browser: puppeteer.Browser | null = null;
   
   try {
     console.log('FEELCYCLEログイン検証開始', { email });
-    console.log('検証プロセス詳細ログ: 開始時刻 =', new Date().toISOString());
-    console.log('検証プロセス詳細ログ: メモリ使用量 =', process.memoryUsage());
     
     // Puppeteer設定（Lambda環境対応）
     const isLambda = !!process.env.AWS_LAMBDA_FUNCTION_NAME;
     console.log('Lambda環境:', isLambda);
-    console.log('検証プロセス詳細ログ: Lambda環境変数確認済み');
     
     if (isLambda) {
       console.log('Lambda環境でChromium起動中...');
-      console.log('検証プロセス詳細ログ: Chromium起動前メモリ =', process.memoryUsage());
-      
-      // @sparticuz/chromiumを使用（chrome-aws-lambdaレイヤーは利用不可）
-      console.log('@sparticuz/chromiumでの起動を試行中...');
-      const executablePath = await chromium.executablePath();
-      console.log('検証プロセス詳細ログ: Chromium実行パス =', executablePath);
-      
-      // executablePathが無効な場合は例外を投げる
-      if (!executablePath || executablePath === 'undefined') {
-        throw new Error('@sparticuz/chromium executablePath is invalid: ' + executablePath);
-      }
-      
-      console.log('検証プロセス詳細ログ: puppeteer.launch開始');
-      
-      // タイムアウト延長でより安定した起動確認
-      const launchTimeout = 30000; // 30秒に延長
-      console.log('検証プロセス詳細ログ: Chromium起動タイムアウト =', launchTimeout);
-      
-      console.log('検証プロセス詳細ログ: puppeteer.launch引数準備中...');
-      const launchArgs = [
-        ...chromium.args,
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-images',
-        '--single-process',
-        '--memory-pressure-off',
-        '--max_old_space_size=2048',
-        '--disable-background-timer-throttling',
-        '--disable-renderer-backgrounding',
-        '--disable-default-apps',
-        '--disable-extensions-http-throttling',
-        '--disable-component-extensions-with-background-pages',
-        '--disable-background-networking',
-        '--no-default-browser-check',
-        '--no-first-run',
-        '--disable-sync',
-        '--disable-translate',
-        '--disable-features=TranslateUI',
-        '--disable-ipc-flooding-protection',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ];
-      console.log('検証プロセス詳細ログ: launch引数数 =', launchArgs.length);
-      
-      console.log('検証プロセス詳細ログ: Promise.race開始...');
-      
-      // spawn ETXTBSY エラー対策：Chromium起動のみリトライ（ログインはリトライしない）
-      let browserLaunchAttempts = 0;
-      const maxAttempts = 3;
-      
-      while (browserLaunchAttempts < maxAttempts) {
+      try {
+        // まずchrome-aws-lambdaレイヤーを試す（確実性重視）
+        console.log('chrome-aws-lambdaレイヤーでの起動を試行中...');
+        const chromeAwsLambdaPath = '/opt/chrome/chrome';
+        
+        browser = await puppeteer.launch({
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-plugins',
+            '--disable-images',
+            '--single-process',
+            '--memory-pressure-off',
+            '--max_old_space_size=4096',
+            '--disable-background-timer-throttling',
+            '--disable-renderer-backgrounding',
+            '--disable-default-apps',
+            '--disable-extensions-http-throttling',
+            '--disable-component-extensions-with-background-pages',
+            '--disable-background-networking',
+            '--no-default-browser-check',
+            '--no-first-run',
+            '--disable-sync',
+            '--disable-translate',
+            '--disable-features=TranslateUI',
+            '--disable-ipc-flooding-protection'
+          ],
+          defaultViewport: { width: 1280, height: 720 },
+          executablePath: chromeAwsLambdaPath,
+          headless: true,
+          timeout: 15000
+        });
+        console.log('Lambda環境でChromium起動成功 (chrome-aws-lambda)');
+      } catch (chromeAwsLambdaError) {
+        console.error('chrome-aws-lambda起動エラー:', chromeAwsLambdaError);
         try {
-          browserLaunchAttempts++;
-          console.log(`Chromium起動試行 ${browserLaunchAttempts}/${maxAttempts} (ログイン処理は1回のみ)`);
+          // フォールバック: @sparticuz/chromiumを試す
+          console.log('@sparticuz/chromiumでの起動を試行中...');
+          const executablePath = await chromium.executablePath();
+          console.log('Chromium実行パス:', executablePath);
           
-          browser = await Promise.race([
-            puppeteer.launch({
-              args: launchArgs,
-              defaultViewport: { width: 1024, height: 768 },
-              executablePath,
-              headless: true,
-              timeout: launchTimeout,
-              ignoreDefaultArgs: ['--disable-extensions'], // 競合回避
-              handleSIGINT: false,
-              handleSIGTERM: false,
-              handleSIGHUP: false
-            }),
-            new Promise<never>((_, reject) => 
-              setTimeout(() => {
-                console.log('検証プロセス詳細ログ: タイムアウト発生');
-                reject(new Error('@sparticuz/chromium launch timeout'));
-              }, launchTimeout + 1000)
-            )
-          ]) as puppeteer.Browser;
-          
-          // Chromium起動成功：ループを抜けて1回だけログイン試行
-          console.log('⚠️ 重要: ログイン試行は1回のみ実行（アカウントロック防止）');
-          break;
-          
-        } catch (launchError) {
-          console.log(`Chromium起動試行 ${browserLaunchAttempts} 失敗:`, launchError instanceof Error ? launchError.message : 'Unknown error');
-          
-          if (browserLaunchAttempts >= maxAttempts) {
-            console.error('❌ Chromium起動に失敗しました。ログイン試行はスキップします（アカウント保護）');
-            throw launchError;
+          // executablePathが無効な場合は例外を投げる
+          if (!executablePath || executablePath === 'undefined') {
+            throw new Error('@sparticuz/chromium executablePath is invalid: ' + executablePath);
           }
           
-          // 次の試行まで少し待機（spawn ETXTBSY対策）
-          console.log('⏳ 2秒待機後に Chromium起動を再試行...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          browser = await puppeteer.launch({
+            args: [
+              ...chromium.args,
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-gpu',
+              '--disable-extensions',
+              '--disable-plugins',
+              '--disable-images',
+              '--single-process',
+              '--memory-pressure-off',
+              '--max_old_space_size=4096',
+              '--disable-background-timer-throttling',
+              '--disable-renderer-backgrounding',
+              '--disable-default-apps',
+              '--disable-extensions-http-throttling',
+              '--disable-component-extensions-with-background-pages',
+              '--disable-background-networking',
+              '--no-default-browser-check',
+              '--no-first-run',
+              '--disable-sync',
+              '--disable-translate',
+              '--disable-features=TranslateUI',
+              '--disable-ipc-flooding-protection'
+            ],
+            defaultViewport: { width: 1280, height: 720 },
+            executablePath,
+            headless: true,
+            timeout: 15000
+          });
+          console.log('Lambda環境でChromium起動成功 (@sparticuz/chromium)');
+        } catch (sparticzError) {
+          console.error('@sparticuz/chromium起動エラー:', sparticzError);
+          throw new Error('Lambda環境でChromiumの起動に失敗しました。スクレイピング機能は現在利用できません。');
         }
       }
-      console.log('Lambda環境でChromium起動成功 (@sparticuz/chromium)');
-      console.log('検証プロセス詳細ログ: Chromium起動後メモリ =', process.memoryUsage());
     } else {
       console.log('ローカル環境でPuppeteer起動中...');
       browser = await puppeteer.launch({
@@ -351,15 +244,8 @@ async function verifyFeelcycleLogin(email: string, password: string): Promise<{
 
     // ページ作成とユーザーエージェント設定
     console.log('新しいページを作成中...');
-    const page = await browser!.newPage();
+    const page = await browser.newPage();
     console.log('ページ作成完了');
-    
-    // デバッグ用スクリーンショット機能（現在は無効化）
-    const takeScreenshot = async (step: string) => {
-      // スクリーンショット機能は一時的に無効化
-      console.log(`📷 スクリーンショット [${step}] スキップ（機能無効化中）`);
-      return;
-    };
     
     // コンソールエラーをキャプチャ
     page.on('console', msg => {
@@ -442,26 +328,21 @@ async function verifyFeelcycleLogin(email: string, password: string): Promise<{
       '.user-input'
     ];
     
-    // ページの完全読み込みを待機（ローディングスピナー対応）
+    // ページの完全読み込みを待機
     console.log('ページ読み込み完了を待機中...');
-    await new Promise(resolve => setTimeout(resolve, 5000)); // 5秒に延長
-    await takeScreenshot('ページ読み込み後');
+    await new Promise(resolve => setTimeout(resolve, 3000)); // 3秒待機
     
-    // FEELCYCLEは通常のフォーム形式（モーダルではない）
-    console.log('ログインフォームの表示確認中...');
+    // FEELCYCLEログインモーダルの表示を待機
+    console.log('ログインモーダルの表示を待機中...');
     try {
-      // メールアドレス入力フィールドが表示されるまで待機
-      await page.waitForSelector('input[name="email"]', { timeout: 10000 });
-      console.log('✅ ログインフォーム発見');
-      await takeScreenshot('フォーム発見後');
+      await page.waitForSelector('#login_modal', { timeout: 5000 });
+      console.log('ログインモーダル発見');
       
-      // パスワードフィールドも確認
-      await page.waitForSelector('input[name="password"]', { timeout: 3000 });
-      console.log('✅ パスワードフィールド確認');
-      await takeScreenshot('フォーム準備完了');
-    } catch (formError) {
-      console.log('⚠️ フォーム検出エラー:', formError instanceof Error ? formError.message : 'Unknown error');
-      await takeScreenshot('フォームエラー時');
+      // モーダルコンテンツの表示を待機
+      await page.waitForSelector('#login_modal .modalContent', { timeout: 3000 });
+      console.log('モーダルコンテンツ表示完了');
+    } catch (modalError) {
+      console.log('モーダル検出エラー（直接フォーム検索に進行）:', modalError instanceof Error ? modalError.message : 'Unknown error');
     }
     
     // 実際のDOM構造を調査
@@ -621,15 +502,12 @@ async function verifyFeelcycleLogin(email: string, password: string): Promise<{
 
     // ログインボタンをクリック
     console.log('ログインボタンクリック中...');
-    await takeScreenshot('ログイン前');
-    
     await Promise.all([
       page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }),
       page.click(submitButton)
     ]);
 
     console.log('ログインボタンクリック完了');
-    await takeScreenshot('ログイン後');
 
     // ログイン結果確認
     const currentUrl = page.url();
@@ -637,17 +515,10 @@ async function verifyFeelcycleLogin(email: string, password: string): Promise<{
 
     if (currentUrl.includes('/mypage/login')) {
       // ログイン失敗（同じページにリダイレクト）
-      // セキュリティ考慮: 具体的なエラーメッセージは内部ログのみ
-      const errorElement = await page.$('.error').catch(() => null);
-      const errorMessage = errorElement ? await page.evaluate(el => el.textContent, errorElement).catch(() => null) : null;
-      
-      if (errorMessage) {
-        console.debug('FEELCYCLE login error details:', errorMessage);
-      }
-      
+      const errorMessage = await page.$eval('.error', el => el.textContent || 'ログインに失敗しました').catch(() => 'ログインに失敗しました');
       return {
         success: false,
-        error: 'メールアドレスまたはパスワードが正しくありません'
+        error: errorMessage
       };
     }
 
@@ -669,24 +540,14 @@ async function verifyFeelcycleLogin(email: string, password: string): Promise<{
     };
 
   } catch (error) {
-    console.error('FEELCYCLE login verification failed');
-    if (error instanceof Error) {
-      console.debug('Debug info:', error.message);
-      console.debug('Stack trace:', error.stack);
-    }
-    
-    // セキュリティ考慮: 技術的な詳細は隠し、一般的なエラーメッセージを返す
+    console.error('ログイン検証エラー:', error);
     return {
       success: false,
-      error: 'ログイン検証中に問題が発生しました。しばらく時間をおいてから再度お試しください'
+      error: `ログイン検証中にエラーが発生しました: ${error instanceof Error ? error.message : 'Unknown error'}`
     };
   } finally {
     if (browser) {
-      try {
-        await browser.close();
-      } catch (closeError) {
-        console.debug('Browser close error:', closeError);
-      }
+      await browser.close();
     }
   }
 }
@@ -842,24 +703,17 @@ export async function authenticateFeelcycleAccount(userId: string, email: string
     console.log(`FEELCYCLE認証開始: ${userId}`);
 
     // 1. ログイン検証
-    console.log('ステップ1: ログイン検証開始');
     const verificationResult = await verifyFeelcycleLogin(email, password);
-    console.log('ステップ1結果:', JSON.stringify(verificationResult, null, 2));
     
     if (!verificationResult.success) {
-      console.error('ログイン検証失敗:', verificationResult.error);
       throw new Error(verificationResult.error || 'ログイン認証に失敗しました');
     }
 
     // 2. 認証情報をSecrets Managerに保存
-    console.log('ステップ2: Secrets Manager保存開始');
     await storeCredentials(userId, email, password);
-    console.log('ステップ2完了: Secrets Manager保存成功');
 
     // 3. 取得した情報をDynamoDBに保存
-    console.log('ステップ3: DynamoDB保存開始');
     await saveFeeelcycleData(userId, email, verificationResult.userInfo);
-    console.log('ステップ3完了: DynamoDB保存成功');
 
     console.log(`FEELCYCLE認証完了: ${userId}`);
 

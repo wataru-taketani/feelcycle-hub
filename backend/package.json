@@ -13,32 +13,34 @@
     "init-batch": "npm run build && node dist/cmd-initialize-batch.js",
     "clear-lessons": "npm run build && node dist/cmd-clear-lessons.js",
     "process-studio": "npm run build && node dist/cmd-process-studio.js",
-    "batch-status": "npm run build && node dist/cmd-batch-status.js"
+    "batch-status": "npm run build && node dist/cmd-batch-status.js",
+    "cleanup-invalid-studio": "npm run build && node dist/cleanup-invalid-studio.js"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.614.0",
-    "@aws-sdk/client-lambda": "^3.855.0",
-    "@aws-sdk/client-secrets-manager": "^3.614.0",
-    "@aws-sdk/lib-dynamodb": "^3.614.0",
-    "@sparticuz/chromium": "^138.0.0",
+    "@aws-sdk/client-dynamodb": "^3.859.0",
+    "@aws-sdk/client-lambda": "^3.859.0",
+    "@aws-sdk/client-secrets-manager": "^3.859.0",
+    "@aws-sdk/lib-dynamodb": "^3.859.0",
+    "@sparticuz/chromium": "^138.0.2",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/puppeteer": "^5.4.7",
-    "axios": "^1.7.2",
-    "cheerio": "^1.0.0-rc.12",
+    "axios": "^1.11.0",
+    "cheerio": "^1.1.2",
     "cors": "^2.8.5",
     "dotenv-flow": "^4.1.0",
     "express": "^5.1.0",
-    "playwright": "^1.45.1",
+    "playwright": "^1.54.2",
     "puppeteer": "^24.15.0"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.140",
-    "@typescript-eslint/eslint-plugin": "^7.16.0",
-    "@typescript-eslint/parser": "^7.16.0",
-    "eslint": "^8.57.0",
-    "tsx": "^4.16.0",
-    "typescript": "^5.5.2",
-    "vitest": "^2.0.2"
+    "@types/aws-lambda": "^8.10.152",
+    "@types/jest": "^30.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "eslint": "^8.57.1",
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2",
+    "vitest": "^2.1.9"
   }
 }

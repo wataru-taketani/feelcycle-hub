@@ -90,56 +90,18 @@ async function handleVerifyAuth(event: APIGatewayProxyEvent): Promise<APIGateway
       };
     }
 
-    console.log(`FEELCYCLE認証開始（同期テスト）: ${userId} (${email})`);
+    console.log(`FEELCYCLE認証開始（非同期）: ${userId} (${email})`);
 
-    // デバッグ用：同期実行でエラーを詳細に確認
-    if (userId.startsWith('debug-')) {
-      console.log('🔍 デバッグモード: 同期実行でスクリーンショット機能テスト');
-      try {
-        const result = await authenticateFeelcycleAccount(userId, email, password);
-        console.log(`✅ FEELCYCLE認証完了（同期）: ${userId}`, JSON.stringify(result, null, 2));
-        return {
-          statusCode: 200,
-          headers: corsHeaders,
-          body: JSON.stringify({
-            success: true,
-            status: 'completed',
-            message: 'FEELCYCLE認証が完了しました',
-            userId: userId,
-            data: result,
-            timestamp: new Date().toISOString()
-          })
-        };
-      } catch (error) {
-        console.error(`❌ FEELCYCLE認証失敗（同期）: ${userId}`);
-        console.error('エラー詳細:', error);
-        console.error('エラースタック:', error instanceof Error ? error.stack : 'No stack trace');
-        return {
-          statusCode: 500,
-          headers: corsHeaders,
-          body: JSON.stringify({
-            success: false,
-            status: 'failed',
-            message: error instanceof Error ? error.message : 'Unknown error',
-            userId: userId,
-            timestamp: new Date().toISOString()
-          })
-        };
-      }
-    }
-
-    // 通常ユーザー：非同期で認証実行（待機しない）
+    // 非同期で認証実行（待機しない）
     const authPromise = authenticateFeelcycleAccount(userId, email, password);
     
     // バックグラウンド処理（結果をログ出力）
     authPromise
       .then(result => {
-        console.log(`✅ FEELCYCLE認証完了（バックグラウンド）: ${userId}`, JSON.stringify(result, null, 2));
+        console.log(`✅ FEELCYCLE認証完了（バックグラウンド）: ${userId}`, result);
       })
       .catch(error => {
-        console.error(`❌ FEELCYCLE認証失敗（バックグラウンド）: ${userId}`);
-        console.error('エラー詳細:', error);
-        console.error('エラースタック:', error.stack);
+        console.error(`❌ FEELCYCLE認証失敗（バックグラウンド）: ${userId}`, error.message);
       });
 
     // 即座にレスポンス返却

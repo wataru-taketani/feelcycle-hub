@@ -574,73 +574,6 @@ className="data-[state=active]:bg-background data-[state=active]:text-foreground
 
 **✅ タブ選択時の背景色変更: 実装完了**
 
-## FEELCYCLE認証システム包括的改善完了 (2025-08-06) 🚀
-
-### Enhanced FEELCYCLE認証システム統合修正実施完了 ✅
-
-**目的**: GeminiとWindserf提案を統合した包括的FEELCYCLE認証システム改善
-**成果**: 87個セレクタ削減・パスワード暗号化修正・ローカル環境対応・統合テスト完了
-
-#### 修正前の重要問題
-- **Windserf指摘**: 87個セレクタ（email: 28個, password: 29個, submit: 30個）
-- **パスワード暗号化設計欠陥**: originalPassword依存で復号不可
-- **Gemini指摘**: ローカル環境Chrome実行パス検出不備
-- **動的待機処理**: setTimeout固定待機による不安定性
-
-#### 実装した修正内容
-
-##### 1. セレクタ大幅削減（96.6%改善）
-```typescript
-// 修正前: 87個の複雑なセレクタ配列
-// 修正後: 3個の正確なセレクタ
-const emailSelector = 'input[name="email"]';
-const passwordSelector = 'input[name="password"]';  
-const loginButtonSelector = 'button.btn1';
-```
-
-##### 2. パスワード暗号化システム修正
-- **マスターキー方式**: originalPassword不要の完全復号システム
-- **AES-256-CBC + PBKDF2**: セキュリティ強化
-- **バックグラウンド認証対応**: 保存済み認証情報での自動認証
-
-##### 3. ローカル環境Chrome自動検出
-- **複数OS対応**: macOS/Linux/Windows Chrome実行パス検出
-- **環境分離**: Lambda/ローカル完全分離実現
-
-##### 4. 動的待機処理改善
-```typescript
-// 修正前: setTimeout(5000) 固定待機
-// 修正後: waitForSelector 動的待機
-await page.waitForSelector(selector, { visible: true, timeout: 15000 });
-```
-
-#### 統合テスト結果
-- ✅ **セレクタ削減効果**: 96.6%削減（87個→3個）
-- ✅ **ローカルブラウザ起動**: Chrome実行パス自動検出成功
-- ✅ **パスワード暗号化**: マスターキー方式完全動作確認
-- ✅ **復号機能**: originalPassword不要で正常復号確認
-
-#### 技術的成果
-1. **処理速度**: セレクタ検索時間大幅短縮
-2. **信頼性**: 正確なセレクタによる成功率向上  
-3. **保守性**: 変更対象の明確化
-4. **セキュリティ**: マスターキー暗号化によるセキュリティ向上
-
-#### 実装ファイル
-- `src/services/enhanced-feelcycle-auth-service.ts` - 修正版認証サービス
-- `src/test-enhanced-feelcycle-auth.js` - 統合テストスクリプト
-- `src/services/feelcycle-login-diagnostics.js` - サイト構造診断
-- `FEELCYCLE_AUTH_ENHANCEMENT_MEMO.md` - 包括的改善記録
-
-#### 重要な学習事項
-- **外部レビューの価値**: 87個セレクタ問題を外部提案により発見・修正
-- **段階的修正**: 診断→修正→テスト→統合の安全なアプローチ
-- **セキュリティ設計**: originalPassword依存問題の根本解決
-
-**✅ Enhanced FEELCYCLE認証システム: 包括的改善・統合テスト完了**
-
----
-
 ## 🚧 進行中の開発 - FEELCYCLE Account Integration (2025-08-03)
 
 ### FEELCYCLEアカウント連携機能実装完了 ✅
@@ -1071,75 +1004,6 @@ timeout: 15000  // 30秒 → 15秒
 
 **✅ FEELCYCLEアカウント連携機能: 基本実装完了（重要な学習事項含む）**
 
-## FEELCYCLE認証状態管理の修正 (2025-08-05)
-
-### 発見された問題
-- 認証完了後も設定ページで「連携する」ボタンが表示される
-- 非同期認証処理への対応不備
-- フロントエンドでの状態更新が正しく動作しない
-
-### 実装された修正
-
-#### 1. 非同期認証処理への対応
-```typescript
-// フロントエンド: FeelcycleAuthModal.tsx
-if (result.status === 'processing') {
-  // ポーリングで認証完了を確認
-  const checkAuthStatus = async () => {
-    const statusResponse = await fetch(`/feelcycle/auth/status?userId=${userId}`);
-    const statusData = await statusResponse.json();
-    
-    if (statusData.linked && statusData.data) {
-      onSuccess(statusData.data); // 完了時にコールバック実行
-    } else {
-      setTimeout(checkAuthStatus, 3000); // 3秒後に再確認
-    }
-  };
-}
-```
-
-#### 2. 認証完了後の状態更新機能
-```typescript
-// 設定ページ: page.tsx
-const handleFeelcycleAuthSuccess = (data: any) => {
-  setFeelcycleLinked(true);
-  setFeelcycleData(data);
-  console.log('FEELCYCLE認証成功:', data);
-};
-```
-
-#### 3. 連携済み状態での UI表示
-```tsx
-{feelcycleLinked ? (
-  <>
-    <div>
-      <label>所属店舗</label>
-      <Input value={feelcycleData?.homeStudio || '取得中...'} disabled />
-    </div>
-    <div>
-      <label>会員種別</label>
-      <Input value={feelcycleData?.membershipType || '取得中...'} disabled />
-    </div>
-  </>
-) : (
-  <Button onClick={() => setShowFeelcycleModal(true)}>
-    FEELCYCLEアカウントを連携する
-  </Button>
-)}
-```
-
-### 技術的改善点
-1. **ポーリング機能**: 非同期処理完了まで定期的にステータス確認
-2. **エラーハンドリング**: ポーリング失敗時の適切な再試行機能
-3. **状態管理**: 認証完了後の即座な UI更新
-4. **UX向上**: 処理中メッセージの改善「マイページ情報を取得中...しばらくお待ちください」
-
-### バックアップ管理
-- `BACKUP_FEELCYCLE_STATE_FIX_20250805_132622/`
-- 修正前のコード保管済み
-
-**✅ FEELCYCLE認証状態管理修正: 実装完了**
-
 ## 🚨 緊急事態対応完了: 全スタジオデータ破損からの完全復旧 (2025-08-03)
 
 ### 発見された重大問題
@@ -1349,40 +1213,6 @@ FEELCYCLEのログイン処理は `#login_modal` モーダル内で実行され�
 
 **✅ インストラクターのみ検索機能: 修正完了**
 
-## 🚀 日次スクレイピングバッチ大幅改善完了 (2025-08-06)
-
-### 大規模システム改善プロジェクト
-**問題**: 継続的なバッチ処理失敗（吉祥寺レッスンデータ不足含む）  
-**原因**: JavaScript SPA読み込み待機不足 + Chromium実行環境問題  
-**解決**: Enhanced Real Scraper実装による**完全復旧達成**
-
-### 改善実績
-- **バッチ進捗**: 23/37 → **31/37スタジオ** (+35%改善)
-- **強化版成功率**: **100%** (8/8スタジオ)  
-- **処理時間**: 30秒→**9.6秒** (68%短縮)
-- **吉祥寺レッスン**: ✅ **142件正常取得** (完全解決)
-
-### 技術的革新
-1. **JavaScript SPA対応**: Vue.js動的読み込み完全対応
-2. **マルチパターンセレクタ**: 将来のHTML構造変更耐性
-3. **Chromium最適化**: Lambda環境特化設定
-4. **リトライ強化**: 2回→5回、段階的遅延戦略
-5. **ハイブリッド実装**: Enhanced + Traditional のフォールバック
-
-### 実装ファイル
-- **Enhanced Scraper**: `src/services/enhanced-real-scraper.ts`
-- **バッチ統合**: `src/scripts/progressive-daily-refresh.ts`  
-- **診断ツール**: `src/services/test-scraper-diagnostics.js`
-- **包括レポート**: `FEELCYCLE_SCRAPER_IMPROVEMENT_REPORT.md`
-
-### 運用状況
-- **現在稼働**: 強化版スクレイパー統合済み本番システム
-- **残りタスク**: 6スタジオの次回自動復旧待ち
-- **監視項目**: バッチ完了率・処理時間・エラー率
-- **保守**: 月次HTML構造チェック・四半期最適化
-
-**✅ システム全体の劇的改善により、安定したレッスンデータ供給体制を確立**
-
 ## 次のステップ（将来的な改善案）
 - [ ] CloudWatch Logsとの連携強化
 - [ ] Slackアラート機能追加
@@ -1394,6 +1224,5 @@ FEELCYCLEのログイン処理は `#login_modal` モーダル内で実行され�
 
 **プロジェクト完了日**: 2025-07-29 (レッスンデータ取得システム)  
 **FEELCYCLEアカウント連携完了日**: 2025-08-03  
-**スクレイピングバッチ大幅改善完了日**: 2025-08-06 🚀  
-**ステータス**: 本番運用中・継続改善 ✅  
-**最終確認**: 全37スタジオ対応・強化版スクレイパー統合・吉祥寺データ完全復旧
+**ステータス**: 本番運用準備完了 ✅  
+**最終確認**: 全37スタジオ・5,180+レッスンデータ取得成功 + FEELCYCLE認証基盤構築完了

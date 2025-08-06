@@ -1,4 +1,5 @@
 import { RealFeelcycleScraper } from '../services/real-scraper';
+import { EnhancedRealFeelcycleScraper } from '../services/enhanced-real-scraper';
 import { LessonsService } from '../services/lessons-service';
 import { studiosService } from '../services/studios-service';
 import { autoRecoveryService, RecoveryContext } from '../services/auto-recovery-service';
@@ -121,9 +122,32 @@ async function progressiveDailyRefresh() {
     const studioStartTime = Date.now();
     
     try {
-      // Get ALL lessons for this studio in one request
+      // Get ALL lessons for this studio in one request with enhanced scraper + fallback
       console.log(`Fetching all lesson data for ${studioToProcess.studioCode} (all dates at once)...`);
-      const allLessons = await RealFeelcycleScraper.searchAllLessons(studioToProcess.studioCode);
+      
+      let allLessons;
+      let scraperUsed = 'unknown';
+      
+      try {
+        // Try enhanced scraper first (JavaScript SPA support + multi-pattern selectors)
+        console.log('🚀 Trying enhanced scraper with SPA support...');
+        allLessons = await EnhancedRealFeelcycleScraper.searchAllLessonsEnhanced(studioToProcess.studioCode);
+        scraperUsed = 'enhanced';
+        console.log(`✅ Enhanced scraper succeeded for ${studioToProcess.studioCode}`);
+      } catch (enhancedError) {
+        console.log(`⚠️  Enhanced scraper failed: ${enhancedError instanceof Error ? enhancedError.message : 'Unknown error'}`);
+        console.log('🔄 Falling back to traditional scraper...');
+        
+        try {
+          // Fallback to traditional scraper
+          allLessons = await RealFeelcycleScraper.searchAllLessons(studioToProcess.studioCode);
+          scraperUsed = 'traditional';
+          console.log(`✅ Traditional scraper succeeded for ${studioToProcess.studioCode}`);
+        } catch (traditionalError) {
+          console.log(`❌ Traditional scraper also failed: ${traditionalError instanceof Error ? traditionalError.message : 'Unknown error'}`);
+          throw traditionalError; // Re-throw to trigger recovery
+        }
+      }
       
       if (allLessons.length > 0) {
         // Save all lessons to DynamoDB
@@ -140,6 +164,7 @@ async function progressiveDailyRefresh() {
         
         console.log(`✅ Saved ${allLessons.length} lessons in ${studioDuration.toFixed(2)}s`);
         console.log(`   Dates: ${Object.keys(lessonsByDate).length} (${Object.entries(lessonsByDate).map(([date, count]) => `${date}:${count}`).join(', ')})`);
+        console.log(`   Scraper used: ${scraperUsed} ${scraperUsed === 'enhanced' ? '🚀' : '🔄'}`);
         
         // Mark as completed
         await studiosService.markStudioAsProcessed(studioToProcess.studioCode, 'completed');
