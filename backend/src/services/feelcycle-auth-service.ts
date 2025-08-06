@@ -213,24 +213,55 @@ async function verifyFeelcycleLoginEnhanced(email: string, password: string): Pr
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
+    // リクエスト最適化設定（高速化）
+    console.log('リクエスト最適化設定中...');
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      const url = req.url();
+      
+      // 不要なリソースをブロックして高速化
+      if (resourceType === 'image' || resourceType === 'font' || 
+          url.includes('analytics') || url.includes('tracking') ||
+          url.includes('gtm') || url.includes('google-analytics')) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+
     console.log('FEELCYCLEログインページに移動中...');
     await page.goto('https://m.feelcycle.com/mypage/login', {
-      waitUntil: 'domcontentloaded',
-      timeout: 30000
+      waitUntil: 'networkidle2', // ネットワークが2秒間アイドル状態まで待機
+      timeout: 60000 // タイムアウトを60秒に延長
     });
     console.log('ログインページロード完了');
 
-    // モーダル検出・表示待機（Gemini提案の概念を診断結果で修正）
-    console.log('ログインモーダルの検出と表示待機中...');
+    // JavaScript実行完了の確認
+    console.log('JavaScript実行完了を待機中...');
+    await page.waitForFunction(() => {
+      // SPAフレームワークの読み込み完了を確認
+      return document.readyState === 'complete' && 
+             document.querySelector('input[name="email"]') !== null; // フォーム要素確認
+    }, { timeout: 30000 });
+    console.log('✅ JavaScript実行完了');
+
+    // ログインフォームの完全読み込み待機（段階的強化）
+    console.log('ログインフォームの完全読み込み待機中...');
     try {
-      // 診断結果に基づく正確なモーダルセレクタ
-      await page.waitForSelector('[class*="modal"]', { visible: true, timeout: 10000 });
-      console.log('✅ ログインモーダル発見');
+      // 複数の待機戦略を組み合わせ
+      await Promise.race([
+        page.waitForSelector('[class*="modal"]', { visible: true, timeout: 15000 }),
+        page.waitForSelector('input[name="email"]', { visible: true, timeout: 15000 })
+      ]);
+      console.log('✅ ログインフォーム読み込み完了');
       
-      // モーダルが完全に読み込まれるまで少し待機
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch (modalError) {
-      console.log('⚠️  モーダル検出タイムアウト、通常フォームとして処理続行');
+      // 追加の安定化待機
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    } catch (error) {
+      console.log('⚠️ フォーム検出タイムアウト、代替戦略を実行');
+      // フォールバック処理：基本的な待機を実行
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
 
     // 診断結果に基づく簡略化されたセレクタ使用（Windserf提案対応）
@@ -252,17 +283,27 @@ async function verifyFeelcycleLoginEnhanced(email: string, password: string): Pr
 
     console.log('ログイン情報入力完了');
 
-    // ログインボタンクリック（30個→1個に簡略化）
+    // ログインボタンクリック（SPA対応の安全なナビゲーション）
     console.log('ログインボタンクリック中...');
     const loginButtonSelector = 'button.btn1'; // 診断で確認済み
-    await page.waitForSelector(loginButtonSelector, { visible: true, timeout: 5000 });
+    await page.waitForSelector(loginButtonSelector, { visible: true, timeout: 10000 });
 
-    // 動的待機処理（Windserf提案：setTimeout削除）
-    await Promise.all([
-      page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 15000 }),
-      page.click(loginButtonSelector)
-    ]);
-    console.log('ログインボタンクリック完了、ページ遷移待機完了');
+    // より安全なナビゲーション待機
+    try {
+      await Promise.all([
+        page.waitForNavigation({ 
+          waitUntil: 'networkidle2', // ← SPA対応修正
+          timeout: 30000 
+        }),
+        page.click(loginButtonSelector)
+      ]);
+      console.log('✅ ログイン処理完了');
+    } catch (navigationError) {
+      console.log('⚠️ ナビゲーション待機タイムアウト、URL確認で継続');
+      // フォールバック: URL変化を確認
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      console.log('フォールバック待機完了、処理継続');
+    }
 
     // ログイン結果確認
     const currentUrl = page.url();
