@@ -1,0 +1,29 @@
+# Netlifyビルドから除外するファイル・ディレクトリ
+
+# バックエンド関連（完全除外）
+backend/
+infra/
+
+# プロジェクト管理ファイル
+PROJECT_IMPROVEMENT_PLAN*.md
+DEVELOPMENT_MEMO.md
+BACKUP_*/
+chatlog/
+sample/
+
+# セキュリティ監査
+security-audit*.json
+frontend-outdated.json
+
+# テスト・一時ファイル
+test-*.js
+*.temp
+.github/
+
+# 不要な設定ファイル
+package-lock.json
+package.json
+
+# バックアップ・ログ
+*.txt
+*.log
