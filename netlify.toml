@@ -1,7 +1,7 @@
 [build]
   base = "frontend"
   publish = "out"
-  command = "npm run export"
+  command = "npm run build"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -35,13 +35,13 @@
 
 # Environment-specific settings
 [context.production]
-  command = "npm run export"
+  command = "npm run build"
   
 [context.deploy-preview]
-  command = "npm run export"
+  command = "npm run build"
 
 [context.branch-deploy]
-  command = "npm run export"
+  command = "npm run build"
 
 # Forms (for contact/feedback if needed)
 [build.processing]
