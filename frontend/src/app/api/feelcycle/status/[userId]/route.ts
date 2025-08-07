@@ -38,7 +38,7 @@ export async function GET(
       'Content-Type': 'application/json',
     };
     
-    const backendResponse = await fetch(`${API_BASE_URL}/feelcycle/status/${userId}`, {
+    const backendResponse = await fetch(`${API_BASE_URL}/feelcycle/auth/status?userId=${userId}`, {
       method: 'GET',
       headers
     });
