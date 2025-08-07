@@ -28,54 +28,17 @@ export async function POST(request: NextRequest) {
 
     console.log(`FEELCYCLE連携リクエスト: ${userId}, Email: ${email.replace(/(.{3}).*(@.*)/, '$1***$2')}`);
 
-    // 開発環境での認証バイパス（認証トークンがない場合も含む）
-    const authToken = process.env.FEELCYCLE_API_TOKEN || process.env.NEXT_PUBLIC_API_TOKEN;
-    const isDevelopment = process.env.NODE_ENV === 'development' || 
-                         process.env.NEXT_PUBLIC_API_BASE_URL?.includes('localhost') ||
-                         API_BASE_URL.includes('localhost') ||
-                         !authToken; // 認証トークンがない場合は開発環境として扱う
-    
     console.log('🔧 Environment check:', { 
-      isDevelopment, 
       nodeEnv: process.env.NODE_ENV,
       apiUrl: API_BASE_URL 
     });
-    
-    // 開発環境では一時的にモックレスポンスを返す
-    if (isDevelopment) {
-      console.log('🚧 Development mode: Returning mock response');
-      return NextResponse.json(
-        {
-          success: true,
-          data: {
-            name: '開発テストユーザー',
-            memberType: 'フルタイム',
-            homeStudio: '銀座スタジオ',
-            linkedAt: new Date().toISOString()
-          }
-        },
-        { status: 200 }
-      );
-    }
 
     // バックエンドAPIに転送
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
     
-    // 開発環境では認証をスキップ、本番環境では適切な認証ヘッダーを追加
-    if (!isDevelopment) {
-      // 本番環境では認証トークンを追加
-      const authToken = process.env.FEELCYCLE_API_TOKEN || process.env.NEXT_PUBLIC_API_TOKEN;
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-        console.log('🔐 Production mode: Adding auth token');
-      } else {
-        console.warn('⚠️ Production mode: No auth token found');
-      }
-    }
-    
-    const backendResponse = await fetch(`${API_BASE_URL}/feelcycle/integrate`, {
+    const backendResponse = await fetch(`${API_BASE_URL}/feelcycle/auth/verify`, {
       method: 'POST',
       headers,
       body: JSON.stringify({
