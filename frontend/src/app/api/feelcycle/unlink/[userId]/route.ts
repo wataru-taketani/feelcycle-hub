@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * FEELCYCLE 連携状態取得API
- * GET /api/feelcycle/status/[userId]
+ * FEELCYCLE 連携解除API
+ * DELETE /api/feelcycle/unlink/[userId]
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://2busbn3z42.execute-api.ap-northeast-1.amazonaws.com/dev';
 
-export async function GET(
+export async function DELETE(
   _request: NextRequest,
   { params }: { params: { userId: string } }
 ) {
-  console.log('📊 FEELCYCLE連携状態取得API呼び出し (Frontend)');
+  console.log('🔓 FEELCYCLE連携解除API呼び出し (Frontend)');
 
   try {
     const { userId } = params;
@@ -26,27 +26,22 @@ export async function GET(
       );
     }
 
-    console.log(`連携状態確認: ${userId}`);
-
-    console.log('🔧 Environment check (status):', { 
-      nodeEnv: process.env.NODE_ENV,
-      apiUrl: API_BASE_URL 
-    });
+    console.log(`連携解除: ${userId}`);
 
     // バックエンドAPIにリクエスト
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
     
-    const backendResponse = await fetch(`${API_BASE_URL}/feelcycle/status/${userId}`, {
-      method: 'GET',
+    const backendResponse = await fetch(`${API_BASE_URL}/feelcycle/unlink/${userId}`, {
+      method: 'DELETE',
       headers
     });
 
     const backendData = await backendResponse.json();
-    console.log('📊 Backend Response:', { 
+    console.log('🔓 Backend Response:', { 
       status: backendResponse.status, 
-      isLinked: backendData.isLinked 
+      success: backendData.success 
     });
 
     // バックエンドのレスポンスをそのまま返す
@@ -56,7 +51,7 @@ export async function GET(
     );
 
   } catch (error) {
-    console.error('❌ FEELCYCLE連携状態取得API エラー (Frontend):', error);
+    console.error('❌ FEELCYCLE連携解除API エラー (Frontend):', error);
     
     return NextResponse.json(
       { 
@@ -75,7 +70,7 @@ export async function OPTIONS() {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });

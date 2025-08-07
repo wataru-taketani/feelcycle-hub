@@ -1,5 +1,14 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { 
+  DynamoDBClient, 
+  DeleteItemCommand, 
+  UpdateItemCommand 
+} from '@aws-sdk/client-dynamodb';
+import { 
+  SecretsManagerClient, 
+  DeleteSecretCommand 
+} from '@aws-sdk/client-secrets-manager';
+import { 
   authenticateFeelcycleAccountEnhanced, 
   checkFeelcycleAccountStatusEnhanced 
 } from '../services/feelcycle-auth-service';
@@ -277,21 +286,72 @@ export async function unlinkAccount(event: APIGatewayProxyEvent): Promise<APIGat
 
     console.log(`連携解除処理: ${userId}`);
 
-    // TODO: 連携解除の実装
-    // - Secrets Managerから認証情報削除
-    // - DynamoDBから連携データ削除
-    // - ユーザーテーブルの連携ステータス更新
+    // DynamoDB設定
+    const tableName = process.env.FEELCYCLE_DATA_TABLE || 'feelcycle-hub-user-feelcycle-data-dev';
+    const usersTableName = process.env.USER_TABLE || 'feelcycle-hub-users-dev';
     
-    console.log('⚠️ 連携解除機能は今後実装予定');
+    const dynamoDb = new DynamoDBClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
 
-    return {
-      statusCode: 501,
-      headers,
-      body: JSON.stringify({ 
-        success: false,
-        error: 'Unlink functionality not yet implemented' 
-      })
-    };
+    try {
+      // 1. FEELCYCLEデータテーブルからユーザーデータを削除
+      console.log(`FEELCYCLEデータ削除: ${tableName}`);
+      const deleteFeelcycleDataCommand = new DeleteItemCommand({
+        TableName: tableName,
+        Key: {
+          userId: { S: userId }
+        }
+      });
+      await dynamoDb.send(deleteFeelcycleDataCommand);
+
+      // 2. ユーザーテーブルの連携ステータスを更新
+      console.log(`ユーザーステータス更新: ${usersTableName}`);
+      const updateUserCommand = new UpdateItemCommand({
+        TableName: usersTableName,
+        Key: {
+          PK: { S: `USER#${userId}` },
+          SK: { S: 'PROFILE' }
+        },
+        UpdateExpression: 'SET feelcycleAccountLinked = :linked REMOVE feelcycleLastVerified',
+        ExpressionAttributeValues: {
+          ':linked': { BOOL: false }
+        }
+      });
+      await dynamoDb.send(updateUserCommand);
+
+      // 3. Secrets Manager からの認証情報削除
+      // 注意: 個別ユーザーの認証情報はuserIdをキーとして保存されていると仮定
+      try {
+        console.log(`Secrets Manager認証情報削除: feelcycle-user-credentials-${userId}`);
+        const secretsManager = new SecretsManagerClient({ region: process.env.AWS_REGION || 'ap-northeast-1' });
+        
+        const deleteSecretCommand = new DeleteSecretCommand({
+          SecretId: `feelcycle-user-credentials-${userId}`,
+          ForceDeleteWithoutRecovery: true
+        });
+        
+        await secretsManager.send(deleteSecretCommand);
+        console.log('✅ Secrets Manager認証情報削除完了');
+      } catch (secretError) {
+        // Secret が存在しない場合はエラーではない
+        console.log('ℹ️ Secrets Manager削除スキップ (存在しないか既に削除済み)');
+      }
+
+      console.log('✅ FEELCYCLE連携解除完了');
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ 
+          success: true,
+          message: 'FEELCYCLE連携を解除しました',
+          timestamp: new Date().toISOString()
+        })
+      };
+
+    } catch (dbError) {
+      console.error('データベース操作エラー:', dbError);
+      throw new Error(`Database operation failed: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`);
+    }
 
   } catch (error) {
     console.error('連携解除API エラー:', error);

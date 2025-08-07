@@ -1,8 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authenticateFeelcycleAccountWorking } from '../services/working-feelcycle-auth-service';
 import { checkFeelcycleAccountStatus } from '../services/enhanced-feelcycle-auth-service';
-// Lambda専用のシンプル実装を追加
-const { authenticateFeelcycleAccountLambda } = require('../services/lambda-feelcycle-auth.js');
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -95,11 +93,11 @@ async function handleVerifyAuth(event: APIGatewayProxyEvent): Promise<APIGateway
 
     console.log(`FEELCYCLE認証開始（同期テスト）: ${userId} (${email})`);
 
-    // デバッグ用：Lambda専用シンプル実装でテスト
+    // デバッグ用：同期実行でエラーを詳細に確認
     if (userId.startsWith('debug-')) {
-      console.log('🔍 デバッグモード: Lambda専用シンプル実装テスト');
+      console.log('🔍 デバッグモード: 同期実行でスクリーンショット機能テスト');
       try {
-        const result = await authenticateFeelcycleAccountLambda(userId, email, password);
+        const result = await authenticateFeelcycleAccountWorking(userId, email, password);
         console.log(`✅ FEELCYCLE認証完了（同期）: ${userId}`, JSON.stringify(result, null, 2));
         return {
           statusCode: 200,
@@ -131,9 +129,9 @@ async function handleVerifyAuth(event: APIGatewayProxyEvent): Promise<APIGateway
       }
     }
 
-    // Lambda専用シンプル実装で実行（WindSurf方式）
-    console.log('🚀 Lambda専用シンプル認証実行開始');
-    const result = await authenticateFeelcycleAccountLambda(userId, email, password);
+    // 同期実行で即座結果返却（WindSurf方式）
+    console.log('🚀 同期FEELCYCLE認証実行開始');
+    const result = await authenticateFeelcycleAccountWorking(userId, email, password);
     
     console.log(`✅ FEELCYCLE認証完了: ${userId}`, JSON.stringify(result, null, 2));
     

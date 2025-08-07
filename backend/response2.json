@@ -1,1 +1,1 @@
-null
+{"statusCode":200,"headers":{"Content-Type":"application/json","Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"DELETE, OPTIONS","Access-Control-Allow-Headers":"Content-Type, Authorization"},"body":"{\"success\":true,\"message\":\"FEELCYCLE連携を解除しました\",\"timestamp\":\"2025-08-07T21:48:14.631Z\"}"}
