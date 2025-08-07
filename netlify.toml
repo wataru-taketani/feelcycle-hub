@@ -1,7 +1,10 @@
 [build]
   base = "frontend"
-  publish = "out"
+  publish = ".next"
   command = "npm run build"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -9,10 +12,8 @@
   NEXT_PUBLIC_LIFF_ID = "2007687052-qExN9w3O"
   NEXT_PUBLIC_FRONTEND_URL = "https://feelcycle-hub.netlify.app"
 
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+# Next.js API routes are handled by @netlify/plugin-nextjs
+# No manual redirects needed for /api/* routes
 
 [[headers]]
   for = "/*"

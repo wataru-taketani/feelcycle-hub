@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'export', // 開発環境ではAPI Routesを使用するためコメントアウト
+  // output: 'export', // API Routesを使用するためコメントアウト
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
-  distDir: 'out',
+  // distDir: 'out', // API Routesを使用するためコメントアウト
   eslint: {
     ignoreDuringBuilds: true,
   },
