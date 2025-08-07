@@ -16,16 +16,16 @@
     "cost-estimate": "tsx scripts/cost-estimate.ts"
   },
   "devDependencies": {
-    "@types/node": "^20.14.0",
+    "@types/node": "^20.19.9",
     "concurrently": "^8.2.2",
-    "tsx": "^4.16.0",
-    "typescript": "^5.5.2"
+    "tsx": "^4.20.3",
+    "typescript": "^5.9.2"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
   },
   "dependencies": {
-    "@aws-sdk/client-lambda": "^3.848.0"
+    "@aws-sdk/client-lambda": "^3.859.0"
   }
 }

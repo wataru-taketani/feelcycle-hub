@@ -81,6 +81,22 @@ export async function handler(
       result = await authHandler(apiEvent);
     } else if (path.startsWith('/feelcycle/auth/') || path.includes('/feelcycle/auth/')) {
       return await feelcycleAuthHandler(apiEvent);
+    } else if (path.startsWith('/feelcycle/')) {
+      // FEELCYCLE統合API
+      const { integrateAccount, getIntegrationStatus, unlinkAccount } = await import('./feelcycle-integration');
+      if (path === '/feelcycle/integrate' && httpMethod === 'POST') {
+        return await integrateAccount(apiEvent);
+      } else if (path.startsWith('/feelcycle/status/') && httpMethod === 'GET') {
+        return await getIntegrationStatus(apiEvent);
+      } else if (path.startsWith('/feelcycle/unlink/') && httpMethod === 'DELETE') {
+        return await unlinkAccount(apiEvent);
+      } else {
+        result = {
+          success: false,
+          error: 'Not Found',
+          message: `FEELCYCLE path ${path} not found`,
+        };
+      }
     } else if (path === '/user/preferences/favorites') {
       return await userSettingsHandler(apiEvent);
     } else if (path.startsWith('/user-settings')) {
@@ -103,7 +119,7 @@ export async function handler(
       result = await historyHandler(apiEvent);
     } else if (path === '/debug-modules') {
       return await debugLambdaModules(apiEvent);
-    } else if (path === '/simple-test') {
+    } else if (path === '/simple-test' || path === '/dev/simple-test') {
       return await simpleTest(apiEvent);
     } else if (path === '/test-line') {
       // LINE通知テスト用エンドポイント

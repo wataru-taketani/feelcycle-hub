@@ -1,0 +1,121 @@
+{
+  "@line/liff": {
+    "current": "2.27.0",
+    "wanted": "2.27.1",
+    "latest": "2.27.1",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/@line/liff"
+  },
+  "@types/node": {
+    "current": "20.19.9",
+    "wanted": "20.19.9",
+    "latest": "24.2.0",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/@types/node"
+  },
+  "@types/react": {
+    "current": "18.3.23",
+    "wanted": "18.3.23",
+    "latest": "19.1.9",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/@types/react"
+  },
+  "@types/react-dom": {
+    "current": "18.3.7",
+    "wanted": "18.3.7",
+    "latest": "19.1.7",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/@types/react-dom"
+  },
+  "@typescript-eslint/eslint-plugin": {
+    "current": "7.18.0",
+    "wanted": "7.18.0",
+    "latest": "8.39.0",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/@typescript-eslint/eslint-plugin"
+  },
+  "@typescript-eslint/parser": {
+    "current": "7.18.0",
+    "wanted": "7.18.0",
+    "latest": "8.39.0",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/@typescript-eslint/parser"
+  },
+  "axios": {
+    "current": "1.10.0",
+    "wanted": "1.11.0",
+    "latest": "1.11.0",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/axios"
+  },
+  "eslint": {
+    "current": "8.57.1",
+    "wanted": "8.57.1",
+    "latest": "9.32.0",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/eslint"
+  },
+  "eslint-config-next": {
+    "current": "14.2.5",
+    "wanted": "14.2.5",
+    "latest": "15.4.5",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/eslint-config-next"
+  },
+  "lucide-react": {
+    "current": "0.528.0",
+    "wanted": "0.528.0",
+    "latest": "0.536.0",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/lucide-react"
+  },
+  "next": {
+    "current": "14.2.31",
+    "wanted": "14.2.31",
+    "latest": "15.4.5",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/next"
+  },
+  "postcss": {
+    "current": "8.4.31",
+    "wanted": "8.5.6",
+    "latest": "8.5.6",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/postcss"
+  },
+  "react": {
+    "current": "18.3.1",
+    "wanted": "18.3.1",
+    "latest": "19.1.1",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/react"
+  },
+  "react-dom": {
+    "current": "18.3.1",
+    "wanted": "18.3.1",
+    "latest": "19.1.1",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/react-dom"
+  },
+  "sonner": {
+    "current": "2.0.6",
+    "wanted": "2.0.7",
+    "latest": "2.0.7",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/sonner"
+  },
+  "tailwindcss": {
+    "current": "3.4.17",
+    "wanted": "3.4.17",
+    "latest": "4.1.11",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/tailwindcss"
+  },
+  "typescript": {
+    "current": "5.8.3",
+    "wanted": "5.9.2",
+    "latest": "5.9.2",
+    "dependent": "frontend",
+    "location": "/Users/wataru/Projects/feelcycle-hub/node_modules/typescript"
+  }
+}

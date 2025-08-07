@@ -26,6 +26,7 @@ export interface AuthState {
   user: LiffUser | null;
   loading: boolean;
   error: string | null;
+  apiUser?: ApiUser | null;
 }
 
 export interface ApiUser {

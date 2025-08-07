@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  // output: 'export', // 開発環境ではAPI Routesを使用するためコメントアウト
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
   distDir: 'out',

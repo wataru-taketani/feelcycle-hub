@@ -1,10 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { liffService, initLiff } from '@/lib/liff';
-import { AuthState, LiffUser, ApiUser } from '@/types/liff';
+import type { AuthState, LiffUser, ApiUser } from '@/types/liff';
 
 interface AuthContextType extends AuthState {
   login: () => Promise<void>;
@@ -97,11 +98,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // 開発時用の緊急バイパス
       if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && window.location.hostname === 'localhost') {
         console.log('🚨 Development bypass activated');
+        const mockUser = {
+          userId: 'dev-user-123',
+          displayName: 'テストユーザー',
+          pictureUrl: '',
+          statusMessage: ''
+        };
+        const mockApiUser = { 
+          userId: 'dev-user-123', 
+          lineUserId: 'dev-user-123',
+          email: 'dev@example.com',
+          planType: 'free',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
         updateAuthState({
-          isAuthenticated: false,
-          user: null,
+          isAuthenticated: true,
+          user: mockUser,
           loading: false
         });
+        
+        setApiUser(mockApiUser);
         return;
       }
 

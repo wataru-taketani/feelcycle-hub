@@ -11,7 +11,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, User, Bell, Heart, X, MapPin, RefreshCw } from "lucide-react";
-import FeelcycleAuthModal from '@/components/auth/FeelcycleAuthModal';
+import FEELCYCLEIntegrationModal from '@/components/feelcycle/FEELCYCLEIntegrationModal';
+import FEELCYCLEStatusCard from '@/components/feelcycle/FEELCYCLEStatusCard';
+import { useFEELCYCLEIntegration } from '@/hooks/useFEELCYCLEIntegration';
 import StudioGrid from "@/components/shared/StudioGrid";
 import { useInstructors } from "@/hooks/useInstructors";
 import { 
@@ -33,6 +35,9 @@ import {
 export default function SettingsPage() {
   const { user, isAuthenticated, loading, apiUser } = useAuth();
   
+  // デバッグログを追加
+  console.log('SettingsPage render:', { isAuthenticated, user, loading, apiUser });
+  
   // Add error boundary for debugging
   const [pageError, setPageError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
@@ -40,10 +45,9 @@ export default function SettingsPage() {
   // ユーザー設定の状態管理（サーバー同期対応）
   const [userSettings, setUserSettings] = useState(() => getUserSettings());
   
-  // FEELCYCLE連携状態
-  const [feelcycleLinked, setFeelcycleLinked] = useState(false);
-  const [feelcycleData, setFeelcycleData] = useState<any>(null);
-  const [showFeelcycleModal, setShowFeelcycleModal] = useState(false);
+  // FEELCYCLE連携状態（新しい統合システム）
+  const feelcycleIntegration = useFEELCYCLEIntegration(apiUser?.userId || '');
+  const [showFEELCYCLEModal, setShowFEELCYCLEModal] = useState(false);
   
   // サーバーとの同期処理
   useEffect(() => {
@@ -56,18 +60,7 @@ export default function SettingsPage() {
           const syncedSettings = await getUserFavoritesWithSync(apiUser.userId);
           setUserSettings(syncedSettings);
           
-          // FEELCYCLE連携状態チェック
-          try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/feelcycle/auth/status?userId=${apiUser.userId}`);
-            const feelcycleInfo = await response.json();
-            setFeelcycleLinked(feelcycleInfo?.linked || false);
-            setFeelcycleData(feelcycleInfo?.data || null);
-          } catch (error) {
-            console.error('FEELCYCLE連携状況確認エラー:', error);
-            // エラーが発生した場合は未連携として扱う
-            setFeelcycleLinked(false);
-            setFeelcycleData(null);
-          }
+          // FEELCYCLE連携状態は useFEELCYCLEIntegration フックで自動管理
           
           setSyncStatus('synced');
           console.log('✅ Settings synced with server');
@@ -181,11 +174,11 @@ export default function SettingsPage() {
     }
   };
 
-  // FEELCYCLE認証成功時の処理
-  const handleFeelcycleAuthSuccess = (data: any) => {
-    setFeelcycleLinked(true);
-    setFeelcycleData(data);
-    console.log('FEELCYCLE認証成功:', data);
+  // FEELCYCLE連携成功時の処理（新しい統合システム）
+  const handleFEELCYCLEIntegrationSuccess = () => {
+    setShowFEELCYCLEModal(false);
+    feelcycleIntegration.checkStatus(); // 状態を更新
+    console.log('FEELCYCLE連携成功');
   };
 
   // Show error if page failed to mount
@@ -284,42 +277,32 @@ export default function SettingsPage() {
               </p>
             </div>
             {/* FEELCYCLE連携状態に応じた表示 */}
-            {feelcycleLinked ? (
-              <>
-                <div>
-                  <label className="block mb-1.5 text-sm font-medium">所属店舗</label>
-                  <Input 
-                    value={feelcycleData?.homeStudio || '取得中...'} 
-                    disabled 
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    FEELCYCLEサイトから自動取得されます
-                  </p>
-                </div>
-                <div>
-                  <label className="block mb-1.5 text-sm font-medium">会員種別</label>
-                  <Input 
-                    value={feelcycleData?.membershipType || '取得中...'} 
-                    disabled 
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    FEELCYCLEサイトから自動取得されます
-                  </p>
-                </div>
-              </>
+            {feelcycleIntegration.isLinked ? (
+              <FEELCYCLEStatusCard 
+                userData={feelcycleIntegration.userData}
+                onUnlink={feelcycleIntegration.unlink}
+                isLoading={feelcycleIntegration.loading}
+                error={feelcycleIntegration.error}
+              />
             ) : (
               <div>
                 <label className="block mb-1.5 text-sm font-medium">FEELCYCLEアカウント連携</label>
                 <Button 
                   variant="outline" 
                   className="w-full h-11"
-                  onClick={() => setShowFeelcycleModal(true)}
+                  onClick={() => setShowFEELCYCLEModal(true)}
+                  disabled={feelcycleIntegration.loading}
                 >
-                  FEELCYCLEアカウントを連携する
+                  {feelcycleIntegration.loading ? '連携中...' : 'FEELCYCLEアカウントを連携する'}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-1">
                   連携により所属店舗・会員種別情報が自動取得されます
                 </p>
+                {feelcycleIntegration.error && (
+                  <p className="text-xs text-red-500 mt-1">
+                    {feelcycleIntegration.error}
+                  </p>
+                )}
               </div>
             )}
             <Button className="w-full h-11" onClick={handleSaveProfile}>
@@ -531,10 +514,10 @@ export default function SettingsPage() {
       </div>
 
       {/* FEELCYCLEアカウント連携モーダル */}
-      <FeelcycleAuthModal
-        isOpen={showFeelcycleModal}
-        onClose={() => setShowFeelcycleModal(false)}
-        onSuccess={handleFeelcycleAuthSuccess}
+      <FEELCYCLEIntegrationModal
+        isOpen={showFEELCYCLEModal}
+        onClose={() => setShowFEELCYCLEModal(false)}
+        onSuccess={handleFEELCYCLEIntegrationSuccess}
         userId={apiUser?.userId || ''}
       />
     </div>

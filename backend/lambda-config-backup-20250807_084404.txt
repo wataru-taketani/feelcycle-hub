@@ -1,0 +1,6 @@
+=== FEELCYCLE認証Lambda設定バックアップ ===
+Function: feelcycle-hub-main-dev
+Timeout: 30秒
+MemorySize: 512MB
+LastModified: 2025-08-06T23:37:39.000+0000
+State: Active
