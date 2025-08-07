@@ -28,10 +28,12 @@ export async function POST(request: NextRequest) {
 
     console.log(`FEELCYCLE連携リクエスト: ${userId}, Email: ${email.replace(/(.{3}).*(@.*)/, '$1***$2')}`);
 
-    // 開発環境での認証バイパス
+    // 開発環境での認証バイパス（認証トークンがない場合も含む）
+    const authToken = process.env.FEELCYCLE_API_TOKEN || process.env.NEXT_PUBLIC_API_TOKEN;
     const isDevelopment = process.env.NODE_ENV === 'development' || 
                          process.env.NEXT_PUBLIC_API_BASE_URL?.includes('localhost') ||
-                         API_BASE_URL.includes('localhost');
+                         API_BASE_URL.includes('localhost') ||
+                         !authToken; // 認証トークンがない場合は開発環境として扱う
     
     console.log('🔧 Environment check:', { 
       isDevelopment, 
