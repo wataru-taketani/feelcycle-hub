@@ -1,13 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "ES2020",
     "lib": [
       "dom",
-      "dom.iterable",
-      "es6"
+      "dom.iterable", 
+      "ES2020"
     ],
-    "allowJs": true,
-    "skipLibCheck": true,
+    "allowJs": false,
+    "skipLibCheck": false,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -17,6 +17,28 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    
+    // 厳格な型チェック設定
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    
+    // import/export の厳格化
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": false,
+    
+    // 未使用コードの検出
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    
+    // その他の厳格設定
+    "forceConsistentCasingInFileNames": true,
+    "useDefineForClassFields": true,
+    
     "plugins": [
       {
         "name": "next"

@@ -1,0 +1,34 @@
+{
+  "extends": [
+    "next/core-web-vitals"
+  ],
+  "root": true,
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "node": true
+  },
+  "rules": {
+    // 基本的なコード品質ルール
+    "no-console": "off",
+    "react-hooks/exhaustive-deps": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off"
+      }
+    }
+  ],
+  "ignorePatterns": [
+    "out/",
+    "dist/",
+    "node_modules/",
+    ".next/",
+    "*.config.js",
+    "backup*/"
+  ]
+}

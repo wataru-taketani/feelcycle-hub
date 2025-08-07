@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,17 @@ export default function FeelcycleAuthModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  // ポーリング制御用のRef（再レンダリング時に初期化されない）
+  const pollingRef = useRef<{
+    isActive: boolean;
+    count: number;
+    timeoutId: NodeJS.Timeout | null;
+  }>({
+    isActive: false,
+    count: 0,
+    timeoutId: null
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,48 +74,81 @@ export default function FeelcycleAuthModal({
         // 非同期処理の場合：ポーリングで完了を待機
         setIsSuccess(true);
         
-        // ポーリングで認証完了を確認（最大60秒でタイムアウト）
-        let pollCount = 0;
+        // 既存のポーリングを停止
+        if (pollingRef.current.timeoutId) {
+          clearTimeout(pollingRef.current.timeoutId);
+          pollingRef.current.timeoutId = null;
+        }
+        
+        // ポーリング初期化
+        pollingRef.current.isActive = true;
+        pollingRef.current.count = 0;
         const maxPolls = 20; // 3秒 × 20回 = 最大60秒
         
         const checkAuthStatus = async () => {
+          // ポーリングが非アクティブの場合は停止
+          if (!pollingRef.current.isActive) {
+            console.log('🛑 ポーリング停止済み');
+            return;
+          }
+          
           try {
-            pollCount++;
-            console.log(`認証状況確認中... (${pollCount}/${maxPolls})`);
+            pollingRef.current.count++;
+            const currentCount = pollingRef.current.count;
+            console.log(`🔄 認証状況確認中... (${currentCount}/${maxPolls})`);
             
             const statusResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/feelcycle/auth/status?userId=${userId}`);
             const statusData = await statusResponse.json();
             
             if (statusData.linked && statusData.data) {
-              // 認証完了
-              console.log('FEELCYCLE認証完了:', statusData.data);
+              // 認証完了 - ポーリング停止
+              pollingRef.current.isActive = false;
+              if (pollingRef.current.timeoutId) {
+                clearTimeout(pollingRef.current.timeoutId);
+                pollingRef.current.timeoutId = null;
+              }
+              console.log('✅ FEELCYCLE認証完了:', statusData.data);
               onSuccess(statusData.data);
               handleClose();
-            } else if (pollCount >= maxPolls) {
-              // タイムアウト
-              console.error('認証処理がタイムアウトしました');
+            } else if (currentCount >= maxPolls) {
+              // タイムアウト - ポーリング停止
+              pollingRef.current.isActive = false;
+              if (pollingRef.current.timeoutId) {
+                clearTimeout(pollingRef.current.timeoutId);
+                pollingRef.current.timeoutId = null;
+              }
+              console.error('❌ 認証処理がタイムアウトしました');
               setError('認証処理に時間がかかっています。しばらく後に再度お試しください。');
               setIsSuccess(false);
               setIsLoading(false);
             } else {
               // まだ処理中：3秒後に再確認
-              setTimeout(checkAuthStatus, 3000);
+              console.log(`⏳ ${currentCount}回目完了、3秒後に再確認`);
+              pollingRef.current.timeoutId = setTimeout(checkAuthStatus, 3000);
             }
           } catch (pollError) {
-            console.error('認証状況確認エラー:', pollError);
-            if (pollCount >= maxPolls) {
+            console.error('❌ 認証状況確認エラー:', pollError);
+            const currentCount = pollingRef.current.count;
+            if (currentCount >= maxPolls) {
+              pollingRef.current.isActive = false;
+              if (pollingRef.current.timeoutId) {
+                clearTimeout(pollingRef.current.timeoutId);
+                pollingRef.current.timeoutId = null;
+              }
               setError('認証状況の確認に失敗しました。再度お試しください。');
               setIsSuccess(false);
               setIsLoading(false);
             } else {
               // エラーの場合は5秒後に再確認
-              setTimeout(checkAuthStatus, 5000);
+              console.log(`⚠️ エラー発生、5秒後に再試行 (${currentCount}/${maxPolls})`);
+              pollingRef.current.timeoutId = setTimeout(checkAuthStatus, 5000);
             }
           }
         };
         
         // 1秒後にポーリング開始
-        setTimeout(checkAuthStatus, 1000);
+        console.log('🚀 ポーリング開始予定: 1秒後');
+        pollingRef.current.timeoutId = setTimeout(checkAuthStatus, 1000);
         
       } else if (result.status === 'completed') {
         // 同期処理完了の場合（デバッグモード）
@@ -124,8 +168,8 @@ export default function FeelcycleAuthModal({
       if (err instanceof Error) {
         if (err.message.includes('fetch')) {
           errorMessage = 'サーバーとの通信に失敗しました。インターネット接続を確認してください。';
-        } else if (err.message.includes('401') || err.message.includes('認証')) {
-          errorMessage = 'メールアドレスまたはパスワードが正しくありません。';
+        } else if (err.message.includes('401') || err.message.includes('認証') || err.message.includes('AUTHENTICATION_FAILED')) {
+          errorMessage = 'メールアドレスまたはパスワードが正しくありません。アカウントロック防止のため、正確な情報をご確認ください。';
         } else if (err.message.includes('timeout')) {
           errorMessage = 'サーバーの応答がタイムアウトしました。しばらく後に再試行してください。';
         } else {
@@ -140,6 +184,14 @@ export default function FeelcycleAuthModal({
   };
 
   const handleClose = () => {
+    // ポーリング完全停止
+    pollingRef.current.isActive = false;
+    if (pollingRef.current.timeoutId) {
+      clearTimeout(pollingRef.current.timeoutId);
+      pollingRef.current.timeoutId = null;
+    }
+    pollingRef.current.count = 0;
+    
     setEmail('');
     setPassword('');
     setShowPassword(false);
