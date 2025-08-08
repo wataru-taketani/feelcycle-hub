@@ -33,9 +33,10 @@ export async function DELETE(
       'Content-Type': 'application/json',
     };
     
-    const backendResponse = await fetch(`${API_BASE_URL}/feelcycle/unlink/${userId}`, {
-      method: 'DELETE',
-      headers
+    const backendResponse = await fetch(`${API_BASE_URL}/feelcycle/auth/unlink`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ userId })
     });
 
     const backendData = await backendResponse.json();

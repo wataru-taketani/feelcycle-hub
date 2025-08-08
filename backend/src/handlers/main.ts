@@ -77,11 +77,16 @@ export async function handler(
     let result: ApiResponse;
     
     // ルーティング
+    console.log(`🔍 ルーティング判定: ${httpMethod} ${path}`);
+    
     if (path.startsWith('/auth/')) {
+      console.log('✅ /auth/ ルートにマッチ');
       result = await authHandler(apiEvent);
     } else if (path.startsWith('/feelcycle/auth/') || path.includes('/feelcycle/auth/')) {
+      console.log('✅ /feelcycle/auth/ ルートにマッチ');
       return await feelcycleAuthHandler(apiEvent);
     } else if (path.startsWith('/feelcycle/')) {
+      console.log('✅ /feelcycle/ ルートにマッチ');
       // FEELCYCLE統合API
       const { integrateAccount, getIntegrationStatus, unlinkAccount } = await import('./feelcycle-integration');
       if (path === '/feelcycle/integrate' && httpMethod === 'POST') {

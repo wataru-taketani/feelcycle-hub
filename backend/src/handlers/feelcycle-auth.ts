@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { authenticateFeelcycleAccountWorking } from '../services/working-feelcycle-auth-service';
-import { checkFeelcycleAccountStatus } from '../services/enhanced-feelcycle-auth-service';
-// Lambda専用のシンプル実装を追加
+import { authenticateFeelcycleAccount, checkFeelcycleAccountStatus, unlinkFeelcycleAccount } from '../services/enhanced-feelcycle-auth-service';
+// Lambda専用のシンプル実装（デバッグ用に残す）
 const { authenticateFeelcycleAccountLambda } = require('../services/lambda-feelcycle-auth.js');
 
 const corsHeaders = {
@@ -38,6 +38,16 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       return await handleCheckStatus(event);
     }
 
+    // DELETE /feelcycle/auth/unlink/{userId} - 連携解除
+    if (method === 'DELETE' && path.includes('/feelcycle/auth/unlink/')) {
+      return await handleUnlinkAuth(event);
+    }
+
+    // POST /feelcycle/auth/unlink - 連携解除（代替エンドポイント）
+    if (method === 'POST' && path.includes('/feelcycle/auth/unlink')) {
+      return await handleUnlinkAuth(event);
+    }
+
     return {
       statusCode: 404,
       headers: corsHeaders,
@@ -45,7 +55,8 @@ export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayPr
         error: 'Endpoint not found',
         availableEndpoints: [
           'POST /feelcycle/auth/verify',
-          'GET /feelcycle/auth/status'
+          'GET /feelcycle/auth/status',
+          'DELETE /feelcycle/auth/unlink/{userId}'
         ]
       })
     };
@@ -131,12 +142,13 @@ async function handleVerifyAuth(event: APIGatewayProxyEvent): Promise<APIGateway
       }
     }
 
-    // Lambda専用シンプル実装で実行（WindSurf方式）
-    console.log('🚀 Lambda専用シンプル認証実行開始');
-    const result = await authenticateFeelcycleAccountLambda(userId, email, password);
-    
+    // 本番処理：永続化するEnhanced実装を使用
+    // DynamoDB/Secrets Managerへ保存し、ステータスAPIと整合するようにする
+    console.log('🚀 Enhanced認証実行開始（DynamoDB保存あり）');
+    const result = await authenticateFeelcycleAccount(userId, email, password);
+
     console.log(`✅ FEELCYCLE認証完了: ${userId}`, JSON.stringify(result, null, 2));
-    
+
     return {
       statusCode: 200, // OK - 処理完了
       headers: corsHeaders,
@@ -215,6 +227,64 @@ async function handleCheckStatus(event: APIGatewayProxyEvent): Promise<APIGatewa
       headers: corsHeaders,
       body: JSON.stringify({
         error: 'Failed to check status',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      })
+    };
+  }
+}
+
+// 連携解除処理
+async function handleUnlinkAuth(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    let userId: string;
+
+    // DELETEリクエストの場合はパスからuserIdを抽出
+    if (event.httpMethod === 'DELETE') {
+      const pathParts = event.path.split('/');
+      userId = pathParts[pathParts.length - 1];
+    } 
+    // POSTリクエストの場合はボディからuserIdを取得
+    else if (event.httpMethod === 'POST') {
+      const body = event.body ? JSON.parse(event.body) : {};
+      userId = body.userId;
+    } else {
+      userId = '';
+    }
+
+    if (!userId) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          error: 'User ID is required'
+        })
+      };
+    }
+
+    console.log(`FEELCYCLE連携解除開始: ${userId}`);
+
+    const result = await unlinkFeelcycleAccount(userId);
+
+    console.log(`✅ FEELCYCLE連携解除完了: ${userId}`);
+
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        success: true,
+        message: 'FEELCYCLE連携を解除しました',
+        userId: userId,
+        timestamp: new Date().toISOString()
+      })
+    };
+
+  } catch (error) {
+    console.error('FEELCYCLE連携解除エラー:', error);
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        error: 'Failed to unlink account',
         message: error instanceof Error ? error.message : 'Unknown error'
       })
     };

@@ -75,7 +75,7 @@ export const FEELCYCLEStatusCard: React.FC<FEELCYCLEStatusCardProps> = ({
   };
 
   const getMemberTypeBadgeColor = (memberType: string) => {
-    switch (memberType.toLowerCase()) {
+    switch (memberType?.toLowerCase()) {
       case 'premium':
       case 'プレミアム':
       case 'プレミアム会員':

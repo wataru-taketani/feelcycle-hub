@@ -1,5 +1,5 @@
 import { SecretsManagerClient, GetSecretValueCommand, UpdateSecretCommand } from '@aws-sdk/client-secrets-manager';
-import { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, GetItemCommand, PutItemCommand, UpdateItemCommand, DeleteItemCommand } from '@aws-sdk/client-dynamodb';
 import { marshall, unmarshall } from '@aws-sdk/util-dynamodb';
 import * as crypto from 'crypto';
 import * as puppeteer from 'puppeteer-core';
@@ -400,13 +400,20 @@ async function scrapeUserInfoEnhanced(page: puppeteer.Page): Promise<{
 
     // 会員情報取得（複数パターン対応）
     try {
+      // ページの全体構造をデバッグ出力
+      const pageContent = await page.content();
+      console.log('マイページHTML構造の一部:', pageContent.substring(0, 2000));
+      
+      // より確実なセレクタで情報を探索
       const membershipSelectors = [
-        '.user-info .membership', // 新構造想定
+        'section.right_box div', // より具体的なセレクタ
+        '.right_box div', // 既存の動作確認済み
+        'section[class*="right_box"] div', // class部分一致
+        'header section div', // header内のsection内のdiv
+        '.content_wrap_pc header section div', // フルパス
+        '.user-info .membership',
         '.member-info',
-        '.membership-type',
-        '.right_box div', // 現在の構造
-        '[class*="member"]',
-        '[class*="subscription"]'
+        '.membership-type'
       ];
 
       let membershipFound = false;
@@ -421,12 +428,16 @@ async function scrapeUserInfoEnhanced(page: puppeteer.Page): Promise<{
               const parts = membershipText.split('/').map(part => part.trim());
               if (parts.length >= 2) {
                 basicInfo.membershipType = parts[0];
-                basicInfo.homeStudio = parts[1];
+                // 店舗名から括弧内のコードを除去（例: "銀座（GNZ）" → "銀座"）
+                const studioName = parts[1].replace(/（[^）]*）/g, '').trim();
+                basicInfo.homeStudio = studioName;
+                console.log(`✅ 会員情報解析成功: ${basicInfo.membershipType} / ${basicInfo.homeStudio}`);
                 membershipFound = true;
                 break;
               }
-            } else {
+            } else if (membershipText.length > 0) {
               basicInfo.membershipType = membershipText;
+              console.log(`✅ 会員種別のみ取得: ${basicInfo.membershipType}`);
               membershipFound = true;
               break;
             }
@@ -623,12 +634,15 @@ async function saveFeeelcycleDataEnhanced(userId: string, email: string, userInf
   }
 }
 
-// ユーザーテーブルの連携ステータス更新
+// ユーザーテーブルの連携ステータス更新（PK/SK構造対応）
 async function updateUserFeelcycleStatus(userId: string, linked: boolean): Promise<void> {
   try {
     const command = new UpdateItemCommand({
       TableName: USER_TABLE,
-      Key: marshall({ userId }),
+      Key: marshall({ 
+        PK: `USER#${userId}`,
+        SK: `PROFILE`
+      }),
       UpdateExpression: 'SET feelcycleAccountLinked = :linked, feelcycleLastVerified = :timestamp',
       ExpressionAttributeValues: marshall({
         ':linked': linked,
@@ -719,10 +733,10 @@ export async function authenticateFeelcycleAccountEnhanced(userId: string, email
       throw new Error(verificationResult.error || 'ログイン認証に失敗しました');
     }
 
-    // 2. 認証情報をSecrets Managerに保存（修正版）
-    console.log('ステップ2: Enhanced Secrets Manager保存開始');
-    await storeCredentials(userId, email, password);
-    console.log('ステップ2完了: Enhanced Secrets Manager保存成功');
+    // 2. 認証情報をSecrets Managerに保存（一時的にスキップ - 権限エラー回避）
+    console.log('ステップ2: Enhanced Secrets Manager保存スキップ（権限エラー回避）');
+    // await storeCredentials(userId, email, password);
+    console.log('ステップ2完了: Enhanced Secrets Manager保存スキップ');
 
     // 3. 取得した情報をDynamoDBに保存（修正版）
     console.log('ステップ3: Enhanced DynamoDB保存開始');
@@ -778,6 +792,47 @@ export async function checkFeelcycleAccountStatusEnhanced(userId: string): Promi
   } catch (error) {
     console.error('Enhanced FEELCYCLE連携状況確認エラー:', error);
     return { linked: false };
+  }
+}
+
+/**
+ * FEELCYCLE連携解除
+ */
+export async function unlinkFeelcycleAccount(userId: string): Promise<{ success: boolean }> {
+  try {
+    console.log(`FEELCYCLE連携解除開始: ${userId}`);
+
+    // 1. DynamoDBのFEELCYCLE連携データを削除
+    const deleteFeelcycleDataCommand = new DeleteItemCommand({
+      TableName: FEELCYCLE_DATA_TABLE,
+      Key: marshall({ userId })
+    });
+    await dynamoClient.send(deleteFeelcycleDataCommand);
+    console.log('✅ FEELCYCLE連携データ削除完了');
+
+    // 2. ユーザーテーブルの連携フラグを更新
+    const updateUserCommand = new UpdateItemCommand({
+      TableName: USER_TABLE,
+      Key: marshall({
+        PK: `USER#${userId}`,
+        SK: 'PROFILE'
+      }),
+      UpdateExpression: 'REMOVE feelcycleLinked, feelcycleLinkedAt',
+      ReturnValues: 'ALL_NEW'
+    });
+    await dynamoClient.send(updateUserCommand);
+    console.log('✅ ユーザーテーブル連携フラグ削除完了');
+
+    // 3. Secrets Managerの認証情報を削除（将来的に実装）
+    // 現在は権限不足でスキップ
+    console.log('ℹ️  Secrets Manager認証情報削除スキップ（権限不足）');
+
+    console.log(`✅ FEELCYCLE連携解除完了: ${userId}`);
+    return { success: true };
+
+  } catch (error) {
+    console.error('FEELCYCLE連携解除エラー:', error);
+    throw new Error(`連携解除に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 

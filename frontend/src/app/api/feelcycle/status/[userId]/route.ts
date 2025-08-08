@@ -46,12 +46,18 @@ export async function GET(
     const backendData = await backendResponse.json();
     console.log('📊 Backend Response:', { 
       status: backendResponse.status, 
-      isLinked: backendData.isLinked 
+      isLinked: backendData.isLinked ?? backendData.linked 
     });
 
-    // バックエンドのレスポンスをそのまま返す
+    // フロントエンドで期待するレスポンス形式に正規化して返す
+    const normalized = {
+      success: backendData.success ?? true,
+      isLinked: backendData.isLinked ?? backendData.linked ?? false,
+      data: backendData.data ?? null,
+    };
+
     return NextResponse.json(
-      backendData,
+      normalized,
       { status: backendResponse.status }
     );
 
